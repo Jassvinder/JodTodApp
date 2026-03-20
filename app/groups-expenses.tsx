@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,19 +8,21 @@ import {
   RefreshControl,
   TextInput,
   Alert,
-  Platform,
 } from 'react-native';
-import { useRouter, useFocusEffect } from 'expo-router';
-import { expenseService, type ExpenseListParams } from '../../../services/expenses';
-import { formatCurrency, formatRelativeDate, percentChange } from '../../../utils/format';
-import { Colors } from '../../../constants/colors';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
+import { groupService, type GroupExpenseListParams } from '../services/groups';
+import { expenseService } from '../services/expenses';
+import { formatCurrency, formatRelativeDate } from '../utils/format';
+import { Colors } from '../constants/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import type { Expense, Category, ExpenseSummary } from '../../../types/models';
+import type { GroupExpense, Category } from '../types/models';
 
-export default function ExpensesScreen() {
+export default function GroupExpensesScreen() {
   const router = useRouter();
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [summary, setSummary] = useState<ExpenseSummary | null>(null);
+  const { groupId: groupIdParam } = useLocalSearchParams<{ groupId: string }>();
+  const groupId = parseInt(groupIdParam || '0', 10);
+
+  const [expenses, setExpenses] = useState<GroupExpense[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -45,19 +47,18 @@ export default function ExpensesScreen() {
 
   const fetchExpenses = async (pageNum: number = 1, append: boolean = false) => {
     try {
-      const params: ExpenseListParams = { page: pageNum };
+      const params: GroupExpenseListParams = { page: pageNum };
       if (selectedCategory) params.category = selectedCategory;
       if (searchQuery.trim()) params.search = searchQuery.trim();
 
-      const response = await expenseService.getExpenses(params);
-      const { data, meta, summary: summaryData } = response.data;
+      const response = await groupService.getGroupExpenses(groupId, params);
+      const { data, meta } = response.data;
 
       if (append) {
         setExpenses((prev) => [...prev, ...data]);
       } else {
         setExpenses(data);
       }
-      setSummary(summaryData);
       setPage(meta.current_page);
       setLastPage(meta.last_page);
     } catch (error: any) {
@@ -69,13 +70,9 @@ export default function ExpensesScreen() {
     }
   };
 
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  // Refetch on focus (when coming back from add/edit)
   useFocusEffect(
     useCallback(() => {
+      fetchCategories();
       setLoading(true);
       setPage(1);
       fetchExpenses(1);
@@ -107,7 +104,7 @@ export default function ExpensesScreen() {
     setPage(1);
   };
 
-  const handleDelete = (expense: Expense) => {
+  const handleDelete = (expense: GroupExpense) => {
     Alert.alert(
       'Delete Expense',
       `Are you sure you want to delete this expense of ${formatCurrency(expense.amount)}?`,
@@ -118,7 +115,7 @@ export default function ExpensesScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await expenseService.deleteExpense(expense.id);
+              await groupService.deleteGroupExpense(groupId, expense.id);
               setExpenses((prev) => prev.filter((e) => e.id !== expense.id));
             } catch (error: any) {
               Alert.alert('Error', error.response?.data?.message || 'Failed to delete expense.');
@@ -133,8 +130,6 @@ export default function ExpensesScreen() {
     ? categories.find((c) => c.id === selectedCategory)?.name || 'Category'
     : 'All Categories';
 
-  const pct = percentChange(summary?.monthly_total || 0, summary?.last_month_total || 0);
-
   if (loading && !refreshing) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background }}>
@@ -145,26 +140,6 @@ export default function ExpensesScreen() {
 
   const renderHeader = () => (
     <View>
-      {/* Monthly Summary Card */}
-      {summary && (
-        <View style={{ backgroundColor: Colors.surface, borderRadius: 12, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: Colors.border }}>
-          <Text style={{ fontSize: 13, color: Colors.textSecondary, marginBottom: 4 }}>This Month</Text>
-          <Text style={{ fontSize: 24, fontWeight: '700', color: Colors.text }}>{formatCurrency(summary.monthly_total)}</Text>
-          {summary.last_month_total > 0 && (
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
-              <Ionicons
-                name={pct > 0 ? 'trending-up' : pct < 0 ? 'trending-down' : 'remove-outline'}
-                size={16}
-                color={pct > 0 ? Colors.error : pct < 0 ? Colors.success : Colors.textMuted}
-              />
-              <Text style={{ fontSize: 13, color: pct > 0 ? Colors.error : pct < 0 ? Colors.success : Colors.textMuted, marginLeft: 4 }}>
-                {pct !== 0 ? `${Math.abs(pct)}% ${pct > 0 ? 'more' : 'less'} than last month` : 'Same as last month'}
-              </Text>
-            </View>
-          )}
-        </View>
-      )}
-
       {/* Filters */}
       <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
         {/* Category Dropdown */}
@@ -246,9 +221,9 @@ export default function ExpensesScreen() {
     </View>
   );
 
-  const renderExpenseItem = ({ item }: { item: Expense }) => (
+  const renderExpenseItem = ({ item }: { item: GroupExpense }) => (
     <TouchableOpacity
-      onPress={() => router.push({ pathname: '/(tabs)/expenses/edit', params: { id: item.id } })}
+      onPress={() => router.push({ pathname: '/groups-expense-edit', params: { groupId, expenseId: item.id } })}
       onLongPress={() => handleDelete(item)}
       style={{
         backgroundColor: Colors.surface,
@@ -274,13 +249,13 @@ export default function ExpensesScreen() {
         <Text style={{ fontSize: 18 }}>{item.category?.icon || '💰'}</Text>
       </View>
 
-      {/* Description & Date */}
+      {/* Description & Payer */}
       <View style={{ flex: 1 }}>
         <Text style={{ fontSize: 15, fontWeight: '500', color: Colors.text }} numberOfLines={1}>
           {item.description || item.category?.name || 'Expense'}
         </Text>
         <Text style={{ fontSize: 12, color: Colors.textMuted, marginTop: 2 }}>
-          {item.category?.name ? `${item.category.name} · ` : ''}{formatRelativeDate(item.expense_date)}
+          Paid by {item.payer?.name || 'Unknown'} · {formatRelativeDate(item.expense_date)}
         </Text>
       </View>
 
@@ -296,7 +271,7 @@ export default function ExpensesScreen() {
       <Ionicons name="receipt-outline" size={48} color={Colors.textMuted} />
       <Text style={{ fontSize: 16, fontWeight: '600', color: Colors.text, marginTop: 12 }}>No expenses yet</Text>
       <Text style={{ fontSize: 14, color: Colors.textSecondary, marginTop: 4, textAlign: 'center' }}>
-        {searchQuery || selectedCategory ? 'Try changing your filters' : 'Tap + to add your first expense'}
+        {searchQuery || selectedCategory ? 'Try changing your filters' : 'Tap + to add a group expense'}
       </Text>
     </View>
   );
@@ -325,9 +300,9 @@ export default function ExpensesScreen() {
         onEndReachedThreshold={0.3}
       />
 
-      {/* FAB - Add Expense */}
+      {/* FAB - Add Group Expense */}
       <TouchableOpacity
-        onPress={() => router.push('/(tabs)/expenses/add')}
+        onPress={() => router.push({ pathname: '/groups-expense-add', params: { groupId } })}
         style={{
           position: 'absolute',
           bottom: 20,

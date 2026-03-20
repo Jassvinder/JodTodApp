@@ -1,7 +1,7 @@
 import { Stack } from 'expo-router';
 import { Colors } from '../../../constants/colors';
 
-export default function IncomesLayout() {
+export default function TodosLayout() {
   return (
     <Stack
       screenOptions={{
@@ -10,9 +10,7 @@ export default function IncomesLayout() {
         headerShadowVisible: false,
       }}
     >
-      <Stack.Screen name="index" options={{ title: 'Income' }} />
-      <Stack.Screen name="add" options={{ title: 'Add Income', presentation: 'modal' }} />
-      <Stack.Screen name="edit" options={{ title: 'Edit Income' }} />
+      <Stack.Screen name="index" options={{ title: 'My Tasks' }} />
     </Stack>
   );
 }

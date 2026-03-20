@@ -7,7 +7,7 @@ export const profileService = {
     return api.get<ApiResponse<User>>('/profile');
   },
 
-  updateProfile(data: { name: string; email: string }) {
+  updateProfile(data: { name: string }) {
     return api.patch<ApiResponse<User>>('/profile', data);
   },
 

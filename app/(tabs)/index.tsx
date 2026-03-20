@@ -6,21 +6,26 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../stores/authStore';
+import { useDrawerStore } from '../../stores/drawerStore';
 import { dashboardService } from '../../services/dashboard';
-import { formatCurrency, formatRelativeDate, percentChange } from '../../utils/format';
+import { notificationService } from '../../services/notifications';
+import { formatCurrency, formatRelativeDate, percentChange, resolveUrl } from '../../utils/format';
 import { Colors } from '../../constants/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import type { DashboardData } from '../../types/dashboard';
 
 export default function DashboardScreen() {
   const { user } = useAuthStore();
+  const { open: openDrawer } = useDrawerStore();
   const router = useRouter();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const fetchData = async () => {
     try {
@@ -34,13 +39,24 @@ export default function DashboardScreen() {
     }
   };
 
+  const fetchUnreadCount = async () => {
+    try {
+      const response = await notificationService.getRecent();
+      setUnreadCount(response.data.data.unread_count);
+    } catch {
+      // Silent fail
+    }
+  };
+
   useEffect(() => {
     fetchData();
+    fetchUnreadCount();
   }, []);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     fetchData();
+    fetchUnreadCount();
   }, []);
 
   if (loading) {
@@ -63,8 +79,59 @@ export default function DashboardScreen() {
     >
       <View style={{ padding: 16 }}>
         {/* Header */}
-        <Text style={{ fontSize: 22, fontWeight: '700', color: Colors.text }}>Welcome, {user?.name?.split(' ')[0]}!</Text>
-        <Text style={{ fontSize: 14, color: Colors.textSecondary, marginBottom: 16 }}>Your expense overview</Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <TouchableOpacity onPress={openDrawer} style={{ padding: 4 }}>
+            <Ionicons name="menu" size={26} color={Colors.text} />
+          </TouchableOpacity>
+          <View style={{ flex: 1, marginLeft: 12 }}>
+            <Text style={{ fontSize: 20, fontWeight: '700', color: Colors.text }}>Welcome, {user?.name?.split(' ')[0]}!</Text>
+            <Text style={{ fontSize: 13, color: Colors.textSecondary }}>Your expense overview</Text>
+          </View>
+          <TouchableOpacity
+            onPress={() => router.push('/notifications')}
+            style={{ padding: 6, marginRight: 8 }}
+          >
+            <Ionicons name="notifications-outline" size={22} color={Colors.text} />
+            {unreadCount > 0 && (
+              <View
+                style={{
+                  position: 'absolute',
+                  top: 2,
+                  right: 2,
+                  backgroundColor: Colors.error,
+                  borderRadius: 9,
+                  minWidth: 16,
+                  height: 16,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  paddingHorizontal: 3,
+                }}
+              >
+                <Text style={{ fontSize: 9, fontWeight: '700', color: '#fff' }}>
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push('/(tabs)/profile')} style={{ padding: 2 }}>
+            {user?.avatar_url ? (
+              <Image source={{ uri: resolveUrl(user.avatar_url)! }} style={{ width: 34, height: 34, borderRadius: 17 }} />
+            ) : (
+              <View style={{
+                width: 34,
+                height: 34,
+                borderRadius: 17,
+                backgroundColor: Colors.primary,
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: '#fff' }}>
+                  {user?.name ? user.name.charAt(0).toUpperCase() : '?'}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
 
         {/* Summary Cards */}
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 }}>
@@ -137,15 +204,22 @@ export default function DashboardScreen() {
 
         {/* Todo Stats */}
         {data?.todoStats && (data.todoStats.pending > 0 || data.todoStats.overdue > 0) && (
-          <View style={{ backgroundColor: Colors.surface, borderRadius: 12, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: Colors.border }}>
-            <Text style={{ fontSize: 15, fontWeight: '600', color: Colors.text, marginBottom: 4 }}>My Tasks</Text>
+          <TouchableOpacity
+            onPress={() => router.push('/todos')}
+            activeOpacity={0.7}
+            style={{ backgroundColor: Colors.surface, borderRadius: 12, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: Colors.border }}
+          >
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+              <Text style={{ fontSize: 15, fontWeight: '600', color: Colors.text }}>My Tasks</Text>
+              <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
+            </View>
             <View style={{ flexDirection: 'row', gap: 16 }}>
               <Text style={{ fontSize: 13, color: Colors.textSecondary }}>{data.todoStats.pending} pending</Text>
               {data.todoStats.overdue > 0 && (
                 <Text style={{ fontSize: 13, color: Colors.error }}>{data.todoStats.overdue} overdue</Text>
               )}
             </View>
-          </View>
+          </TouchableOpacity>
         )}
 
         {/* Groups Overview */}

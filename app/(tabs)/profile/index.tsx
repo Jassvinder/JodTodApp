@@ -12,6 +12,7 @@ import {
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../../stores/authStore';
 import { profileService } from '../../../services/profile';
+import { resolveUrl } from '../../../utils/format';
 import { Colors } from '../../../constants/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
@@ -41,13 +42,12 @@ export default function ProfileScreen() {
   const handleSaveProfile = async () => {
     const newErrors: Record<string, string> = {};
     if (!name.trim()) newErrors.name = 'Name is required';
-    if (!email.trim()) newErrors.email = 'Email is required';
     if (Object.keys(newErrors).length > 0) { setErrors(newErrors); return; }
 
     setSaving(true);
     setErrors({});
     try {
-      const response = await profileService.updateProfile({ name: name.trim(), email: email.trim() });
+      const response = await profileService.updateProfile({ name: name.trim() });
       setUser(response.data.data);
       setEditing(false);
       Alert.alert('Success', response.data.message);
@@ -97,9 +97,9 @@ export default function ProfileScreen() {
       <View style={{ padding: 16 }}>
         {/* Avatar & Name */}
         <View style={{ alignItems: 'center', marginBottom: 24, paddingTop: 8 }}>
-          {user?.avatar ? (
+          {user?.avatar_url ? (
             <Image
-              source={{ uri: user.avatar }}
+              source={{ uri: resolveUrl(user.avatar_url)! }}
               style={{ width: 80, height: 80, borderRadius: 40, marginBottom: 12 }}
             />
           ) : (
@@ -149,20 +149,23 @@ export default function ProfileScreen() {
                 />
                 {errors.name && <Text style={{ color: Colors.error, fontSize: 12, marginTop: 2 }}>{errors.name}</Text>}
               </View>
+              <View style={{ marginBottom: 12 }}>
+                <Text style={{ fontSize: 13, fontWeight: '500', color: Colors.textMuted, marginBottom: 4 }}>Email</Text>
+                <View style={{ backgroundColor: '#f1f5f9', borderWidth: 1, borderColor: Colors.border, borderRadius: 10, padding: 12 }}>
+                  <Text style={{ fontSize: 15, color: Colors.textMuted }}>{user?.email}</Text>
+                </View>
+                <Text style={{ fontSize: 11, color: Colors.textMuted, marginTop: 4 }}>Email requires verification and can't be changed here.</Text>
+              </View>
               <View style={{ marginBottom: 16 }}>
-                <Text style={{ fontSize: 13, fontWeight: '500', color: Colors.text, marginBottom: 4 }}>Email</Text>
-                <TextInput
-                  value={email}
-                  onChangeText={setEmail}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  style={{ backgroundColor: Colors.background, borderWidth: 1, borderColor: errors.email ? Colors.error : Colors.border, borderRadius: 10, padding: 12, fontSize: 15, color: Colors.text }}
-                />
-                {errors.email && <Text style={{ color: Colors.error, fontSize: 12, marginTop: 2 }}>{errors.email}</Text>}
+                <Text style={{ fontSize: 13, fontWeight: '500', color: Colors.textMuted, marginBottom: 4 }}>Phone</Text>
+                <View style={{ backgroundColor: '#f1f5f9', borderWidth: 1, borderColor: Colors.border, borderRadius: 10, padding: 12 }}>
+                  <Text style={{ fontSize: 15, color: Colors.textMuted }}>{user?.phone ? `+91 ${user.phone}` : 'Not added'}</Text>
+                </View>
+                <Text style={{ fontSize: 11, color: Colors.textMuted, marginTop: 4 }}>Phone requires OTP verification and can't be changed here.</Text>
               </View>
               <View style={{ flexDirection: 'row', gap: 10 }}>
                 <TouchableOpacity
-                  onPress={() => { setEditing(false); setName(user?.name || ''); setEmail(user?.email || ''); setErrors({}); }}
+                  onPress={() => { setEditing(false); setName(user?.name || ''); setErrors({}); }}
                   style={{ flex: 1, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: Colors.border, alignItems: 'center' }}
                 >
                   <Text style={{ color: Colors.textSecondary, fontWeight: '600' }}>Cancel</Text>
@@ -205,6 +208,19 @@ export default function ProfileScreen() {
             </View>
             <Text style={{ fontSize: 13, color: Colors.textMuted }}>Coming soon</Text>
           </View>
+        </View>
+
+        {/* Quick Links */}
+        <View style={{ backgroundColor: Colors.surface, borderRadius: 12, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: Colors.border }}>
+          <Text style={{ fontSize: 16, fontWeight: '600', color: Colors.text, marginBottom: 12 }}>Quick Links</Text>
+          <TouchableOpacity
+            onPress={() => router.push('/contacts')}
+            style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: Colors.border }}
+          >
+            <Ionicons name="people-outline" size={22} color={Colors.primary} />
+            <Text style={{ fontSize: 15, color: Colors.text, fontWeight: '500', marginLeft: 10, flex: 1 }}>My Contacts</Text>
+            <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+          </TouchableOpacity>
         </View>
 
         {/* Actions */}
