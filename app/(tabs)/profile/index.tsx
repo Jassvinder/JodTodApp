@@ -5,7 +5,6 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Alert,
   ActivityIndicator,
   Image,
 } from 'react-native';
@@ -15,10 +14,14 @@ import { profileService } from '../../../services/profile';
 import { resolveUrl } from '../../../utils/format';
 import { Colors } from '../../../constants/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useToast } from '../../../components/Toast';
+import { useConfirm } from '../../../components/ConfirmDialog';
 
 export default function ProfileScreen() {
   const { user, logout, setUser } = useAuthStore();
   const router = useRouter();
+  const toast = useToast();
+  const confirm = useConfirm();
 
   // Edit profile state
   const [editing, setEditing] = useState(false);
@@ -50,7 +53,7 @@ export default function ProfileScreen() {
       const response = await profileService.updateProfile({ name: name.trim() });
       setUser(response.data.data);
       setEditing(false);
-      Alert.alert('Success', response.data.message);
+      toast.show(response.data.message);
     } catch (error: any) {
       const fieldErrors = error.response?.data?.errors;
       if (fieldErrors) {
@@ -58,7 +61,7 @@ export default function ProfileScreen() {
         for (const key in fieldErrors) mapped[key] = fieldErrors[key][0];
         setErrors(mapped);
       } else {
-        Alert.alert('Error', error.response?.data?.message || 'Failed to update profile.');
+        toast.show(error.response?.data?.message || 'Failed to update profile.', 'error');
       }
     } finally {
       setSaving(false);
@@ -67,7 +70,7 @@ export default function ProfileScreen() {
 
   const handleDeleteAccount = async () => {
     if (!deletePassword) {
-      Alert.alert('Error', 'Please enter your password.');
+      toast.show('Please enter your password.', 'error');
       return;
     }
     setDeleting(true);
@@ -75,21 +78,20 @@ export default function ProfileScreen() {
       await profileService.deleteAccount(deletePassword);
       await logout();
     } catch (error: any) {
-      Alert.alert('Error', error.response?.data?.message || 'Failed to delete account.');
+      toast.show(error.response?.data?.message || 'Failed to delete account.', 'error');
     } finally {
       setDeleting(false);
     }
   };
 
   const confirmDelete = () => {
-    Alert.alert(
-      'Delete Account',
-      'Are you sure? All your data will be permanently deleted. This cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Continue', style: 'destructive', onPress: () => setShowDelete(true) },
-      ],
-    );
+    confirm.show({
+      title: 'Delete Account',
+      message: 'Are you sure? All your data will be permanently deleted. This cannot be undone.',
+      confirmText: 'Continue',
+      danger: true,
+      onConfirm: () => setShowDelete(true),
+    });
   };
 
   return (

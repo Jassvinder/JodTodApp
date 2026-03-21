@@ -5,7 +5,6 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Alert,
   ActivityIndicator,
   Platform,
   KeyboardAvoidingView,
@@ -16,6 +15,8 @@ import { groupService } from '../services/groups';
 import { Colors } from '../constants/colors';
 import { resolveUrl } from '../utils/format';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useToast } from '../components/Toast';
+import { useConfirm } from '../components/ConfirmDialog';
 
 let ImagePicker: typeof import('expo-image-picker') | null = null;
 try {
@@ -39,6 +40,8 @@ export default function EditGroupScreen() {
     photoUrl: string;
   }>();
   const groupId = parseInt(id || '0', 10);
+  const toast = useToast();
+  const confirm = useConfirm();
 
   const [name, setName] = useState(initialName || '');
   const [description, setDescription] = useState(initialDescription || '');
@@ -50,63 +53,58 @@ export default function EditGroupScreen() {
 
   const pickPhoto = async () => {
     if (!ImagePicker) {
-      Alert.alert('Not Available', 'expo-image-picker is not installed.');
+      toast.show('expo-image-picker is not installed.', 'error');
       return;
     }
 
-    Alert.alert('Group Photo', 'Choose a source', [
-      {
-        text: 'Camera',
-        onPress: async () => {
-          const permission = await ImagePicker!.requestCameraPermissionsAsync();
-          if (!permission.granted) {
-            Alert.alert('Permission Required', 'Camera access is needed.');
-            return;
-          }
-          const result = await ImagePicker!.launchCameraAsync({
-            mediaTypes: ['images'],
-            quality: 0.7,
-            allowsEditing: true,
-            aspect: [1, 1],
-          });
-          if (!result.canceled && result.assets[0]) {
-            const asset = result.assets[0];
-            setPhoto({
-              uri: asset.uri,
-              name: asset.fileName || `group_photo_${Date.now()}.jpg`,
-              type: asset.mimeType || 'image/jpeg',
-            });
-            setRemovePhoto(false);
-          }
-        },
+    const handlePhotoResult = (asset: any) => {
+      setPhoto({
+        uri: asset.uri,
+        name: asset.fileName || `group_photo_${Date.now()}.jpg`,
+        type: asset.mimeType || 'image/jpeg',
+      });
+      setRemovePhoto(false);
+    };
+
+    confirm.show({
+      title: 'Group Photo',
+      message: 'Choose a source',
+      confirmText: 'Camera',
+      cancelText: 'Gallery',
+      danger: false,
+      onConfirm: async () => {
+        const permission = await ImagePicker!.requestCameraPermissionsAsync();
+        if (!permission.granted) {
+          toast.show('Camera access is needed.', 'error');
+          return;
+        }
+        const result = await ImagePicker!.launchCameraAsync({
+          mediaTypes: ['images'],
+          quality: 0.7,
+          allowsEditing: true,
+          aspect: [1, 1],
+        });
+        if (!result.canceled && result.assets[0]) {
+          handlePhotoResult(result.assets[0]);
+        }
       },
-      {
-        text: 'Gallery',
-        onPress: async () => {
-          const permission = await ImagePicker!.requestMediaLibraryPermissionsAsync();
-          if (!permission.granted) {
-            Alert.alert('Permission Required', 'Gallery access is needed.');
-            return;
-          }
-          const result = await ImagePicker!.launchImageLibraryAsync({
-            mediaTypes: ['images'],
-            quality: 0.7,
-            allowsEditing: true,
-            aspect: [1, 1],
-          });
-          if (!result.canceled && result.assets[0]) {
-            const asset = result.assets[0];
-            setPhoto({
-              uri: asset.uri,
-              name: asset.fileName || `group_photo_${Date.now()}.jpg`,
-              type: asset.mimeType || 'image/jpeg',
-            });
-            setRemovePhoto(false);
-          }
-        },
+      onCancel: async () => {
+        const permission = await ImagePicker!.requestMediaLibraryPermissionsAsync();
+        if (!permission.granted) {
+          toast.show('Gallery access is needed.', 'error');
+          return;
+        }
+        const result = await ImagePicker!.launchImageLibraryAsync({
+          mediaTypes: ['images'],
+          quality: 0.7,
+          allowsEditing: true,
+          aspect: [1, 1],
+        });
+        if (!result.canceled && result.assets[0]) {
+          handlePhotoResult(result.assets[0]);
+        }
       },
-      { text: 'Cancel', style: 'cancel' },
-    ]);
+    });
   };
 
   const handleRemovePhoto = () => {
@@ -152,7 +150,7 @@ export default function EditGroupScreen() {
         for (const key in fieldErrors) mapped[key] = fieldErrors[key][0];
         setErrors(mapped);
       } else {
-        Alert.alert('Error', error.response?.data?.message || 'Failed to update group.');
+        toast.show(error.response?.data?.message || 'Failed to update group.', 'error');
       }
     } finally {
       setSaving(false);
@@ -191,10 +189,13 @@ export default function EditGroupScreen() {
               </TouchableOpacity>
               {hasPhoto && (
                 <TouchableOpacity
-                  onPress={() => Alert.alert('Remove Photo', 'Are you sure you want to remove this photo?', [
-                    { text: 'Cancel', style: 'cancel' },
-                    { text: 'Remove', style: 'destructive', onPress: handleRemovePhoto },
-                  ])}
+                  onPress={() => confirm.show({
+                    title: 'Remove Photo',
+                    message: 'Are you sure you want to remove this photo?',
+                    confirmText: 'Remove',
+                    danger: true,
+                    onConfirm: handleRemovePhoto,
+                  })}
                   style={{
                     position: 'absolute', top: -4, right: -4,
                     width: 26, height: 26, borderRadius: 13,

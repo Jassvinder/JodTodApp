@@ -5,7 +5,6 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Alert,
   ActivityIndicator,
   Platform,
   KeyboardAvoidingView,
@@ -19,6 +18,8 @@ import { contactService } from '../services/contacts';
 import { resolveUrl } from '../utils/format';
 import { Colors } from '../constants/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import DatePickerField from '../components/DatePickerField';
+import { useToast } from '../components/Toast';
 import type { TodoCategory, Contact, Todo } from '../types/models';
 
 const PRIORITY_COLORS = {
@@ -30,6 +31,7 @@ const PRIORITY_COLORS = {
 export default function EditTodoScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const toast = useToast();
 
   // Form state
   const [title, setTitle] = useState('');
@@ -72,11 +74,11 @@ export default function EditTodoScreen() {
         prefillForm(todo);
       } else {
         // Try fetching with search or just show error
-        Alert.alert('Error', 'Task not found.');
+        toast.show('Task not found.', 'error');
         router.back();
       }
     } catch (error: any) {
-      Alert.alert('Error', error.response?.data?.message || 'Failed to load task.');
+      toast.show(error.response?.data?.message || 'Failed to load task.', 'error');
       router.back();
     } finally {
       setLoading(false);
@@ -128,7 +130,7 @@ export default function EditTodoScreen() {
         for (const key in fieldErrors) mapped[key] = fieldErrors[key][0];
         setErrors(mapped);
       } else {
-        Alert.alert('Error', error.response?.data?.message || 'Failed to update task.');
+        toast.show(error.response?.data?.message || 'Failed to update task.', 'error');
       }
     } finally {
       setSaving(false);
@@ -209,25 +211,12 @@ export default function EditTodoScreen() {
           </View>
 
           {/* Due Date Input */}
-          <View style={{ marginBottom: 20 }}>
-            <Text style={{ fontSize: 13, fontWeight: '500', color: Colors.text, marginBottom: 6 }}>Due Date</Text>
-            <TextInput
-              value={dueDate}
-              onChangeText={setDueDate}
-              placeholder="YYYY-MM-DD"
-              placeholderTextColor={Colors.textMuted}
-              style={{
-                backgroundColor: Colors.surface,
-                borderWidth: 1,
-                borderColor: errors.due_date ? Colors.error : Colors.border,
-                borderRadius: 10,
-                padding: 12,
-                fontSize: 15,
-                color: Colors.text,
-              }}
-            />
-            {errors.due_date && <Text style={{ color: Colors.error, fontSize: 12, marginTop: 4 }}>{errors.due_date}</Text>}
-          </View>
+          <DatePickerField
+            label="Due Date"
+            value={dueDate}
+            onChange={setDueDate}
+            error={errors.due_date}
+          />
 
           {/* Category Picker */}
           <View style={{ marginBottom: 20 }}>

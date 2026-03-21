@@ -5,16 +5,18 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
   RefreshControl,
   FlatList,
 } from 'react-native';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
-import { groupService, type SettlementsResponse } from '../services/groups';
-import { formatCurrency, formatRelativeDate } from '../utils/format';
+import { groupService, type SettlementsResponse, type MemberSharesData } from '../services/groups';
+import { formatCurrency, formatRelativeDate, resolveUrl } from '../utils/format';
 import { Colors } from '../constants/colors';
 import { useAuthStore } from '../stores/authStore';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import CollapsibleSection from '../components/CollapsibleSection';
+import { useToast } from '../components/Toast';
+import { useConfirm } from '../components/ConfirmDialog';
 import type { MemberBalance, SuggestedTransaction, Settlement } from '../types/models';
 
 export default function SettlementsScreen() {
@@ -22,6 +24,8 @@ export default function SettlementsScreen() {
   const { groupId: groupIdParam } = useLocalSearchParams<{ groupId: string }>();
   const groupId = parseInt(groupIdParam || '0', 10);
   const currentUser = useAuthStore((s) => s.user);
+  const toast = useToast();
+  const confirm = useConfirm();
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -32,10 +36,12 @@ export default function SettlementsScreen() {
 
   const [balances, setBalances] = useState<MemberBalance[]>([]);
   const [suggestedTransactions, setSuggestedTransactions] = useState<SuggestedTransaction[]>([]);
+  const [memberShares, setMemberShares] = useState<MemberSharesData | null>(null);
   const [settlements, setSettlements] = useState<Settlement[]>([]);
   const [page, setPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(true);
 
   const fetchData = async (pageNum: number = 1, append: boolean = false) => {
     try {
@@ -49,6 +55,7 @@ export default function SettlementsScreen() {
       if (pageNum === 1) {
         setBalances(data.balances);
         setSuggestedTransactions(data.suggestedTransactions);
+        setMemberShares(data.memberShares);
       }
 
       if (append) {
@@ -63,7 +70,7 @@ export default function SettlementsScreen() {
         setIsAdmin(groupRes.data.data.isAdmin);
       }
     } catch (error: any) {
-      Alert.alert('Error', error.response?.data?.message || 'Failed to load settlements.');
+      toast.show(error.response?.data?.message || 'Failed to load settlements.', 'error');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -91,90 +98,75 @@ export default function SettlementsScreen() {
   };
 
   const hasPendingSettlements = settlements.some((s) => s.status === 'pending');
+  const hasUnsettledExpenses = balances.some((b) => Math.abs(b.balance) >= 0.01);
+  const isAllSettled = !hasUnsettledExpenses && !hasPendingSettlements;
 
   const handleSettleUp = () => {
-    if (hasPendingSettlements) {
-      Alert.alert('Pending Settlements', 'There are pending settlements that need to be marked as completed first.');
-      return;
-    }
-
-    Alert.alert(
-      'Settle Up',
-      'This will create settlement records based on current balances. Continue?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Settle Up',
-          onPress: async () => {
-            setSettlingUp(true);
-            try {
-              await groupService.settleUp(groupId);
-              setPage(1);
-              fetchData(1);
-            } catch (error: any) {
-              Alert.alert('Error', error.response?.data?.message || 'Failed to settle up.');
-            } finally {
-              setSettlingUp(false);
-            }
-          },
-        },
-      ]
-    );
+    confirm.show({
+      title: 'Settle Up',
+      message: 'This will create settlement records based on current balances. Continue?',
+      confirmText: 'Settle Up',
+      danger: false,
+      onConfirm: async () => {
+        setSettlingUp(true);
+        try {
+          await groupService.settleUp(groupId);
+          setPage(1);
+          fetchData(1);
+        } catch (error: any) {
+          toast.show(error.response?.data?.message || 'Failed to settle up.', 'error');
+        } finally {
+          setSettlingUp(false);
+        }
+      },
+    });
   };
 
-  const handleSettleAll = () => {
-    Alert.alert(
-      'Settle All',
-      'This will mark ALL pending settlements as completed. Are you sure?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Settle All',
-          onPress: async () => {
-            setSettlingAll(true);
-            try {
-              await groupService.settleAll(groupId);
-              setPage(1);
-              fetchData(1);
-            } catch (error: any) {
-              Alert.alert('Error', error.response?.data?.message || 'Failed to settle all.');
-            } finally {
-              setSettlingAll(false);
-            }
-          },
-        },
-      ]
-    );
+  const handleMarkAllPaid = () => {
+    confirm.show({
+      title: 'Mark All as Paid',
+      message: 'This will mark ALL pending settlements as completed. Are you sure?',
+      confirmText: 'Mark All as Paid',
+      danger: false,
+      onConfirm: async () => {
+        setSettlingAll(true);
+        try {
+          await groupService.settleAll(groupId);
+          setPage(1);
+          fetchData(1);
+        } catch (error: any) {
+          toast.show(error.response?.data?.message || 'Failed to mark all as paid.', 'error');
+        } finally {
+          setSettlingAll(false);
+        }
+      },
+    });
   };
 
   const handleMarkComplete = (settlement: Settlement) => {
-    Alert.alert(
-      'Mark as Paid',
-      `Confirm that ${settlement.from_user.name} has paid ${formatCurrency(settlement.amount)} to ${settlement.to_user.name}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Confirm',
-          onPress: async () => {
-            setMarkingId(settlement.id);
-            try {
-              await groupService.markSettlementComplete(groupId, settlement.id);
-              setSettlements((prev) =>
-                prev.map((s) =>
-                  s.id === settlement.id ? { ...s, status: 'completed' as const } : s
-                )
-              );
-              // Refresh balances
-              fetchData(1);
-            } catch (error: any) {
-              Alert.alert('Error', error.response?.data?.message || 'Failed to mark settlement.');
-            } finally {
-              setMarkingId(null);
-            }
-          },
-        },
-      ]
-    );
+    confirm.show({
+      title: 'Mark as Paid',
+      message: `Confirm that ${settlement.from_user.name} has paid ${formatCurrency(settlement.amount)} to ${settlement.to_user.name}?`,
+      confirmText: 'Confirm',
+      danger: false,
+      onConfirm: async () => {
+        setMarkingId(settlement.id);
+        try {
+          await groupService.markSettlementComplete(groupId, settlement.id);
+          setSettlements((prev) =>
+            prev.map((s) =>
+              s.id === settlement.id ? { ...s, status: 'completed' as const } : s
+            )
+          );
+          // Refresh balances
+          fetchData(1);
+        } catch (error: any) {
+          toast.show(error.response?.data?.message || 'Failed to mark settlement.', 'error');
+        } finally {
+          setMarkingId(null);
+        }
+      },
+    });
   };
 
   const getInitials = (name: string): string => {
@@ -202,11 +194,16 @@ export default function SettlementsScreen() {
 
   const renderHeader = () => (
     <View>
-      {/* Balance Cards */}
-      <Text style={{ fontSize: 16, fontWeight: '600', color: Colors.text, marginBottom: 10 }}>Member Balances</Text>
-      <View style={{ marginBottom: 16 }}>
+      {/* Member Balances */}
+      <CollapsibleSection
+        title="Member Balances"
+        icon="wallet-outline"
+        iconColor={Colors.primary}
+        iconBg="#eef2ff"
+        defaultOpen={true}
+      >
         {balances.length === 0 ? (
-          <View style={{ backgroundColor: Colors.surface, borderRadius: 12, padding: 20, alignItems: 'center', borderWidth: 1, borderColor: Colors.border }}>
+          <View style={{ padding: 20, alignItems: 'center' }}>
             <Text style={{ fontSize: 14, color: Colors.textSecondary }}>No balances to show</Text>
           </View>
         ) : (
@@ -215,13 +212,12 @@ export default function SettlementsScreen() {
             const isZero = member.balance === 0;
             const bgColor = isZero ? '#f1f5f9' : isPositive ? '#f0fdf4' : '#fef2f2';
             const textColor = isZero ? Colors.textMuted : isPositive ? Colors.success : Colors.error;
-            const label = isZero ? 'Settled' : isPositive ? 'Gets back' : 'Owes';
+            const label = isZero ? 'Settled' : isPositive ? 'To Receive' : 'To Pay';
 
             return (
               <View
                 key={member.user_id}
                 style={{
-                  backgroundColor: Colors.surface,
                   borderRadius: 10,
                   padding: 12,
                   marginBottom: 6,
@@ -255,17 +251,70 @@ export default function SettlementsScreen() {
             );
           })
         )}
-      </View>
+      </CollapsibleSection>
 
-      {/* Suggested Transactions */}
+      {/* Member Shares */}
+      {memberShares && memberShares.total_expense > 0 && (
+        <CollapsibleSection
+          title="Member Shares"
+          icon="pie-chart-outline"
+          iconColor="#8b5cf6"
+          iconBg="#ede9fe"
+          defaultOpen={true}
+        >
+          <View style={{
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            paddingBottom: 10,
+            marginBottom: 8,
+            borderBottomWidth: 1,
+            borderBottomColor: Colors.border,
+          }}>
+            <Text style={{ fontSize: 13, color: Colors.textSecondary }}>Total Unsettled</Text>
+            <Text style={{ fontSize: 15, fontWeight: '700', color: Colors.text }}>{formatCurrency(memberShares.total_expense)}</Text>
+          </View>
+          {memberShares.members.map((member) => (
+            <View
+              key={member.user_id}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                paddingVertical: 8,
+                borderBottomWidth: 1,
+                borderBottomColor: Colors.border,
+              }}
+            >
+              <View style={{
+                width: 32, height: 32, borderRadius: 16,
+                backgroundColor: '#ede9fe',
+                justifyContent: 'center', alignItems: 'center',
+                marginRight: 10,
+              }}>
+                <Text style={{ fontSize: 12, fontWeight: '700', color: '#8b5cf6' }}>
+                  {member.name?.charAt(0)?.toUpperCase() || '?'}
+                </Text>
+              </View>
+              <Text style={{ fontSize: 14, fontWeight: '500', color: Colors.text, flex: 1 }}>{member.name}</Text>
+              <Text style={{ fontSize: 14, fontWeight: '600', color: Colors.text }}>{formatCurrency(member.total_share)}</Text>
+            </View>
+          ))}
+        </CollapsibleSection>
+      )}
+
+      {/* Suggested Payments */}
       {suggestedTransactions.length > 0 && (
-        <View style={{ marginBottom: 16 }}>
-          <Text style={{ fontSize: 16, fontWeight: '600', color: Colors.text, marginBottom: 10 }}>Suggested Payments</Text>
+        <CollapsibleSection
+          title="Suggested Payments"
+          icon="swap-horizontal-outline"
+          iconColor={Colors.success}
+          iconBg="#dcfce7"
+          defaultOpen={true}
+        >
           {suggestedTransactions.map((tx, index) => (
             <View
               key={index}
               style={{
-                backgroundColor: Colors.surface,
                 borderRadius: 10,
                 padding: 12,
                 marginBottom: 6,
@@ -317,44 +366,34 @@ export default function SettlementsScreen() {
               </Text>
             </View>
           ))}
-        </View>
+        </CollapsibleSection>
       )}
 
-      {/* Action Buttons */}
+      {/* Action Button - Smart 4-step flow */}
       {isAdmin && (
-        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
-          <TouchableOpacity
-            onPress={handleSettleUp}
-            disabled={settlingUp || hasPendingSettlements}
-            style={{
-              flex: 1,
-              backgroundColor: hasPendingSettlements ? Colors.border : Colors.primary,
-              borderRadius: 10,
-              padding: 12,
-              alignItems: 'center',
+        <View style={{ marginBottom: 16 }}>
+          {isAllSettled ? (
+            <View style={{
+              backgroundColor: '#dcfce7',
+              borderRadius: 12,
+              padding: 16,
               flexDirection: 'row',
+              alignItems: 'center',
               justifyContent: 'center',
-            }}
-          >
-            {settlingUp ? (
-              <ActivityIndicator color="#fff" size="small" />
-            ) : (
-              <>
-                <Ionicons name="swap-horizontal" size={16} color="#fff" />
-                <Text style={{ color: '#fff', fontSize: 13, fontWeight: '600', marginLeft: 6 }}>Settle Up</Text>
-              </>
-            )}
-          </TouchableOpacity>
-
-          {hasPendingSettlements && (
+              borderWidth: 1,
+              borderColor: '#bbf7d0',
+            }}>
+              <Ionicons name="checkmark-circle" size={22} color={Colors.success} />
+              <Text style={{ fontSize: 15, fontWeight: '600', color: '#16a34a', marginLeft: 8 }}>All Settled!</Text>
+            </View>
+          ) : hasPendingSettlements ? (
             <TouchableOpacity
-              onPress={handleSettleAll}
+              onPress={handleMarkAllPaid}
               disabled={settlingAll}
               style={{
-                flex: 1,
                 backgroundColor: Colors.success,
-                borderRadius: 10,
-                padding: 12,
+                borderRadius: 12,
+                padding: 14,
                 alignItems: 'center',
                 flexDirection: 'row',
                 justifyContent: 'center',
@@ -364,17 +403,72 @@ export default function SettlementsScreen() {
                 <ActivityIndicator color="#fff" size="small" />
               ) : (
                 <>
-                  <Ionicons name="checkmark-done" size={16} color="#fff" />
-                  <Text style={{ color: '#fff', fontSize: 13, fontWeight: '600', marginLeft: 6 }}>Settle All</Text>
+                  <Ionicons name="checkmark-done" size={18} color="#fff" />
+                  <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600', marginLeft: 8 }}>Mark All as Paid</Text>
                 </>
               )}
             </TouchableOpacity>
-          )}
+          ) : hasUnsettledExpenses ? (
+            <TouchableOpacity
+              onPress={handleSettleUp}
+              disabled={settlingUp}
+              style={{
+                backgroundColor: Colors.primary,
+                borderRadius: 12,
+                padding: 14,
+                alignItems: 'center',
+                flexDirection: 'row',
+                justifyContent: 'center',
+              }}
+            >
+              {settlingUp ? (
+                <ActivityIndicator color="#fff" size="small" />
+              ) : (
+                <>
+                  <Ionicons name="swap-horizontal" size={18} color="#fff" />
+                  <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600', marginLeft: 8 }}>Settle Up</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          ) : null}
         </View>
       )}
 
-      {/* Settlement History Header */}
-      <Text style={{ fontSize: 16, fontWeight: '600', color: Colors.text, marginBottom: 10 }}>Settlement History</Text>
+      {/* Settlement History Toggle */}
+      <TouchableOpacity
+        onPress={() => setHistoryOpen(!historyOpen)}
+        activeOpacity={0.7}
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          backgroundColor: Colors.surface,
+          borderRadius: 12,
+          borderWidth: 1,
+          borderColor: Colors.border,
+          padding: 14,
+          marginBottom: historyOpen ? 10 : 0,
+        }}
+      >
+        <View style={{
+          width: 30, height: 30, borderRadius: 8,
+          backgroundColor: '#eef2ff',
+          justifyContent: 'center', alignItems: 'center', marginRight: 10,
+        }}>
+          <Ionicons name="time-outline" size={16} color={Colors.primary} />
+        </View>
+        <Text style={{ fontSize: 15, fontWeight: '600', color: Colors.text, flex: 1 }}>
+          Settlement History
+          {settlements.length > 0 && (
+            <Text style={{ fontSize: 13, fontWeight: '400', color: Colors.textSecondary }}> ({settlements.length})</Text>
+          )}
+        </Text>
+        <Ionicons
+          name="chevron-up"
+          size={18}
+          color={Colors.textMuted}
+          style={{ transform: [{ rotate: historyOpen ? '0deg' : '180deg' }] }}
+        />
+      </TouchableOpacity>
     </View>
   );
 
@@ -504,7 +598,7 @@ export default function SettlementsScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: Colors.background }}>
       <FlatList
-        data={settlements}
+        data={historyOpen ? settlements : []}
         renderItem={renderSettlementItem}
         keyExtractor={(item) => item.id.toString()}
         ListHeaderComponent={renderHeader}

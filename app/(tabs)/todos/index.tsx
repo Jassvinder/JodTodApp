@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
-  Alert,
   Image,
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -14,6 +13,8 @@ import { todoService, type TodoListParams } from '../../../services/todos';
 import { resolveUrl } from '../../../utils/format';
 import { Colors } from '../../../constants/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useToast } from '../../../components/Toast';
+import { useConfirm } from '../../../components/ConfirmDialog';
 import type { Todo, TodoCategory } from '../../../types/models';
 
 const PRIORITY_COLORS: Record<string, string> = {
@@ -26,6 +27,8 @@ type StatusFilter = 'all' | 'pending' | 'completed' | 'assigned_to_me' | 'assign
 
 export default function TodosTabScreen() {
   const router = useRouter();
+  const toast = useToast();
+  const confirm = useConfirm();
   const [todos, setTodos] = useState<Todo[]>([]);
   const [categories, setCategories] = useState<TodoCategory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,7 +70,7 @@ export default function TodosTabScreen() {
       setPage(meta.current_page);
       setLastPage(meta.last_page);
     } catch (error: any) {
-      Alert.alert('Error', error.response?.data?.message || 'Failed to load tasks.');
+      toast.show(error.response?.data?.message || 'Failed to load tasks.', 'error');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -102,26 +105,25 @@ export default function TodosTabScreen() {
       const updated = response.data.data;
       setTodos((prev) => prev.map((t) => (t.id === todo.id ? updated : t)));
     } catch (error: any) {
-      Alert.alert('Error', error.response?.data?.message || 'Failed to update task.');
+      toast.show(error.response?.data?.message || 'Failed to update task.', 'error');
     }
   };
 
   const handleDelete = (todo: Todo) => {
-    Alert.alert('Delete Task', `Are you sure you want to delete "${todo.title}"?`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await todoService.deleteTodo(todo.id);
-            setTodos((prev) => prev.filter((t) => t.id !== todo.id));
-          } catch (error: any) {
-            Alert.alert('Error', error.response?.data?.message || 'Failed to delete task.');
-          }
-        },
+    confirm.show({
+      title: 'Delete Task',
+      message: `Are you sure you want to delete "${todo.title}"?`,
+      confirmText: 'Delete',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          await todoService.deleteTodo(todo.id);
+          setTodos((prev) => prev.filter((t) => t.id !== todo.id));
+        } catch (error: any) {
+          toast.show(error.response?.data?.message || 'Failed to delete task.', 'error');
+        }
       },
-    ]);
+    });
   };
 
   const isOverdue = (dueDate: string | null): boolean => {

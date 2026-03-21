@@ -5,6 +5,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useAuthStore } from '../stores/authStore';
 import { View, ActivityIndicator } from 'react-native';
 import { Colors } from '../constants/colors';
+import ToastContainer from '../components/Toast';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 export default function RootLayout() {
   const { isAuthenticated, isLoading, user, loadToken } = useAuthStore();
@@ -43,6 +45,8 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <StatusBar style="dark" />
+      <ToastContainer />
+      <ConfirmDialog />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />

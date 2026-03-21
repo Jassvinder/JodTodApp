@@ -5,7 +5,6 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
   RefreshControl,
   Share,
   Platform,
@@ -17,14 +16,19 @@ import { formatCurrency, formatRelativeDate, resolveUrl } from '../utils/format'
 import { Colors } from '../constants/colors';
 import { useAuthStore } from '../stores/authStore';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import CollapsibleSection from '../components/CollapsibleSection';
 import * as Clipboard from 'expo-clipboard';
 import type { GroupMember, GroupExpense, MemberBalance } from '../types/models';
+import { useToast } from '../components/Toast';
+import { useConfirm } from '../components/ConfirmDialog';
 
 export default function GroupDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const groupId = parseInt(id || '0', 10);
   const currentUser = useAuthStore((s) => s.user);
+  const toast = useToast();
+  const confirm = useConfirm();
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -35,7 +39,7 @@ export default function GroupDetailScreen() {
       const response = await groupService.getGroup(groupId);
       setData(response.data.data);
     } catch (error: any) {
-      Alert.alert('Error', error.response?.data?.message || 'Failed to load group.');
+      toast.show(error.response?.data?.message || 'Failed to load group.', 'error');
       router.back();
     } finally {
       setLoading(false);
@@ -62,6 +66,7 @@ export default function GroupDetailScreen() {
   const contacts = data?.contacts ?? [];
   const membersWithUnsettled = data?.membersWithUnsettled ?? [];
   const pendingMembers = data?.pendingMembers ?? [];
+  const memberShares = data?.memberShares ?? [];
 
   const getInitials = (name: string): string => {
     if (!name) return '?';
@@ -74,9 +79,9 @@ export default function GroupDetailScreen() {
     if (!group) return;
     try {
       await Clipboard.setStringAsync(group.invite_code);
-      Alert.alert('Copied', 'Invite code copied to clipboard.');
+      toast.show('Invite code copied to clipboard.');
     } catch {
-      Alert.alert('Error', 'Could not copy invite code.');
+      toast.show('Could not copy invite code.', 'error');
     }
   };
 
@@ -94,42 +99,37 @@ export default function GroupDetailScreen() {
   const handleApproveMember = async (member: { id: number; name: string }) => {
     try {
       await groupService.approveMember(groupId, member.id);
-      Alert.alert('Approved', `${member.name} has been approved.`);
+      toast.show(`${member.name} has been approved.`);
       fetchGroup();
     } catch (error: any) {
-      Alert.alert('Error', error.response?.data?.message || 'Failed to approve member.');
+      toast.show(error.response?.data?.message || 'Failed to approve member.', 'error');
     }
   };
 
   const handleRejectMember = (member: { id: number; name: string }) => {
-    Alert.alert(
-      'Reject Request',
-      `Are you sure you want to reject ${member.name}'s request?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Reject',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await groupService.rejectMember(groupId, member.id);
-              fetchGroup();
-            } catch (error: any) {
-              Alert.alert('Error', error.response?.data?.message || 'Failed to reject request.');
-            }
-          },
-        },
-      ]
-    );
+    confirm.show({
+      title: 'Reject Request',
+      message: `Are you sure you want to reject ${member.name}'s request?`,
+      confirmText: 'Reject',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          await groupService.rejectMember(groupId, member.id);
+          fetchGroup();
+        } catch (error: any) {
+          toast.show(error.response?.data?.message || 'Failed to reject request.', 'error');
+        }
+      },
+    });
   };
 
   const handleRemoveMember = (member: GroupMember) => {
     if (member.id === currentUser?.id) {
-      Alert.alert('Error', 'You cannot remove yourself. Use "Leave Group" instead.');
+      toast.show('You cannot remove yourself. Use "Leave Group" instead.', 'error');
       return;
     }
     if (member.pivot.role === 'admin') {
-      Alert.alert('Error', 'Cannot remove a group admin.');
+      toast.show('Cannot remove a group admin.', 'error');
       return;
     }
 
@@ -139,25 +139,20 @@ export default function GroupDetailScreen() {
       ? `${member.name} has unsettled expenses. They will be deactivated (not included in new expenses) but their balances remain.`
       : `Are you sure you want to remove ${member.name} from the group?`;
 
-    Alert.alert(
-      hasUnsettled ? 'Deactivate Member' : 'Remove Member',
+    confirm.show({
+      title: hasUnsettled ? 'Deactivate Member' : 'Remove Member',
       message,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: hasUnsettled ? 'Deactivate' : 'Remove',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await groupService.removeMember(groupId, member.id);
-              fetchGroup();
-            } catch (error: any) {
-              Alert.alert('Error', error.response?.data?.message || `Failed to ${action} member.`);
-            }
-          },
-        },
-      ]
-    );
+      confirmText: hasUnsettled ? 'Deactivate' : 'Remove',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          await groupService.removeMember(groupId, member.id);
+          fetchGroup();
+        } catch (error: any) {
+          toast.show(error.response?.data?.message || `Failed to ${action} member.`, 'error');
+        }
+      },
+    });
   };
 
   const handleReactivateMember = async (member: GroupMember) => {
@@ -165,52 +160,54 @@ export default function GroupDetailScreen() {
       await groupService.reactivateMember(groupId, member.id);
       fetchGroup();
     } catch (error: any) {
-      Alert.alert('Error', error.response?.data?.message || 'Failed to reactivate member.');
+      toast.show(error.response?.data?.message || 'Failed to reactivate member.', 'error');
     }
   };
 
   const handleLeaveGroup = () => {
-    Alert.alert(
-      'Leave Group',
-      `Are you sure you want to leave "${group?.name}"?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Leave',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await groupService.leaveGroup(groupId);
-              router.back();
-            } catch (error: any) {
-              Alert.alert('Error', error.response?.data?.message || 'Failed to leave group.');
-            }
-          },
-        },
-      ]
-    );
+    confirm.show({
+      title: 'Leave Group',
+      message: `Are you sure you want to leave "${group?.name}"?`,
+      confirmText: 'Leave',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          await groupService.leaveGroup(groupId);
+          router.back();
+        } catch (error: any) {
+          toast.show(error.response?.data?.message || 'Failed to leave group.', 'error');
+        }
+      },
+    });
   };
 
   const handleDeleteGroup = () => {
-    Alert.alert(
-      'Delete Group',
-      'This action cannot be undone. Are you sure?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await groupService.deleteGroup(groupId);
-              router.back();
-            } catch (error: any) {
-              Alert.alert('Error', error.response?.data?.message || 'Failed to delete group.');
-            }
-          },
-        },
-      ]
-    );
+    if (membersWithUnsettled.length > 0) {
+      confirm.show({
+        title: 'Cannot Delete Group',
+        message: `"${group?.name}" has unsettled expenses. Settle all expenses first before deleting the group.`,
+        confirmText: 'OK',
+        cancelText: '',
+        danger: false,
+        onConfirm: () => {},
+      });
+      return;
+    }
+
+    confirm.show({
+      title: 'Delete Group',
+      message: `Are you sure you want to delete "${group?.name}"? This will remove all members and group data. This action cannot be undone.`,
+      confirmText: 'Delete',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          await groupService.deleteGroup(groupId);
+          router.back();
+        } catch (error: any) {
+          toast.show(error.response?.data?.message || 'Failed to delete group.', 'error');
+        }
+      },
+    });
   };
 
   if (loading && !refreshing) {
@@ -273,21 +270,6 @@ export default function GroupDetailScreen() {
             )}
           </View>
 
-          {/* Stats */}
-          <View style={{ flexDirection: 'row', marginTop: 12, gap: 12 }}>
-            <View style={{ flex: 1, backgroundColor: Colors.background, borderRadius: 8, padding: 10, alignItems: 'center' }}>
-              <Text style={{ fontSize: 18, fontWeight: '700', color: Colors.text }}>{data?.totalExpensesCount ?? 0}</Text>
-              <Text style={{ fontSize: 11, color: Colors.textSecondary }}>Expenses</Text>
-            </View>
-            <View style={{ flex: 1, backgroundColor: Colors.background, borderRadius: 8, padding: 10, alignItems: 'center' }}>
-              <Text style={{ fontSize: 16, fontWeight: '700', color: Colors.text }}>{formatCurrency(data?.totalExpensesAmount ?? 0)}</Text>
-              <Text style={{ fontSize: 11, color: Colors.textSecondary }}>Total Spent</Text>
-            </View>
-            <View style={{ flex: 1, backgroundColor: Colors.background, borderRadius: 8, padding: 10, alignItems: 'center' }}>
-              <Text style={{ fontSize: 18, fontWeight: '700', color: Colors.text }}>{members.length}</Text>
-              <Text style={{ fontSize: 11, color: Colors.textSecondary }}>Members</Text>
-            </View>
-          </View>
         </View>
 
         {/* Invite Code */}
@@ -313,22 +295,37 @@ export default function GroupDetailScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Stats Summary */}
+        {(data?.totalExpensesCount ?? 0) > 0 && (
+          <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
+            <View style={{ flex: 1, backgroundColor: Colors.surface, borderRadius: 12, padding: 12, alignItems: 'center', borderWidth: 1, borderColor: Colors.border }}>
+              <Text style={{ fontSize: 20, fontWeight: '700', color: Colors.text }}>{data?.totalExpensesCount ?? 0}</Text>
+              <Text style={{ fontSize: 11, color: Colors.textSecondary }}>Expenses</Text>
+            </View>
+            <View style={{ flex: 1, backgroundColor: '#eef2ff', borderRadius: 12, padding: 12, alignItems: 'center', borderWidth: 1, borderColor: '#c7d2fe' }}>
+              <Text style={{ fontSize: 18, fontWeight: '700', color: Colors.primary }}>{formatCurrency(data?.totalExpensesAmount ?? 0)}</Text>
+              <Text style={{ fontSize: 11, color: Colors.primary }}>Total Spent</Text>
+            </View>
+            <View style={{ flex: 1, backgroundColor: Colors.surface, borderRadius: 12, padding: 12, alignItems: 'center', borderWidth: 1, borderColor: Colors.border }}>
+              <Text style={{ fontSize: 20, fontWeight: '700', color: Colors.text }}>{members.length}</Text>
+              <Text style={{ fontSize: 11, color: Colors.textSecondary }}>Members</Text>
+            </View>
+          </View>
+        )}
+
         {/* Pending Join Requests */}
         {isAdmin && pendingMembers.length > 0 && (
-          <View style={{
-            backgroundColor: '#fffbeb',
-            borderRadius: 12,
-            padding: 14,
-            marginBottom: 12,
-            borderWidth: 1,
-            borderColor: '#fde68a',
-          }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
-              <Ionicons name="time-outline" size={18} color="#d97706" />
-              <Text style={{ fontSize: 15, fontWeight: '600', color: '#92400e', marginLeft: 6, flex: 1 }}>
-                Pending Requests ({pendingMembers.length})
-              </Text>
-            </View>
+          <CollapsibleSection
+            title="Pending Requests"
+            count={pendingMembers.length}
+            icon="time-outline"
+            iconColor="#d97706"
+            iconBg="#fef3c7"
+            backgroundColor="#fffbeb"
+            borderColor="#fde68a"
+            titleColor="#92400e"
+            defaultOpen={true}
+          >
             {pendingMembers.map((member) => (
               <View
                 key={member.id}
@@ -383,30 +380,25 @@ export default function GroupDetailScreen() {
                 </TouchableOpacity>
               </View>
             ))}
-          </View>
+          </CollapsibleSection>
         )}
 
         {/* Members Section */}
-        <View style={{
-          backgroundColor: Colors.surface,
-          borderRadius: 12,
-          padding: 14,
-          marginBottom: 12,
-          borderWidth: 1,
-          borderColor: Colors.border,
-        }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
-            <Text style={{ fontSize: 15, fontWeight: '600', color: Colors.text, flex: 1 }}>Members</Text>
-            {isAdmin && (
-              <TouchableOpacity
-                onPress={() => router.push({ pathname: '/groups-add-member', params: { id: groupId } })}
-                style={{ flexDirection: 'row', alignItems: 'center' }}
-              >
-                <Ionicons name="person-add-outline" size={16} color={Colors.primary} />
-                <Text style={{ fontSize: 13, color: Colors.primary, marginLeft: 4 }}>Add</Text>
-              </TouchableOpacity>
-            )}
-          </View>
+        <CollapsibleSection
+          title="Members"
+          count={members.length}
+          icon="people-outline"
+          defaultOpen={true}
+        >
+          {isAdmin && (
+            <TouchableOpacity
+              onPress={() => router.push({ pathname: '/groups-add-member', params: { id: groupId } })}
+              style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}
+            >
+              <Ionicons name="person-add-outline" size={16} color={Colors.primary} />
+              <Text style={{ fontSize: 13, color: Colors.primary, marginLeft: 4 }}>Add Member</Text>
+            </TouchableOpacity>
+          )}
 
           {members.map((member) => (
             <View
@@ -494,25 +486,49 @@ export default function GroupDetailScreen() {
               )}
             </View>
           ))}
-        </View>
+        </CollapsibleSection>
+
+        {/* Member Shares */}
+        {memberShares.length > 0 && (data?.totalExpensesCount ?? 0) > 0 && (
+          <CollapsibleSection
+            title="Member Shares"
+            icon="pie-chart-outline"
+            iconColor="#8b5cf6"
+            iconBg="#ede9fe"
+            backgroundColor="#faf5ff"
+            borderColor="#e9d5ff"
+            defaultOpen={true}
+          >
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingBottom: 8, marginBottom: 8, borderBottomWidth: 1, borderBottomColor: '#e9d5ff' }}>
+              <Text style={{ fontSize: 12, color: '#7c3aed' }}>Total Expenses</Text>
+              <Text style={{ fontSize: 14, fontWeight: '700', color: '#7c3aed' }}>{formatCurrency(data?.totalExpensesAmount ?? 0)}</Text>
+            </View>
+            {memberShares.map((ms: any) => (
+              <View key={ms.user_id} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: '#f3e8ff' }}>
+                <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#ede9fe', justifyContent: 'center', alignItems: 'center', marginRight: 10 }}>
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: '#7c3aed' }}>{ms.name?.charAt(0)?.toUpperCase() || '?'}</Text>
+                </View>
+                <Text style={{ fontSize: 14, fontWeight: '500', color: Colors.text, flex: 1 }}>{ms.name}</Text>
+                <Text style={{ fontSize: 14, fontWeight: '600', color: '#7c3aed' }}>{formatCurrency(ms.total_share)}</Text>
+              </View>
+            ))}
+          </CollapsibleSection>
+        )}
 
         {/* Recent Expenses Section */}
-        <View style={{
-          backgroundColor: Colors.surface,
-          borderRadius: 12,
-          padding: 14,
-          marginBottom: 12,
-          borderWidth: 1,
-          borderColor: Colors.border,
-        }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
-            <Text style={{ fontSize: 15, fontWeight: '600', color: Colors.text, flex: 1 }}>Recent Expenses</Text>
-            {(data?.totalExpensesCount ?? 0) > 5 && (
-              <TouchableOpacity onPress={() => router.push({ pathname: '/groups-expenses', params: { groupId } })}>
-                <Text style={{ fontSize: 13, color: Colors.primary }}>View All</Text>
-              </TouchableOpacity>
-            )}
-          </View>
+        <CollapsibleSection
+          title="Recent Expenses"
+          icon="receipt-outline"
+          defaultOpen={true}
+        >
+          {(data?.totalExpensesCount ?? 0) > 5 && (
+            <TouchableOpacity
+              onPress={() => router.push({ pathname: '/groups-expenses', params: { groupId } })}
+              style={{ marginBottom: 10 }}
+            >
+              <Text style={{ fontSize: 13, color: Colors.primary }}>View All</Text>
+            </TouchableOpacity>
+          )}
 
           {recentExpenses.length === 0 ? (
             <View style={{ alignItems: 'center', paddingVertical: 20 }}>
@@ -555,42 +571,43 @@ export default function GroupDetailScreen() {
             ))
           )}
 
-          {/* Add Expense Button */}
+        </CollapsibleSection>
+
+        {/* Action Buttons */}
+        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 12 }}>
           <TouchableOpacity
             onPress={() => router.push({ pathname: '/groups-expense-add', params: { groupId } })}
             style={{
+              flex: 1,
               backgroundColor: Colors.primary,
-              borderRadius: 10,
-              padding: 12,
-              alignItems: 'center',
-              marginTop: 10,
+              borderRadius: 12,
+              padding: 14,
               flexDirection: 'row',
+              alignItems: 'center',
               justifyContent: 'center',
             }}
           >
             <Ionicons name="add" size={18} color="#fff" />
-            <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600', marginLeft: 4 }}>Add Expense</Text>
+            <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600', marginLeft: 6 }}>Add Expense</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => router.push({ pathname: '/groups-settlements', params: { groupId } })}
+            style={{
+              flex: 1,
+              backgroundColor: Colors.surface,
+              borderRadius: 12,
+              padding: 14,
+              borderWidth: 1,
+              borderColor: Colors.primary,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Ionicons name="swap-horizontal" size={18} color={Colors.primary} />
+            <Text style={{ fontSize: 14, fontWeight: '600', color: Colors.primary, marginLeft: 6 }}>Settlement</Text>
           </TouchableOpacity>
         </View>
-
-        {/* Settle Up Button */}
-        <TouchableOpacity
-          onPress={() => router.push({ pathname: '/groups-settlements', params: { groupId } })}
-          style={{
-            backgroundColor: Colors.surface,
-            borderRadius: 12,
-            padding: 16,
-            marginBottom: 12,
-            borderWidth: 1,
-            borderColor: Colors.primary,
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Ionicons name="swap-horizontal" size={20} color={Colors.primary} />
-          <Text style={{ fontSize: 15, fontWeight: '600', color: Colors.primary, marginLeft: 8 }}>Settlements & Balances</Text>
-        </TouchableOpacity>
 
         {/* Leave / Delete Group */}
         <View style={{ marginBottom: 40, gap: 8 }}>

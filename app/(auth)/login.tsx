@@ -7,7 +7,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Alert,
   ActivityIndicator,
   Image,
 } from 'react-native';
@@ -16,6 +15,7 @@ import { useAuthStore } from '../../stores/authStore';
 import { authService } from '../../services/auth';
 import { Colors } from '../../constants/colors';
 import { getDeviceName } from '../../utils/device';
+import { useToast } from '../../components/Toast';
 
 type AuthTab = 'email' | 'otp';
 type OtpStep = 'phone' | 'verify';
@@ -39,6 +39,7 @@ export default function LoginScreen() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const { login, loginWithOtp } = useAuthStore();
+  const toast = useToast();
 
   // --- Email Login ---
   const validateEmail = (): boolean => {
@@ -70,7 +71,7 @@ export default function LoginScreen() {
         }
         setErrors(mapped);
       } else {
-        Alert.alert('Login Failed', message);
+        toast.show(message, 'error');
       }
     } finally {
       setLoading(false);
@@ -96,7 +97,7 @@ export default function LoginScreen() {
       setOtpStep('verify');
     } catch (error: any) {
       const message = error.response?.data?.message || 'Failed to send OTP.';
-      Alert.alert('Error', message);
+      toast.show(message, 'error');
     } finally {
       setLoading(false);
     }
@@ -117,7 +118,7 @@ export default function LoginScreen() {
       });
     } catch (error: any) {
       const message = error.response?.data?.message || 'Invalid OTP.';
-      Alert.alert('Verification Failed', message);
+      toast.show(message, 'error');
     } finally {
       setLoading(false);
     }

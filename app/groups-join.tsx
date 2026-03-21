@@ -5,7 +5,6 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Alert,
   ActivityIndicator,
   Platform,
   KeyboardAvoidingView,
@@ -14,9 +13,11 @@ import { useRouter } from 'expo-router';
 import { groupService } from '../services/groups';
 import { Colors } from '../constants/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useToast } from '../components/Toast';
 
 export default function JoinGroupScreen() {
   const router = useRouter();
+  const toast = useToast();
   const [inviteCode, setInviteCode] = useState('');
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState('');
@@ -33,9 +34,8 @@ export default function JoinGroupScreen() {
     try {
       const response = await groupService.joinGroup(code);
       const msg = response.data?.message || 'Join request sent. The group admin will review your request.';
-      Alert.alert('Request Sent', msg, [
-        { text: 'OK', onPress: () => router.back() },
-      ]);
+      toast.show(msg);
+      router.back();
     } catch (error: any) {
       const msg = error.response?.data?.message || error.response?.data?.errors?.invite_code?.[0] || 'Failed to join group.';
       setError(msg);

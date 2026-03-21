@@ -7,7 +7,6 @@ import {
   ActivityIndicator,
   RefreshControl,
   TextInput,
-  Alert,
 } from 'react-native';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { groupService, type GroupExpenseListParams } from '../services/groups';
@@ -15,12 +14,16 @@ import { expenseService } from '../services/expenses';
 import { formatCurrency, formatRelativeDate } from '../utils/format';
 import { Colors } from '../constants/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useToast } from '../components/Toast';
+import { useConfirm } from '../components/ConfirmDialog';
 import type { GroupExpense, Category } from '../types/models';
 
 export default function GroupExpensesScreen() {
   const router = useRouter();
   const { groupId: groupIdParam } = useLocalSearchParams<{ groupId: string }>();
   const groupId = parseInt(groupIdParam || '0', 10);
+  const toast = useToast();
+  const confirm = useConfirm();
 
   const [expenses, setExpenses] = useState<GroupExpense[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -62,7 +65,7 @@ export default function GroupExpensesScreen() {
       setPage(meta.current_page);
       setLastPage(meta.last_page);
     } catch (error: any) {
-      Alert.alert('Error', error.response?.data?.message || 'Failed to load expenses.');
+      toast.show(error.response?.data?.message || 'Failed to load expenses.', 'error');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -105,25 +108,20 @@ export default function GroupExpensesScreen() {
   };
 
   const handleDelete = (expense: GroupExpense) => {
-    Alert.alert(
-      'Delete Expense',
-      `Are you sure you want to delete this expense of ${formatCurrency(expense.amount)}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await groupService.deleteGroupExpense(groupId, expense.id);
-              setExpenses((prev) => prev.filter((e) => e.id !== expense.id));
-            } catch (error: any) {
-              Alert.alert('Error', error.response?.data?.message || 'Failed to delete expense.');
-            }
-          },
-        },
-      ]
-    );
+    confirm.show({
+      title: 'Delete Expense',
+      message: `Are you sure you want to delete this expense of ${formatCurrency(expense.amount)}?`,
+      confirmText: 'Delete',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          await groupService.deleteGroupExpense(groupId, expense.id);
+          setExpenses((prev) => prev.filter((e) => e.id !== expense.id));
+        } catch (error: any) {
+          toast.show(error.response?.data?.message || 'Failed to delete expense.', 'error');
+        }
+      },
+    });
   };
 
   const selectedCategoryName = selectedCategory

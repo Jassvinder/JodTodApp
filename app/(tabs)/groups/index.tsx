@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
-  Alert,
   Image,
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -14,10 +13,12 @@ import { groupService } from '../../../services/groups';
 import { formatCurrency, resolveUrl } from '../../../utils/format';
 import { Colors } from '../../../constants/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useToast } from '../../../components/Toast';
 import type { Group } from '../../../types/models';
 
 export default function GroupsScreen() {
   const router = useRouter();
+  const toast = useToast();
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -27,7 +28,7 @@ export default function GroupsScreen() {
       const response = await groupService.getGroups();
       setGroups(response.data.data);
     } catch (error: any) {
-      Alert.alert('Error', error.response?.data?.message || 'Failed to load groups.');
+      toast.show(error.response?.data?.message || 'Failed to load groups.', 'error');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -109,6 +110,12 @@ export default function GroupsScreen() {
             {role === 'admin' && (
               <View style={{ backgroundColor: '#eef2ff', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, marginLeft: 6 }}>
                 <Text style={{ fontSize: 10, fontWeight: '600', color: Colors.primary }}>Admin</Text>
+              </View>
+            )}
+            {item.is_all_settled && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#dcfce7', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, marginLeft: 6 }}>
+                <Ionicons name="checkmark-circle" size={10} color="#16a34a" />
+                <Text style={{ fontSize: 9, fontWeight: '600', color: '#16a34a', marginLeft: 3 }}>All Settled</Text>
               </View>
             )}
           </View>

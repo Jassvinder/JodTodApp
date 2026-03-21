@@ -9,6 +9,8 @@ export default function ProfileLayout() {
         headerTitleStyle: { fontWeight: '600', color: Colors.text },
         headerShadowVisible: false,
       }}
-    />
+    >
+      <Stack.Screen name="index" options={{ title: 'Profile' }} />
+    </Stack>
   );
 }

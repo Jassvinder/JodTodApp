@@ -5,17 +5,19 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Alert,
   ActivityIndicator,
   Image,
   Platform,
   KeyboardAvoidingView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import DatePickerField from '../../../components/DatePickerField';
 import { expenseService } from '../../../services/expenses';
 import { Colors } from '../../../constants/colors';
 import { API_BASE_URL } from '../../../constants/config';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useToast } from '../../../components/Toast';
+import { useConfirm } from '../../../components/ConfirmDialog';
 import type { Category } from '../../../types/models';
 
 let ImagePicker: typeof import('expo-image-picker') | null = null;
@@ -27,14 +29,15 @@ try {
 
 export default function AddExpenseScreen() {
   const router = useRouter();
+  const toast = useToast();
+  const confirm = useConfirm();
 
   // Form state
   const [amount, setAmount] = useState('');
   const [categoryId, setCategoryId] = useState<number | null>(null);
   const [description, setDescription] = useState('');
   const [expenseDate, setExpenseDate] = useState(new Date().toISOString().split('T')[0]);
-  const [image1, setImage1] = useState<{ uri: string; name: string; type: string } | null>(null);
-  const [image2, setImage2] = useState<{ uri: string; name: string; type: string } | null>(null);
+  const [image, setImage] = useState<{ uri: string; name: string; type: string } | null>(null);
 
   // UI state
   const [categories, setCategories] = useState<Category[]>([]);
@@ -55,7 +58,7 @@ export default function AddExpenseScreen() {
       const response = await expenseService.getCategories();
       setCategories(response.data.data);
     } catch {
-      Alert.alert('Error', 'Failed to load categories.');
+      toast.show('Failed to load categories.', 'error');
     } finally {
       setLoadingCategories(false);
     }
@@ -88,65 +91,69 @@ export default function AddExpenseScreen() {
     setSuggestions([]);
   };
 
-  const pickImage = async (slot: 1 | 2) => {
+  const confirmRemoveImage = () => {
+    confirm.show({
+      title: 'Remove Photo',
+      message: 'Remove this receipt photo?',
+      confirmText: 'Remove',
+      cancelText: 'Cancel',
+      danger: true,
+      onConfirm: () => setImage(null),
+    });
+  };
+
+  const pickImage = async () => {
     if (!ImagePicker) {
-      Alert.alert('Not Available', 'expo-image-picker is not installed. Run: npx expo install expo-image-picker');
+      toast.show('expo-image-picker is not installed. Run: npx expo install expo-image-picker', 'error');
       return;
     }
 
-    Alert.alert('Add Photo', 'Choose a source', [
-      {
-        text: 'Camera',
-        onPress: async () => {
-          const permission = await ImagePicker!.requestCameraPermissionsAsync();
-          if (!permission.granted) {
-            Alert.alert('Permission Required', 'Camera access is needed to take photos.');
-            return;
-          }
-          const result = await ImagePicker!.launchCameraAsync({
-            mediaTypes: ['images'],
-            quality: 0.7,
-            allowsEditing: true,
-          });
-          if (!result.canceled && result.assets[0]) {
-            const asset = result.assets[0];
-            const imageData = {
-              uri: asset.uri,
-              name: asset.fileName || `photo_${Date.now()}.jpg`,
-              type: asset.mimeType || 'image/jpeg',
-            };
-            if (slot === 1) setImage1(imageData);
-            else setImage2(imageData);
-          }
-        },
+    const handleImageResult = (asset: any) => {
+      const imageData = {
+        uri: asset.uri,
+        name: asset.fileName || `photo_${Date.now()}.jpg`,
+        type: asset.mimeType || 'image/jpeg',
+      };
+      setImage(imageData);
+    };
+
+    confirm.show({
+      title: 'Add Photo',
+      message: 'Choose a source',
+      confirmText: 'Camera',
+      cancelText: 'Gallery',
+      danger: false,
+      onConfirm: async () => {
+        const permission = await ImagePicker!.requestCameraPermissionsAsync();
+        if (!permission.granted) {
+          toast.show('Camera access is needed to take photos.', 'error');
+          return;
+        }
+        const result = await ImagePicker!.launchCameraAsync({
+          mediaTypes: ['images'],
+          quality: 0.7,
+          allowsEditing: true,
+        });
+        if (!result.canceled && result.assets[0]) {
+          handleImageResult(result.assets[0]);
+        }
       },
-      {
-        text: 'Gallery',
-        onPress: async () => {
-          const permission = await ImagePicker!.requestMediaLibraryPermissionsAsync();
-          if (!permission.granted) {
-            Alert.alert('Permission Required', 'Gallery access is needed to pick photos.');
-            return;
-          }
-          const result = await ImagePicker!.launchImageLibraryAsync({
-            mediaTypes: ['images'],
-            quality: 0.7,
-            allowsEditing: true,
-          });
-          if (!result.canceled && result.assets[0]) {
-            const asset = result.assets[0];
-            const imageData = {
-              uri: asset.uri,
-              name: asset.fileName || `photo_${Date.now()}.jpg`,
-              type: asset.mimeType || 'image/jpeg',
-            };
-            if (slot === 1) setImage1(imageData);
-            else setImage2(imageData);
-          }
-        },
+      onCancel: async () => {
+        const permission = await ImagePicker!.requestMediaLibraryPermissionsAsync();
+        if (!permission.granted) {
+          toast.show('Gallery access is needed to pick photos.', 'error');
+          return;
+        }
+        const result = await ImagePicker!.launchImageLibraryAsync({
+          mediaTypes: ['images'],
+          quality: 0.7,
+          allowsEditing: true,
+        });
+        if (!result.canceled && result.assets[0]) {
+          handleImageResult(result.assets[0]);
+        }
       },
-      { text: 'Cancel', style: 'cancel' },
-    ]);
+    });
   };
 
   const validate = (): boolean => {
@@ -169,18 +176,11 @@ export default function AddExpenseScreen() {
       formData.append('expense_date', expenseDate);
       if (description.trim()) formData.append('description', description.trim());
 
-      if (image1) {
+      if (image) {
         formData.append('image_1', {
-          uri: image1.uri,
-          name: image1.name,
-          type: image1.type,
-        } as any);
-      }
-      if (image2) {
-        formData.append('image_2', {
-          uri: image2.uri,
-          name: image2.name,
-          type: image2.type,
+          uri: image.uri,
+          name: image.name,
+          type: image.type,
         } as any);
       }
 
@@ -193,7 +193,7 @@ export default function AddExpenseScreen() {
         for (const key in fieldErrors) mapped[key] = fieldErrors[key][0];
         setErrors(mapped);
       } else {
-        Alert.alert('Error', error.response?.data?.message || 'Failed to save expense.');
+        toast.show(error.response?.data?.message || 'Failed to save expense.', 'error');
       }
     } finally {
       setSaving(false);
@@ -305,93 +305,41 @@ export default function AddExpenseScreen() {
             {errors.description && <Text style={{ color: Colors.error, fontSize: 12, marginTop: 4 }}>{errors.description}</Text>}
           </View>
 
-          {/* Date Input */}
+          {/* Date Picker */}
+          <DatePickerField
+            label="Date *"
+            value={expenseDate}
+            onChange={setExpenseDate}
+            error={errors.expense_date}
+          />
+
+          {/* Receipt Photo (optional) */}
           <View style={{ marginBottom: 20 }}>
-            <Text style={{ fontSize: 13, fontWeight: '500', color: Colors.text, marginBottom: 6 }}>Date *</Text>
-            <TextInput
-              value={expenseDate}
-              onChangeText={setExpenseDate}
-              placeholder="YYYY-MM-DD"
-              placeholderTextColor={Colors.textMuted}
+            <Text style={{ fontSize: 13, fontWeight: '500', color: Colors.text, marginBottom: 6 }}>Receipt Photo (optional)</Text>
+            <TouchableOpacity
+              onPress={() => image ? confirmRemoveImage() : pickImage()}
               style={{
+                width: 100, height: 100, borderRadius: 12,
+                borderWidth: 2, borderColor: image ? Colors.border : Colors.border,
+                borderStyle: image ? 'solid' : 'dashed',
+                overflow: 'hidden', justifyContent: 'center', alignItems: 'center',
                 backgroundColor: Colors.surface,
-                borderWidth: 1,
-                borderColor: errors.expense_date ? Colors.error : Colors.border,
-                borderRadius: 10,
-                padding: 12,
-                fontSize: 15,
-                color: Colors.text,
               }}
-            />
-            {errors.expense_date && <Text style={{ color: Colors.error, fontSize: 12, marginTop: 4 }}>{errors.expense_date}</Text>}
-          </View>
-
-          {/* Image Upload */}
-          <View style={{ marginBottom: 20 }}>
-            <Text style={{ fontSize: 13, fontWeight: '500', color: Colors.text, marginBottom: 6 }}>Receipt Photos (optional)</Text>
-            <View style={{ flexDirection: 'row', gap: 12 }}>
-              {/* Image Slot 1 */}
-              <TouchableOpacity
-                onPress={() => image1 ? setImage1(null) : pickImage(1)}
-                style={{
-                  width: 100,
-                  height: 100,
-                  borderRadius: 12,
-                  borderWidth: 1,
-                  borderColor: Colors.border,
-                  borderStyle: image1 ? 'solid' : 'dashed',
-                  backgroundColor: Colors.surface,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  overflow: 'hidden',
-                }}
-              >
-                {image1 ? (
-                  <View style={{ width: '100%', height: '100%' }}>
-                    <Image source={{ uri: image1.uri }} style={{ width: '100%', height: '100%' }} />
-                    <View style={{ position: 'absolute', top: 4, right: 4, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 10, width: 20, height: 20, justifyContent: 'center', alignItems: 'center' }}>
-                      <Ionicons name="close" size={14} color="#fff" />
-                    </View>
+            >
+              {image ? (
+                <View style={{ width: '100%', height: '100%' }}>
+                  <Image source={{ uri: image.uri }} style={{ width: '100%', height: '100%' }} />
+                  <View style={{ position: 'absolute', top: 4, right: 4, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 10, width: 20, height: 20, justifyContent: 'center', alignItems: 'center' }}>
+                    <Ionicons name="close" size={14} color="#fff" />
                   </View>
-                ) : (
-                  <>
-                    <Ionicons name="camera-outline" size={24} color={Colors.textMuted} />
-                    <Text style={{ fontSize: 11, color: Colors.textMuted, marginTop: 4 }}>Photo 1</Text>
-                  </>
-                )}
-              </TouchableOpacity>
-
-              {/* Image Slot 2 */}
-              <TouchableOpacity
-                onPress={() => image2 ? setImage2(null) : pickImage(2)}
-                style={{
-                  width: 100,
-                  height: 100,
-                  borderRadius: 12,
-                  borderWidth: 1,
-                  borderColor: Colors.border,
-                  borderStyle: image2 ? 'solid' : 'dashed',
-                  backgroundColor: Colors.surface,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  overflow: 'hidden',
-                }}
-              >
-                {image2 ? (
-                  <View style={{ width: '100%', height: '100%' }}>
-                    <Image source={{ uri: image2.uri }} style={{ width: '100%', height: '100%' }} />
-                    <View style={{ position: 'absolute', top: 4, right: 4, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 10, width: 20, height: 20, justifyContent: 'center', alignItems: 'center' }}>
-                      <Ionicons name="close" size={14} color="#fff" />
-                    </View>
-                  </View>
-                ) : (
-                  <>
-                    <Ionicons name="camera-outline" size={24} color={Colors.textMuted} />
-                    <Text style={{ fontSize: 11, color: Colors.textMuted, marginTop: 4 }}>Photo 2</Text>
-                  </>
-                )}
-              </TouchableOpacity>
-            </View>
+                </View>
+              ) : (
+                <View style={{ alignItems: 'center' }}>
+                  <Ionicons name="camera-outline" size={24} color={Colors.textMuted} />
+                  <Text style={{ fontSize: 10, color: Colors.textMuted, marginTop: 4 }}>Add Photo</Text>
+                </View>
+              )}
+            </TouchableOpacity>
           </View>
 
           {/* Save Button */}

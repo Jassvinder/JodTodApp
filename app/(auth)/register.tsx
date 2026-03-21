@@ -7,7 +7,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Alert,
   ActivityIndicator,
   Image,
 } from 'react-native';
@@ -15,6 +14,7 @@ import { Link } from 'expo-router';
 import { useAuthStore } from '../../stores/authStore';
 import { Colors } from '../../constants/colors';
 import { getDeviceName } from '../../utils/device';
+import { useToast } from '../../components/Toast';
 
 export default function RegisterScreen() {
   const [name, setName] = useState('');
@@ -26,6 +26,7 @@ export default function RegisterScreen() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const register = useAuthStore((s) => s.register);
+  const toast = useToast();
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -62,7 +63,7 @@ export default function RegisterScreen() {
         }
         setErrors(mapped);
       } else {
-        Alert.alert('Registration Failed', message);
+        toast.show(message, 'error');
       }
     } finally {
       setLoading(false);

@@ -7,17 +7,20 @@ import {
   ActivityIndicator,
   RefreshControl,
   TextInput,
-  Alert,
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { incomeService, type IncomeListParams } from '../../../services/incomes';
 import { formatCurrency, formatRelativeDate, percentChange } from '../../../utils/format';
 import { Colors } from '../../../constants/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useToast } from '../../../components/Toast';
+import { useConfirm } from '../../../components/ConfirmDialog';
 import type { Income, IncomeSummary } from '../../../types/models';
 
 export default function IncomesScreen() {
   const router = useRouter();
+  const toast = useToast();
+  const confirm = useConfirm();
   const [incomes, setIncomes] = useState<Income[]>([]);
   const [summary, setSummary] = useState<IncomeSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -47,7 +50,7 @@ export default function IncomesScreen() {
       setPage(meta.current_page);
       setLastPage(meta.last_page);
     } catch (error: any) {
-      Alert.alert('Error', error.response?.data?.message || 'Failed to load incomes.');
+      toast.show(error.response?.data?.message || 'Failed to load incomes.', 'error');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -83,25 +86,20 @@ export default function IncomesScreen() {
   };
 
   const handleDelete = (income: Income) => {
-    Alert.alert(
-      'Delete Income',
-      `Are you sure you want to delete this income of ${formatCurrency(income.amount)}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await incomeService.deleteIncome(income.id);
-              setIncomes((prev) => prev.filter((i) => i.id !== income.id));
-            } catch (error: any) {
-              Alert.alert('Error', error.response?.data?.message || 'Failed to delete income.');
-            }
-          },
-        },
-      ]
-    );
+    confirm.show({
+      title: 'Delete Income',
+      message: `Are you sure you want to delete this income of ${formatCurrency(income.amount)}?`,
+      confirmText: 'Delete',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          await incomeService.deleteIncome(income.id);
+          setIncomes((prev) => prev.filter((i) => i.id !== income.id));
+        } catch (error: any) {
+          toast.show(error.response?.data?.message || 'Failed to delete income.', 'error');
+        }
+      },
+    });
   };
 
   const pct = percentChange(summary?.this_month_income || 0, summary?.last_month_income || 0);

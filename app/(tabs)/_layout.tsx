@@ -72,7 +72,6 @@ export default function TabLayout() {
         <Tabs.Screen
           name="incomes"
           options={{
-            href: null,
             title: 'Income',
             headerShown: false,
             tabBarIcon: ({ color, size }) => <Ionicons name="trending-up-outline" size={size} color={color} />,

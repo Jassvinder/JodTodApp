@@ -136,6 +136,7 @@ export interface Group {
   members: GroupMember[];
   members_count: number;
   pivot?: { role: string };
+  is_all_settled?: boolean;
 }
 
 export interface GroupExpense {

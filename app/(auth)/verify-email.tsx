@@ -3,7 +3,6 @@ import {
   View,
   Text,
   TouchableOpacity,
-  Alert,
   ActivityIndicator,
   Image,
 } from 'react-native';
@@ -11,21 +10,23 @@ import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../stores/authStore';
 import { Colors } from '../../constants/colors';
 import api from '../../services/api';
+import { useToast } from '../../components/Toast';
 
 export default function VerifyEmailScreen() {
   const [loading, setLoading] = useState(false);
   const [resent, setResent] = useState(false);
   const { user, logout, loadToken } = useAuthStore();
   const router = useRouter();
+  const toast = useToast();
 
   const handleResend = async () => {
     setLoading(true);
     try {
       const response = await api.post('/email/verification-notification');
-      Alert.alert('Success', response.data.message || 'Verification email sent.');
+      toast.show(response.data.message || 'Verification email sent.');
       setResent(true);
     } catch (error: any) {
-      Alert.alert('Error', error.response?.data?.message || 'Failed to resend verification email.');
+      toast.show(error.response?.data?.message || 'Failed to resend verification email.', 'error');
     } finally {
       setLoading(false);
     }
@@ -37,7 +38,7 @@ export default function VerifyEmailScreen() {
       await loadToken();
       // loadToken fetches fresh user data - if verified, root layout will redirect to tabs
     } catch {
-      Alert.alert('Error', 'Could not check verification status.');
+      toast.show('Could not check verification status.', 'error');
     } finally {
       setLoading(false);
     }

@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   TextInput,
-  Alert,
   Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -14,10 +13,12 @@ import { contactService } from '../services/contacts';
 import { resolveUrl } from '../utils/format';
 import { Colors } from '../constants/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useToast } from '../components/Toast';
 import type { SearchUser } from '../types/models';
 
 export default function ContactsAddScreen() {
   const router = useRouter();
+  const toast = useToast();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchUser[]>([]);
   const [loading, setLoading] = useState(false);
@@ -38,7 +39,7 @@ export default function ContactsAddScreen() {
       const response = await contactService.searchUsers(searchQuery.trim());
       setResults(response.data.data);
     } catch (error: any) {
-      Alert.alert('Error', error.response?.data?.message || 'Failed to search users.');
+      toast.show(error.response?.data?.message || 'Failed to search users.', 'error');
     } finally {
       setLoading(false);
     }
@@ -56,11 +57,11 @@ export default function ContactsAddScreen() {
     setAddingId(user.id);
     try {
       const response = await contactService.addContact(user.id);
-      Alert.alert('Success', response.data.message);
+      toast.show(response.data.message);
       // Remove from results since they're now a contact
       setResults((prev) => prev.filter((u) => u.id !== user.id));
     } catch (error: any) {
-      Alert.alert('Error', error.response?.data?.message || 'Failed to add contact.');
+      toast.show(error.response?.data?.message || 'Failed to add contact.', 'error');
     } finally {
       setAddingId(null);
     }

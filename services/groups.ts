@@ -36,11 +36,26 @@ export interface GroupShowResponse {
   contacts: { id: number; name: string; email: string; phone: string | null; avatar: string | null }[];
   membersWithUnsettled: number[];
   pendingMembers: { id: number; name: string; email: string; phone: string | null; avatar: string | null }[];
+  memberShares: { user_id: number; name: string; avatar: string | null; total_share: number }[];
+  isAllSettled: boolean;
+}
+
+export interface MemberShare {
+  user_id: number;
+  name: string;
+  avatar: string | null;
+  total_share: number;
+}
+
+export interface MemberSharesData {
+  total_expense: number;
+  members: MemberShare[];
 }
 
 export interface SettlementsResponse {
   balances: MemberBalance[];
   suggestedTransactions: SuggestedTransaction[];
+  memberShares: MemberSharesData;
   settlements: Settlement[];
   meta: {
     current_page: number;
@@ -113,6 +128,12 @@ export const groupService = {
 
   createGroupExpense(groupId: number, data: GroupExpensePayload) {
     return api.post<ApiResponse<GroupExpense>>(`/groups/${groupId}/expenses`, data);
+  },
+
+  createGroupExpenseFormData(groupId: number, data: FormData) {
+    return api.post<ApiResponse<GroupExpense>>(`/groups/${groupId}/expenses`, data, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
   },
 
   updateGroupExpense(groupId: number, expenseId: number, data: GroupExpensePayload) {

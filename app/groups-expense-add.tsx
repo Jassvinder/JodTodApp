@@ -5,24 +5,37 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Alert,
   ActivityIndicator,
   Platform,
   KeyboardAvoidingView,
   Switch,
+  Image,
 } from 'react-native';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { groupService, type GroupExpensePayload, type GroupShowResponse } from '../services/groups';
 import { expenseService } from '../services/expenses';
 import { formatCurrency } from '../utils/format';
+import DatePickerField from '../components/DatePickerField';
+import CollapsibleSection from '../components/CollapsibleSection';
 import { Colors } from '../constants/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useToast } from '../components/Toast';
+import { useConfirm } from '../components/ConfirmDialog';
 import type { Category, GroupMember } from '../types/models';
+
+let ImagePicker: typeof import('expo-image-picker') | null = null;
+try {
+  ImagePicker = require('expo-image-picker');
+} catch {
+  // expo-image-picker not installed
+}
 
 export default function AddGroupExpenseScreen() {
   const router = useRouter();
   const { groupId: groupIdParam } = useLocalSearchParams<{ groupId: string }>();
   const groupId = parseInt(groupIdParam || '0', 10);
+  const toast = useToast();
+  const confirm = useConfirm();
 
   // Form state
   const [amount, setAmount] = useState('');
@@ -31,6 +44,7 @@ export default function AddGroupExpenseScreen() {
   const [expenseDate, setExpenseDate] = useState(new Date().toISOString().split('T')[0]);
   const [paidBy, setPaidBy] = useState<number | null>(null);
   const [splitType, setSplitType] = useState<'equal' | 'custom' | 'percentage'>('equal');
+  const [image, setImage] = useState<{ uri: string; name: string; type: string } | null>(null);
 
   // Equal split: which members are included
   const [equalSplitMembers, setEqualSplitMembers] = useState<number[]>([]);
@@ -67,7 +81,7 @@ export default function AddGroupExpenseScreen() {
         setPaidBy(active[0].id);
       }
     } catch (error: any) {
-      Alert.alert('Error', error.response?.data?.message || 'Failed to load group data.');
+      toast.show(error.response?.data?.message || 'Failed to load group data.', 'error');
       router.back();
     } finally {
       setLoadingData(false);
@@ -135,6 +149,71 @@ export default function AddGroupExpenseScreen() {
       });
   };
 
+  const confirmRemoveImage = () => {
+    confirm.show({
+      title: 'Remove Photo',
+      message: 'Remove this receipt photo?',
+      confirmText: 'Remove',
+      cancelText: 'Cancel',
+      danger: true,
+      onConfirm: () => setImage(null),
+    });
+  };
+
+  const pickImage = async () => {
+    if (!ImagePicker) {
+      toast.show('expo-image-picker is not installed. Run: npx expo install expo-image-picker', 'error');
+      return;
+    }
+
+    const handleImageResult = (asset: any) => {
+      const imageData = {
+        uri: asset.uri,
+        name: asset.fileName || `photo_${Date.now()}.jpg`,
+        type: asset.mimeType || 'image/jpeg',
+      };
+      setImage(imageData);
+    };
+
+    confirm.show({
+      title: 'Add Photo',
+      message: 'Choose a source',
+      confirmText: 'Camera',
+      cancelText: 'Gallery',
+      danger: false,
+      onConfirm: async () => {
+        const permission = await ImagePicker!.requestCameraPermissionsAsync();
+        if (!permission.granted) {
+          toast.show('Camera access is needed to take photos.', 'error');
+          return;
+        }
+        const result = await ImagePicker!.launchCameraAsync({
+          mediaTypes: ['images'],
+          quality: 0.7,
+          allowsEditing: true,
+        });
+        if (!result.canceled && result.assets[0]) {
+          handleImageResult(result.assets[0]);
+        }
+      },
+      onCancel: async () => {
+        const permission = await ImagePicker!.requestMediaLibraryPermissionsAsync();
+        if (!permission.granted) {
+          toast.show('Gallery access is needed to pick photos.', 'error');
+          return;
+        }
+        const result = await ImagePicker!.launchImageLibraryAsync({
+          mediaTypes: ['images'],
+          quality: 0.7,
+          allowsEditing: true,
+        });
+        if (!result.canceled && result.assets[0]) {
+          handleImageResult(result.assets[0]);
+        }
+      },
+    });
+  };
+
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
     const total = parseFloat(amount) || 0;
@@ -167,17 +246,26 @@ export default function AddGroupExpenseScreen() {
 
     setSaving(true);
     try {
-      const payload: GroupExpensePayload = {
-        description: description.trim(),
-        amount: parseFloat(amount),
-        paid_by: paidBy!,
-        category_id: categoryId!,
-        expense_date: expenseDate,
-        split_type: splitType,
-        splits: buildSplits(),
-      };
+      const formData = new FormData();
+      formData.append('description', description.trim());
+      formData.append('amount', parseFloat(amount).toString());
+      formData.append('split_type', splitType);
+      formData.append('paid_by', paidBy!.toString());
+      formData.append('category_id', categoryId!.toString());
+      formData.append('expense_date', expenseDate);
 
-      await groupService.createGroupExpense(groupId, payload);
+      const splits = buildSplits();
+      splits.forEach((split, i) => {
+        formData.append(`splits[${i}][user_id]`, split.user_id.toString());
+        formData.append(`splits[${i}][share_amount]`, split.share_amount.toString());
+        formData.append(`splits[${i}][percentage]`, split.percentage?.toString() || '');
+      });
+
+      if (image) {
+        formData.append('image_1', { uri: image.uri, name: image.name, type: image.type } as any);
+      }
+
+      await groupService.createGroupExpenseFormData(groupId, formData);
       router.back();
     } catch (error: any) {
       const fieldErrors = error.response?.data?.errors;
@@ -186,7 +274,7 @@ export default function AddGroupExpenseScreen() {
         for (const key in fieldErrors) mapped[key] = fieldErrors[key][0];
         setErrors(mapped);
       } else {
-        Alert.alert('Error', error.response?.data?.message || 'Failed to save expense.');
+        toast.show(error.response?.data?.message || 'Failed to save expense.', 'error');
       }
     } finally {
       setSaving(false);
@@ -292,26 +380,13 @@ export default function AddGroupExpenseScreen() {
             />
           </View>
 
-          {/* Date Input */}
-          <View style={{ marginBottom: 20 }}>
-            <Text style={{ fontSize: 13, fontWeight: '500', color: Colors.text, marginBottom: 6 }}>Date *</Text>
-            <TextInput
-              value={expenseDate}
-              onChangeText={setExpenseDate}
-              placeholder="YYYY-MM-DD"
-              placeholderTextColor={Colors.textMuted}
-              style={{
-                backgroundColor: Colors.surface,
-                borderWidth: 1,
-                borderColor: errors.expense_date ? Colors.error : Colors.border,
-                borderRadius: 10,
-                padding: 12,
-                fontSize: 15,
-                color: Colors.text,
-              }}
-            />
-            {errors.expense_date && <Text style={{ color: Colors.error, fontSize: 12, marginTop: 4 }}>{errors.expense_date}</Text>}
-          </View>
+          {/* Date Picker */}
+          <DatePickerField
+            label="Date *"
+            value={expenseDate}
+            onChange={setExpenseDate}
+            error={errors.expense_date}
+          />
 
           {/* Paid By Picker */}
           <View style={{ marginBottom: 20 }}>
@@ -382,9 +457,17 @@ export default function AddGroupExpenseScreen() {
             )}
           </View>
 
-          {/* Split Type Tabs */}
-          <View style={{ marginBottom: 16 }}>
-            <Text style={{ fontSize: 13, fontWeight: '500', color: Colors.text, marginBottom: 6 }}>Split Type</Text>
+          {/* Split Between - Collapsible */}
+          <CollapsibleSection
+            title="Split Between"
+            defaultOpen={false}
+            icon="git-branch-outline"
+            iconColor={Colors.primary}
+            iconBg="#eef2ff"
+          >
+            {/* Split Type Tabs */}
+            <View style={{ marginBottom: 12 }}>
+              <Text style={{ fontSize: 13, fontWeight: '500', color: Colors.text, marginBottom: 6 }}>Split Type</Text>
             <View style={{ flexDirection: 'row', backgroundColor: Colors.surface, borderRadius: 10, borderWidth: 1, borderColor: Colors.border, overflow: 'hidden' }}>
               {(['equal', 'custom', 'percentage'] as const).map((type) => (
                 <TouchableOpacity
@@ -409,15 +492,8 @@ export default function AddGroupExpenseScreen() {
             </View>
           </View>
 
-          {/* Split Details */}
-          <View style={{
-            backgroundColor: Colors.surface,
-            borderRadius: 12,
-            padding: 14,
-            marginBottom: 20,
-            borderWidth: 1,
-            borderColor: Colors.border,
-          }}>
+            {/* Split Details */}
+            <View style={{ marginTop: 8 }}>
             {splitType === 'equal' && (
               <>
                 <Text style={{ fontSize: 13, fontWeight: '500', color: Colors.textSecondary, marginBottom: 10 }}>
@@ -574,9 +650,39 @@ export default function AddGroupExpenseScreen() {
             )}
           </View>
 
-          {errors.splits && (
-            <Text style={{ color: Colors.error, fontSize: 12, marginBottom: 16, marginTop: -12 }}>{errors.splits}</Text>
-          )}
+            {errors.splits && (
+              <Text style={{ color: Colors.error, fontSize: 12, marginTop: 8 }}>{errors.splits}</Text>
+            )}
+          </CollapsibleSection>
+
+          {/* Receipt Photo (optional) */}
+          <View style={{ marginBottom: 20 }}>
+            <Text style={{ fontSize: 13, fontWeight: '500', color: Colors.text, marginBottom: 6 }}>Receipt Photo (optional)</Text>
+            <TouchableOpacity
+              onPress={() => image ? confirmRemoveImage() : pickImage()}
+              style={{
+                width: 100, height: 100, borderRadius: 12,
+                borderWidth: 2, borderColor: image ? Colors.border : Colors.border,
+                borderStyle: image ? 'solid' : 'dashed',
+                overflow: 'hidden', justifyContent: 'center', alignItems: 'center',
+                backgroundColor: Colors.surface,
+              }}
+            >
+              {image ? (
+                <View style={{ width: '100%', height: '100%' }}>
+                  <Image source={{ uri: image.uri }} style={{ width: '100%', height: '100%' }} />
+                  <View style={{ position: 'absolute', top: 4, right: 4, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 10, width: 20, height: 20, justifyContent: 'center', alignItems: 'center' }}>
+                    <Ionicons name="close" size={14} color="#fff" />
+                  </View>
+                </View>
+              ) : (
+                <View style={{ alignItems: 'center' }}>
+                  <Ionicons name="camera-outline" size={24} color={Colors.textMuted} />
+                  <Text style={{ fontSize: 10, color: Colors.textMuted, marginTop: 4 }}>Add Photo</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
 
           {/* Save Button */}
           <TouchableOpacity

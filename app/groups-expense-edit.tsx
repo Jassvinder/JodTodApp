@@ -5,7 +5,6 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Alert,
   ActivityIndicator,
   Platform,
   KeyboardAvoidingView,
@@ -16,6 +15,8 @@ import { expenseService } from '../services/expenses';
 import { formatCurrency } from '../utils/format';
 import { Colors } from '../constants/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import DatePickerField from '../components/DatePickerField';
+import { useToast } from '../components/Toast';
 import type { Category, GroupMember, GroupExpense } from '../types/models';
 
 export default function EditGroupExpenseScreen() {
@@ -26,6 +27,7 @@ export default function EditGroupExpenseScreen() {
   }>();
   const groupId = parseInt(groupIdParam || '0', 10);
   const expenseId = parseInt(expenseIdParam || '0', 10);
+  const toast = useToast();
 
   // Form state
   const [amount, setAmount] = useState('');
@@ -74,7 +76,7 @@ export default function EditGroupExpenseScreen() {
 
       if (!expense) {
         // Try individual fetch via expenses list with search
-        Alert.alert('Error', 'Expense not found.');
+        toast.show('Expense not found.', 'error');
         router.back();
         return;
       }
@@ -109,7 +111,7 @@ export default function EditGroupExpenseScreen() {
         setEqualSplitMembers(active.map((m) => m.id));
       }
     } catch (error: any) {
-      Alert.alert('Error', error.response?.data?.message || 'Failed to load expense data.');
+      toast.show(error.response?.data?.message || 'Failed to load expense data.', 'error');
       router.back();
     } finally {
       setLoadingData(false);
@@ -227,7 +229,7 @@ export default function EditGroupExpenseScreen() {
         for (const key in fieldErrors) mapped[key] = fieldErrors[key][0];
         setErrors(mapped);
       } else {
-        Alert.alert('Error', error.response?.data?.message || 'Failed to update expense.');
+        toast.show(error.response?.data?.message || 'Failed to update expense.', 'error');
       }
     } finally {
       setSaving(false);
@@ -334,25 +336,12 @@ export default function EditGroupExpenseScreen() {
           </View>
 
           {/* Date Input */}
-          <View style={{ marginBottom: 20 }}>
-            <Text style={{ fontSize: 13, fontWeight: '500', color: Colors.text, marginBottom: 6 }}>Date *</Text>
-            <TextInput
-              value={expenseDate}
-              onChangeText={setExpenseDate}
-              placeholder="YYYY-MM-DD"
-              placeholderTextColor={Colors.textMuted}
-              style={{
-                backgroundColor: Colors.surface,
-                borderWidth: 1,
-                borderColor: errors.expense_date ? Colors.error : Colors.border,
-                borderRadius: 10,
-                padding: 12,
-                fontSize: 15,
-                color: Colors.text,
-              }}
-            />
-            {errors.expense_date && <Text style={{ color: Colors.error, fontSize: 12, marginTop: 4 }}>{errors.expense_date}</Text>}
-          </View>
+          <DatePickerField
+            label="Date *"
+            value={expenseDate}
+            onChange={setExpenseDate}
+            error={errors.expense_date}
+          />
 
           {/* Paid By Picker */}
           <View style={{ marginBottom: 20 }}>

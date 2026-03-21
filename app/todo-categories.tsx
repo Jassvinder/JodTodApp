@@ -7,12 +7,13 @@ import {
   ActivityIndicator,
   RefreshControl,
   TextInput,
-  Alert,
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { todoService } from '../services/todos';
 import { Colors } from '../constants/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useToast } from '../components/Toast';
+import { useConfirm } from '../components/ConfirmDialog';
 import type { TodoCategory } from '../types/models';
 
 const PRESET_COLORS = [
@@ -21,6 +22,8 @@ const PRESET_COLORS = [
 ];
 
 export default function TodoCategoriesScreen() {
+  const toast = useToast();
+  const confirm = useConfirm();
   const [categories, setCategories] = useState<TodoCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -37,7 +40,7 @@ export default function TodoCategoriesScreen() {
       const response = await todoService.getCategories();
       setCategories(response.data.data);
     } catch (error: any) {
-      Alert.alert('Error', error.response?.data?.message || 'Failed to load categories.');
+      toast.show(error.response?.data?.message || 'Failed to load categories.', 'error');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -72,7 +75,7 @@ export default function TodoCategoriesScreen() {
 
   const handleSave = async () => {
     if (!name.trim()) {
-      Alert.alert('Error', 'Please enter a category name.');
+      toast.show('Please enter a category name.', 'error');
       return;
     }
 
@@ -87,32 +90,27 @@ export default function TodoCategoriesScreen() {
       }
       resetForm();
     } catch (error: any) {
-      Alert.alert('Error', error.response?.data?.message || 'Failed to save category.');
+      toast.show(error.response?.data?.message || 'Failed to save category.', 'error');
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = (cat: TodoCategory) => {
-    Alert.alert(
-      'Delete Category',
-      `Are you sure you want to delete "${cat.name}"?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await todoService.deleteCategory(cat.id);
-              setCategories((prev) => prev.filter((c) => c.id !== cat.id));
-            } catch (error: any) {
-              Alert.alert('Error', error.response?.data?.message || 'Failed to delete category.');
-            }
-          },
-        },
-      ]
-    );
+    confirm.show({
+      title: 'Delete Category',
+      message: `Are you sure you want to delete "${cat.name}"?`,
+      confirmText: 'Delete',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          await todoService.deleteCategory(cat.id);
+          setCategories((prev) => prev.filter((c) => c.id !== cat.id));
+        } catch (error: any) {
+          toast.show(error.response?.data?.message || 'Failed to delete category.', 'error');
+        }
+      },
+    });
   };
 
   if (loading && !refreshing) {
@@ -125,101 +123,6 @@ export default function TodoCategoriesScreen() {
 
   const renderHeader = () => (
     <View>
-      {/* Add/Edit Form */}
-      {showForm && (
-        <View style={{
-          backgroundColor: Colors.surface,
-          borderRadius: 12,
-          padding: 16,
-          marginBottom: 16,
-          borderWidth: 1,
-          borderColor: Colors.border,
-        }}>
-          <Text style={{ fontSize: 15, fontWeight: '600', color: Colors.text, marginBottom: 12 }}>
-            {editingId ? 'Edit Category' : 'New Category'}
-          </Text>
-
-          {/* Name Input */}
-          <TextInput
-            value={name}
-            onChangeText={setName}
-            placeholder="Category name"
-            placeholderTextColor={Colors.textMuted}
-            style={{
-              backgroundColor: Colors.background,
-              borderWidth: 1,
-              borderColor: Colors.border,
-              borderRadius: 10,
-              padding: 12,
-              fontSize: 15,
-              color: Colors.text,
-              marginBottom: 12,
-            }}
-          />
-
-          {/* Color Picker */}
-          <Text style={{ fontSize: 13, fontWeight: '500', color: Colors.text, marginBottom: 8 }}>Color</Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 16 }}>
-            {PRESET_COLORS.map((color) => (
-              <TouchableOpacity
-                key={color}
-                onPress={() => setSelectedColor(color)}
-                style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 18,
-                  backgroundColor: color,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  borderWidth: 3,
-                  borderColor: selectedColor === color ? Colors.text : 'transparent',
-                }}
-              >
-                {selectedColor === color && <Ionicons name="checkmark" size={18} color="#fff" />}
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {/* Buttons */}
-          <View style={{ flexDirection: 'row', gap: 10 }}>
-            <TouchableOpacity
-              onPress={resetForm}
-              style={{
-                flex: 1,
-                paddingVertical: 10,
-                borderRadius: 10,
-                backgroundColor: Colors.background,
-                borderWidth: 1,
-                borderColor: Colors.border,
-                alignItems: 'center',
-              }}
-            >
-              <Text style={{ fontSize: 14, fontWeight: '500', color: Colors.text }}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={handleSave}
-              disabled={saving}
-              style={{
-                flex: 1,
-                paddingVertical: 10,
-                borderRadius: 10,
-                backgroundColor: Colors.primary,
-                alignItems: 'center',
-              }}
-            >
-              {saving ? (
-                <ActivityIndicator color="#fff" size="small" />
-              ) : (
-                <Text style={{ fontSize: 14, fontWeight: '500', color: '#fff' }}>
-                  {editingId ? 'Update' : 'Add'}
-                </Text>
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
-
-      {/* Category Count */}
       <Text style={{ fontSize: 13, color: Colors.textSecondary, marginBottom: 8 }}>
         {categories.length} categor{categories.length !== 1 ? 'ies' : 'y'}
       </Text>
@@ -272,6 +175,86 @@ export default function TodoCategoriesScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: Colors.background }}>
+      {/* Add/Edit Form - outside FlatList to prevent keyboard dismiss on re-render */}
+      {showForm && (
+        <View style={{
+          backgroundColor: Colors.surface,
+          borderRadius: 12,
+          padding: 16,
+          margin: 16,
+          marginBottom: 0,
+          borderWidth: 1,
+          borderColor: Colors.border,
+        }}>
+          <Text style={{ fontSize: 15, fontWeight: '600', color: Colors.text, marginBottom: 12 }}>
+            {editingId ? 'Edit Category' : 'New Category'}
+          </Text>
+
+          <TextInput
+            value={name}
+            onChangeText={setName}
+            placeholder="Category name"
+            placeholderTextColor={Colors.textMuted}
+            autoFocus
+            style={{
+              backgroundColor: Colors.background,
+              borderWidth: 1,
+              borderColor: Colors.border,
+              borderRadius: 10,
+              padding: 12,
+              fontSize: 15,
+              color: Colors.text,
+              marginBottom: 12,
+            }}
+          />
+
+          <Text style={{ fontSize: 13, fontWeight: '500', color: Colors.text, marginBottom: 8 }}>Color</Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 16 }}>
+            {PRESET_COLORS.map((color) => (
+              <TouchableOpacity
+                key={color}
+                onPress={() => setSelectedColor(color)}
+                style={{
+                  width: 36, height: 36, borderRadius: 18, backgroundColor: color,
+                  justifyContent: 'center', alignItems: 'center',
+                  borderWidth: 3, borderColor: selectedColor === color ? Colors.text : 'transparent',
+                }}
+              >
+                {selectedColor === color && <Ionicons name="checkmark" size={18} color="#fff" />}
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <TouchableOpacity
+              onPress={resetForm}
+              style={{
+                flex: 1, paddingVertical: 10, borderRadius: 10,
+                backgroundColor: Colors.background, borderWidth: 1, borderColor: Colors.border, alignItems: 'center',
+              }}
+            >
+              <Text style={{ fontSize: 14, fontWeight: '500', color: Colors.text }}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleSave}
+              disabled={saving}
+              style={{
+                flex: 1, paddingVertical: 10, borderRadius: 10,
+                backgroundColor: Colors.primary, alignItems: 'center',
+              }}
+            >
+              {saving ? (
+                <ActivityIndicator color="#fff" size="small" />
+              ) : (
+                <Text style={{ fontSize: 14, fontWeight: '500', color: '#fff' }}>
+                  {editingId ? 'Update' : 'Add'}
+                </Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
       <FlatList
         data={categories}
         renderItem={renderCategoryItem}

@@ -5,7 +5,6 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Alert,
   ActivityIndicator,
   Platform,
   KeyboardAvoidingView,
@@ -19,6 +18,8 @@ import { contactService } from '../services/contacts';
 import { resolveUrl } from '../utils/format';
 import { Colors } from '../constants/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import DatePickerField from '../components/DatePickerField';
+import { useToast } from '../components/Toast';
 import type { TodoCategory, Contact } from '../types/models';
 
 const PRIORITY_COLORS = {
@@ -29,6 +30,7 @@ const PRIORITY_COLORS = {
 
 export default function AddTodoScreen() {
   const router = useRouter();
+  const toast = useToast();
 
   // Form state
   const [title, setTitle] = useState('');
@@ -101,7 +103,7 @@ export default function AddTodoScreen() {
         for (const key in fieldErrors) mapped[key] = fieldErrors[key][0];
         setErrors(mapped);
       } else {
-        Alert.alert('Error', error.response?.data?.message || 'Failed to save task.');
+        toast.show(error.response?.data?.message || 'Failed to save task.', 'error');
       }
     } finally {
       setSaving(false);
@@ -182,25 +184,12 @@ export default function AddTodoScreen() {
           </View>
 
           {/* Due Date Input */}
-          <View style={{ marginBottom: 20 }}>
-            <Text style={{ fontSize: 13, fontWeight: '500', color: Colors.text, marginBottom: 6 }}>Due Date</Text>
-            <TextInput
-              value={dueDate}
-              onChangeText={setDueDate}
-              placeholder="YYYY-MM-DD"
-              placeholderTextColor={Colors.textMuted}
-              style={{
-                backgroundColor: Colors.surface,
-                borderWidth: 1,
-                borderColor: errors.due_date ? Colors.error : Colors.border,
-                borderRadius: 10,
-                padding: 12,
-                fontSize: 15,
-                color: Colors.text,
-              }}
-            />
-            {errors.due_date && <Text style={{ color: Colors.error, fontSize: 12, marginTop: 4 }}>{errors.due_date}</Text>}
-          </View>
+          <DatePickerField
+            label="Due Date"
+            value={dueDate}
+            onChange={setDueDate}
+            error={errors.due_date}
+          />
 
           {/* Category Picker */}
           <View style={{ marginBottom: 20 }}>

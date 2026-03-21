@@ -5,7 +5,6 @@ import {
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
   Image,
 } from 'react-native';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
@@ -13,6 +12,7 @@ import { groupService, type GroupShowResponse } from '../services/groups';
 import { resolveUrl } from '../utils/format';
 import { Colors } from '../constants/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useToast } from '../components/Toast';
 
 interface ContactItem {
   id: number;
@@ -27,6 +27,7 @@ export default function AddMemberScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const groupId = parseInt(id || '0', 10);
+  const toast = useToast();
 
   const [contacts, setContacts] = useState<ContactItem[]>([]);
   const [memberIds, setMemberIds] = useState<number[]>([]);
@@ -45,7 +46,7 @@ export default function AddMemberScreen() {
       );
       setContacts(available);
     } catch (error: any) {
-      Alert.alert('Error', error.response?.data?.message || 'Failed to load data.');
+      toast.show(error.response?.data?.message || 'Failed to load data.', 'error');
       router.back();
     } finally {
       setLoading(false);
@@ -66,9 +67,9 @@ export default function AddMemberScreen() {
       // Remove from list and add to member ids
       setContacts((prev) => prev.filter((c) => c.id !== contact.id));
       setMemberIds((prev) => [...prev, contact.id]);
-      Alert.alert('Success', `${contact.name} has been added to the group.`);
+      toast.show(`${contact.name} has been added to the group.`);
     } catch (error: any) {
-      Alert.alert('Error', error.response?.data?.message || 'Failed to add member.');
+      toast.show(error.response?.data?.message || 'Failed to add member.', 'error');
     } finally {
       setAddingId(null);
     }

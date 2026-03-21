@@ -6,12 +6,12 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
-  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { notificationService } from '../services/notifications';
 import { Colors } from '../constants/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useToast } from '../components/Toast';
 import type { AppNotification } from '../types/models';
 
 function formatTimeAgo(dateStr: string): string {
@@ -53,6 +53,7 @@ function getNotificationIcon(type: string): { name: keyof typeof Ionicons.glyphM
 
 export default function NotificationsScreen() {
   const router = useRouter();
+  const toast = useToast();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -74,7 +75,7 @@ export default function NotificationsScreen() {
       setPage(meta.current_page);
       setLastPage(meta.last_page);
     } catch (error: any) {
-      Alert.alert('Error', error.response?.data?.message || 'Failed to load notifications.');
+      toast.show(error.response?.data?.message || 'Failed to load notifications.', 'error');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -160,7 +161,7 @@ export default function NotificationsScreen() {
         prev.map((n) => ({ ...n, read_at: n.read_at || new Date().toISOString() }))
       );
     } catch (error: any) {
-      Alert.alert('Error', error.response?.data?.message || 'Failed to mark all as read.');
+      toast.show(error.response?.data?.message || 'Failed to mark all as read.', 'error');
     } finally {
       setMarkingAll(false);
     }

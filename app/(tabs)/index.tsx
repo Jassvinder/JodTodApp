@@ -16,6 +16,7 @@ import { notificationService } from '../../services/notifications';
 import { formatCurrency, formatRelativeDate, percentChange, resolveUrl } from '../../utils/format';
 import { Colors } from '../../constants/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import CollapsibleSection from '../../components/CollapsibleSection';
 import type { DashboardData } from '../../types/dashboard';
 
 export default function DashboardScreen() {
@@ -134,63 +135,69 @@ export default function DashboardScreen() {
         </View>
 
         {/* Summary Cards */}
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 }}>
-          <SummaryCard
-            title="Expenses"
-            amount={formatCurrency(ps?.this_month_total || 0)}
-            subtitle={expPct !== 0 ? `${expPct > 0 ? '+' : ''}${expPct}% vs last month` : 'Same as last month'}
-            subtitleColor={expPct > 0 ? Colors.error : Colors.success}
-            icon="wallet-outline"
-            iconBg="#eef2ff"
-            iconColor={Colors.primary}
-          />
-          <SummaryCard
-            title="Income"
-            amount={formatCurrency(is?.this_month_income || 0)}
-            subtitle="This month"
-            subtitleColor={Colors.textSecondary}
-            icon="trending-up-outline"
-            iconBg="#dcfce7"
-            iconColor={Colors.success}
-          />
-          <SummaryCard
-            title={is && is.this_month_savings >= 0 ? 'Savings' : 'Loss'}
-            amount={formatCurrency(is?.this_month_savings || 0)}
-            subtitle="Income - Expenses"
-            subtitleColor={Colors.textSecondary}
-            icon="cash-outline"
-            iconBg={(is?.this_month_savings || 0) >= 0 ? '#dcfce7' : '#fee2e2'}
-            iconColor={(is?.this_month_savings || 0) >= 0 ? Colors.success : Colors.error}
-          />
-          <SummaryCard
-            title="You Owe"
-            amount={formatCurrency(gs?.total_you_owe || 0)}
-            subtitle="Group balances"
-            subtitleColor={Colors.textSecondary}
-            icon="arrow-up-outline"
-            iconBg="#fee2e2"
-            iconColor={Colors.error}
-          />
-          <SummaryCard
-            title="Owed to You"
-            amount={formatCurrency(gs?.total_owed_to_you || 0)}
-            subtitle="Group balances"
-            subtitleColor={Colors.textSecondary}
-            icon="arrow-down-outline"
-            iconBg="#dcfce7"
-            iconColor={Colors.success}
-          />
-        </View>
+        <CollapsibleSection title="Summary" icon="stats-chart-outline" defaultOpen={true}>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+            <SummaryCard
+              title="Expenses"
+              amount={formatCurrency(ps?.this_month_total || 0)}
+              subtitle={expPct !== 0 ? `${expPct > 0 ? '+' : ''}${expPct}% vs last month` : 'Same as last month'}
+              subtitleColor={expPct > 0 ? Colors.error : Colors.success}
+              icon="wallet-outline"
+              iconBg="#eef2ff"
+              iconColor={Colors.primary}
+            />
+            <SummaryCard
+              title="Income"
+              amount={formatCurrency(is?.this_month_income || 0)}
+              subtitle="This month"
+              subtitleColor={Colors.textSecondary}
+              icon="trending-up-outline"
+              iconBg="#dcfce7"
+              iconColor={Colors.success}
+            />
+            <SummaryCard
+              title={is && is.this_month_savings >= 0 ? 'Savings' : 'Loss'}
+              amount={formatCurrency(is?.this_month_savings || 0)}
+              subtitle="Income - Expenses"
+              subtitleColor={Colors.textSecondary}
+              icon="cash-outline"
+              iconBg={(is?.this_month_savings || 0) >= 0 ? '#dcfce7' : '#fee2e2'}
+              iconColor={(is?.this_month_savings || 0) >= 0 ? Colors.success : Colors.error}
+            />
+            <SummaryCard
+              title="To Pay"
+              amount={formatCurrency(gs?.total_you_owe || 0)}
+              subtitle="Group balances"
+              subtitleColor={Colors.textSecondary}
+              icon="arrow-up-outline"
+              iconBg="#fee2e2"
+              iconColor={Colors.error}
+            />
+            <SummaryCard
+              title="To Receive"
+              amount={formatCurrency(gs?.total_owed_to_you || 0)}
+              subtitle="Group balances"
+              subtitleColor={Colors.textSecondary}
+              icon="arrow-down-outline"
+              iconBg="#dcfce7"
+              iconColor={Colors.success}
+            />
+          </View>
+        </CollapsibleSection>
 
         {/* Pending Settlements */}
         {data?.pendingSettlements && data.pendingSettlements.count > 0 && (
-          <View style={{ backgroundColor: '#fef3c7', borderRadius: 12, padding: 14, marginBottom: 16 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-              <Ionicons name="alert-circle" size={20} color="#d97706" />
-              <Text style={{ fontSize: 15, fontWeight: '600', color: '#92400e', marginLeft: 8 }}>
-                Pending Payments ({data.pendingSettlements.count})
-              </Text>
-            </View>
+          <CollapsibleSection
+            title="Pending Payments"
+            count={data.pendingSettlements.count}
+            icon="alert-circle-outline"
+            iconColor="#d97706"
+            iconBg="#fef3c7"
+            backgroundColor="#fef3c7"
+            borderColor="#fcd34d"
+            titleColor="#92400e"
+            defaultOpen={true}
+          >
             {data.pendingSettlements.items.map((s) => (
               <View key={s.id} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 6 }}>
                 <Text style={{ fontSize: 14, color: '#92400e' }}>
@@ -199,33 +206,45 @@ export default function DashboardScreen() {
                 <Text style={{ fontSize: 12, color: '#b45309' }}>{s.group_name}</Text>
               </View>
             ))}
-          </View>
+          </CollapsibleSection>
         )}
 
         {/* Todo Stats */}
         {data?.todoStats && (data.todoStats.pending > 0 || data.todoStats.overdue > 0) && (
-          <TouchableOpacity
-            onPress={() => router.push('/todos')}
-            activeOpacity={0.7}
-            style={{ backgroundColor: Colors.surface, borderRadius: 12, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: Colors.border }}
+          <CollapsibleSection
+            title="My Tasks"
+            icon="checkbox-outline"
+            iconColor="#8b5cf6"
+            iconBg="#ede9fe"
+            defaultOpen={true}
           >
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-              <Text style={{ fontSize: 15, fontWeight: '600', color: Colors.text }}>My Tasks</Text>
-              <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
-            </View>
-            <View style={{ flexDirection: 'row', gap: 16 }}>
-              <Text style={{ fontSize: 13, color: Colors.textSecondary }}>{data.todoStats.pending} pending</Text>
-              {data.todoStats.overdue > 0 && (
-                <Text style={{ fontSize: 13, color: Colors.error }}>{data.todoStats.overdue} overdue</Text>
-              )}
-            </View>
-          </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => router.push('/todos')}
+              activeOpacity={0.7}
+            >
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                <View style={{ flexDirection: 'row', gap: 16 }}>
+                  <Text style={{ fontSize: 13, color: Colors.textSecondary }}>{data.todoStats.pending} pending</Text>
+                  {data.todoStats.overdue > 0 && (
+                    <Text style={{ fontSize: 13, color: Colors.error }}>{data.todoStats.overdue} overdue</Text>
+                  )}
+                </View>
+                <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
+              </View>
+            </TouchableOpacity>
+          </CollapsibleSection>
         )}
 
         {/* Groups Overview */}
         {gs && gs.groups.length > 0 && (
-          <View style={{ backgroundColor: Colors.surface, borderRadius: 12, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: Colors.border }}>
-            <Text style={{ fontSize: 15, fontWeight: '600', color: Colors.text, marginBottom: 10 }}>Groups</Text>
+          <CollapsibleSection
+            title="Groups"
+            count={gs.groups.length}
+            icon="people-outline"
+            iconColor="#3b82f6"
+            iconBg="#dbeafe"
+            defaultOpen={true}
+          >
             {gs.groups.map((g) => (
               <View key={g.group_id} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: Colors.border }}>
                 <View>
@@ -237,13 +256,16 @@ export default function DashboardScreen() {
                 </Text>
               </View>
             ))}
-          </View>
+          </CollapsibleSection>
         )}
 
         {/* Category Breakdown */}
         {ps && ps.category_breakdown.length > 0 && (
-          <View style={{ backgroundColor: Colors.surface, borderRadius: 12, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: Colors.border }}>
-            <Text style={{ fontSize: 15, fontWeight: '600', color: Colors.text, marginBottom: 4 }}>Category Breakdown</Text>
+          <CollapsibleSection
+            title="Category Breakdown"
+            icon="pie-chart-outline"
+            defaultOpen={true}
+          >
             <Text style={{ fontSize: 12, color: Colors.textSecondary, marginBottom: 12 }}>This month's spending</Text>
             {ps.category_breakdown.map((cat, i) => {
               const pct = ps.this_month_total > 0 ? Math.round((cat.total / ps.this_month_total) * 100) : 0;
@@ -260,12 +282,16 @@ export default function DashboardScreen() {
                 </View>
               );
             })}
-          </View>
+          </CollapsibleSection>
         )}
 
         {/* Recent Activity */}
-        <View style={{ backgroundColor: Colors.surface, borderRadius: 12, padding: 14, marginBottom: 24, borderWidth: 1, borderColor: Colors.border }}>
-          <Text style={{ fontSize: 15, fontWeight: '600', color: Colors.text, marginBottom: 10 }}>Recent Activity</Text>
+        <CollapsibleSection
+          title="Recent Activity"
+          icon="time-outline"
+          defaultOpen={true}
+          style={{ marginBottom: 24 }}
+        >
           {data?.recentActivity && data.recentActivity.length > 0 ? (
             data.recentActivity.map((a, i) => (
               <View key={i} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: i < data.recentActivity.length - 1 ? 1 : 0, borderBottomColor: Colors.border }}>
@@ -292,7 +318,7 @@ export default function DashboardScreen() {
           ) : (
             <Text style={{ fontSize: 14, color: Colors.textMuted, textAlign: 'center', paddingVertical: 20 }}>No recent activity</Text>
           )}
-        </View>
+        </CollapsibleSection>
       </View>
     </ScrollView>
   );

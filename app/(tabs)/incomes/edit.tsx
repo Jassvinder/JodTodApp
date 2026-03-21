@@ -5,7 +5,6 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Alert,
   ActivityIndicator,
   Platform,
   KeyboardAvoidingView,
@@ -14,10 +13,13 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { incomeService } from '../../../services/incomes';
 import { Colors } from '../../../constants/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import DatePickerField from '../../../components/DatePickerField';
+import { useToast } from '../../../components/Toast';
 
 export default function EditIncomeScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const toast = useToast();
 
   // Form state
   const [amount, setAmount] = useState('');
@@ -49,7 +51,7 @@ export default function EditIncomeScreen() {
       setDescription(income.description || '');
       setIncomeDate(income.income_date);
     } catch (error: any) {
-      Alert.alert('Error', error.response?.data?.message || 'Failed to load income.');
+      toast.show(error.response?.data?.message || 'Failed to load income.', 'error');
       router.back();
     } finally {
       setLoading(false);
@@ -111,7 +113,7 @@ export default function EditIncomeScreen() {
         for (const key in fieldErrors) mapped[key] = fieldErrors[key][0];
         setErrors(mapped);
       } else {
-        Alert.alert('Error', error.response?.data?.message || 'Failed to update income.');
+        toast.show(error.response?.data?.message || 'Failed to update income.', 'error');
       }
     } finally {
       setSaving(false);
@@ -215,25 +217,12 @@ export default function EditIncomeScreen() {
           </View>
 
           {/* Date Input */}
-          <View style={{ marginBottom: 20 }}>
-            <Text style={{ fontSize: 13, fontWeight: '500', color: Colors.text, marginBottom: 6 }}>Date *</Text>
-            <TextInput
-              value={incomeDate}
-              onChangeText={setIncomeDate}
-              placeholder="YYYY-MM-DD"
-              placeholderTextColor={Colors.textMuted}
-              style={{
-                backgroundColor: Colors.surface,
-                borderWidth: 1,
-                borderColor: errors.income_date ? Colors.error : Colors.border,
-                borderRadius: 10,
-                padding: 12,
-                fontSize: 15,
-                color: Colors.text,
-              }}
-            />
-            {errors.income_date && <Text style={{ color: Colors.error, fontSize: 12, marginTop: 4 }}>{errors.income_date}</Text>}
-          </View>
+          <DatePickerField
+            label="Date *"
+            value={incomeDate}
+            onChange={setIncomeDate}
+            error={errors.income_date}
+          />
 
           {/* Save Button */}
           <TouchableOpacity

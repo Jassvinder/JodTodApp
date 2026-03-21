@@ -5,7 +5,6 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Alert,
   ActivityIndicator,
   Image,
   Platform,
@@ -16,6 +15,9 @@ import { expenseService } from '../../../services/expenses';
 import { Colors } from '../../../constants/colors';
 import { API_BASE_URL } from '../../../constants/config';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import DatePickerField from '../../../components/DatePickerField';
+import { useToast } from '../../../components/Toast';
+import { useConfirm } from '../../../components/ConfirmDialog';
 import type { Category, Expense } from '../../../types/models';
 
 let ImagePicker: typeof import('expo-image-picker') | null = null;
@@ -28,6 +30,8 @@ try {
 export default function EditExpenseScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const toast = useToast();
+  const confirm = useConfirm();
 
   // Form state
   const [amount, setAmount] = useState('');
@@ -76,7 +80,7 @@ export default function EditExpenseScreen() {
       if (expense.image_1) setExistingImage1(expense.image_1);
       if (expense.image_2) setExistingImage2(expense.image_2);
     } catch (error: any) {
-      Alert.alert('Error', error.response?.data?.message || 'Failed to load expense.');
+      toast.show(error.response?.data?.message || 'Failed to load expense.', 'error');
       router.back();
     } finally {
       setLoading(false);
@@ -112,77 +116,64 @@ export default function EditExpenseScreen() {
 
   const pickImage = async (slot: 1 | 2) => {
     if (!ImagePicker) {
-      Alert.alert('Not Available', 'expo-image-picker is not installed. Run: npx expo install expo-image-picker');
+      toast.show('expo-image-picker is not installed. Run: npx expo install expo-image-picker', 'error');
       return;
     }
 
-    Alert.alert('Add Photo', 'Choose a source', [
-      {
-        text: 'Camera',
-        onPress: async () => {
-          const permission = await ImagePicker!.requestCameraPermissionsAsync();
-          if (!permission.granted) {
-            Alert.alert('Permission Required', 'Camera access is needed to take photos.');
-            return;
-          }
-          const result = await ImagePicker!.launchCameraAsync({
-            mediaTypes: ['images'],
-            quality: 0.7,
-            allowsEditing: true,
-          });
-          if (!result.canceled && result.assets[0]) {
-            const asset = result.assets[0];
-            const imageData = {
-              uri: asset.uri,
-              name: asset.fileName || `photo_${Date.now()}.jpg`,
-              type: asset.mimeType || 'image/jpeg',
-            };
-            if (slot === 1) {
-              setImage1(imageData);
-              setExistingImage1(null);
-              setRemoveImage1(false);
-            } else {
-              setImage2(imageData);
-              setExistingImage2(null);
-              setRemoveImage2(false);
-            }
-          }
-        },
+    const handleImageResult = (asset: any) => {
+      const imageData = {
+        uri: asset.uri,
+        name: asset.fileName || `photo_${Date.now()}.jpg`,
+        type: asset.mimeType || 'image/jpeg',
+      };
+      if (slot === 1) {
+        setImage1(imageData);
+        setExistingImage1(null);
+        setRemoveImage1(false);
+      } else {
+        setImage2(imageData);
+        setExistingImage2(null);
+        setRemoveImage2(false);
+      }
+    };
+
+    confirm.show({
+      title: 'Add Photo',
+      message: 'Choose a source',
+      confirmText: 'Camera',
+      cancelText: 'Gallery',
+      danger: false,
+      onConfirm: async () => {
+        const permission = await ImagePicker!.requestCameraPermissionsAsync();
+        if (!permission.granted) {
+          toast.show('Camera access is needed to take photos.', 'error');
+          return;
+        }
+        const result = await ImagePicker!.launchCameraAsync({
+          mediaTypes: ['images'],
+          quality: 0.7,
+          allowsEditing: true,
+        });
+        if (!result.canceled && result.assets[0]) {
+          handleImageResult(result.assets[0]);
+        }
       },
-      {
-        text: 'Gallery',
-        onPress: async () => {
-          const permission = await ImagePicker!.requestMediaLibraryPermissionsAsync();
-          if (!permission.granted) {
-            Alert.alert('Permission Required', 'Gallery access is needed to pick photos.');
-            return;
-          }
-          const result = await ImagePicker!.launchImageLibraryAsync({
-            mediaTypes: ['images'],
-            quality: 0.7,
-            allowsEditing: true,
-          });
-          if (!result.canceled && result.assets[0]) {
-            const asset = result.assets[0];
-            const imageData = {
-              uri: asset.uri,
-              name: asset.fileName || `photo_${Date.now()}.jpg`,
-              type: asset.mimeType || 'image/jpeg',
-            };
-            if (slot === 1) {
-              setImage1(imageData);
-              setExistingImage1(null);
-              setRemoveImage1(false);
-            } else {
-              setImage2(imageData);
-              setExistingImage2(null);
-              setRemoveImage2(false);
-            }
-          }
-        },
+      onCancel: async () => {
+        const permission = await ImagePicker!.requestMediaLibraryPermissionsAsync();
+        if (!permission.granted) {
+          toast.show('Gallery access is needed to pick photos.', 'error');
+          return;
+        }
+        const result = await ImagePicker!.launchImageLibraryAsync({
+          mediaTypes: ['images'],
+          quality: 0.7,
+          allowsEditing: true,
+        });
+        if (!result.canceled && result.assets[0]) {
+          handleImageResult(result.assets[0]);
+        }
       },
-      { text: 'Cancel', style: 'cancel' },
-    ]);
+    });
   };
 
   const handleRemoveExistingImage = (slot: 1 | 2) => {
@@ -246,7 +237,7 @@ export default function EditExpenseScreen() {
         for (const key in fieldErrors) mapped[key] = fieldErrors[key][0];
         setErrors(mapped);
       } else {
-        Alert.alert('Error', error.response?.data?.message || 'Failed to update expense.');
+        toast.show(error.response?.data?.message || 'Failed to update expense.', 'error');
       }
     } finally {
       setSaving(false);
@@ -364,25 +355,12 @@ export default function EditExpenseScreen() {
           </View>
 
           {/* Date Input */}
-          <View style={{ marginBottom: 20 }}>
-            <Text style={{ fontSize: 13, fontWeight: '500', color: Colors.text, marginBottom: 6 }}>Date *</Text>
-            <TextInput
-              value={expenseDate}
-              onChangeText={setExpenseDate}
-              placeholder="YYYY-MM-DD"
-              placeholderTextColor={Colors.textMuted}
-              style={{
-                backgroundColor: Colors.surface,
-                borderWidth: 1,
-                borderColor: errors.expense_date ? Colors.error : Colors.border,
-                borderRadius: 10,
-                padding: 12,
-                fontSize: 15,
-                color: Colors.text,
-              }}
-            />
-            {errors.expense_date && <Text style={{ color: Colors.error, fontSize: 12, marginTop: 4 }}>{errors.expense_date}</Text>}
-          </View>
+          <DatePickerField
+            label="Date *"
+            value={expenseDate}
+            onChange={setExpenseDate}
+            error={errors.expense_date}
+          />
 
           {/* Image Upload */}
           <View style={{ marginBottom: 20 }}>

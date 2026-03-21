@@ -7,7 +7,6 @@ import {
   ActivityIndicator,
   RefreshControl,
   TextInput,
-  Alert,
   Image,
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -15,10 +14,14 @@ import { contactService, type ContactListParams } from '../services/contacts';
 import { resolveUrl } from '../utils/format';
 import { Colors } from '../constants/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useToast } from '../components/Toast';
+import { useConfirm } from '../components/ConfirmDialog';
 import type { Contact } from '../types/models';
 
 export default function ContactsScreen() {
   const router = useRouter();
+  const toast = useToast();
+  const confirm = useConfirm();
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -46,7 +49,7 @@ export default function ContactsScreen() {
       setPage(meta.current_page);
       setLastPage(meta.last_page);
     } catch (error: any) {
-      Alert.alert('Error', error.response?.data?.message || 'Failed to load contacts.');
+      toast.show(error.response?.data?.message || 'Failed to load contacts.', 'error');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -81,25 +84,20 @@ export default function ContactsScreen() {
   };
 
   const handleRemove = (contact: Contact) => {
-    Alert.alert(
-      'Remove Contact',
-      `Are you sure you want to remove ${contact.contact_user.name} from your contacts?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Remove',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await contactService.removeContact(contact.id);
-              setContacts((prev) => prev.filter((c) => c.id !== contact.id));
-            } catch (error: any) {
-              Alert.alert('Error', error.response?.data?.message || 'Failed to remove contact.');
-            }
-          },
-        },
-      ]
-    );
+    confirm.show({
+      title: 'Remove Contact',
+      message: `Are you sure you want to remove ${contact.contact_user.name} from your contacts?`,
+      confirmText: 'Remove',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          await contactService.removeContact(contact.id);
+          setContacts((prev) => prev.filter((c) => c.id !== contact.id));
+        } catch (error: any) {
+          toast.show(error.response?.data?.message || 'Failed to remove contact.', 'error');
+        }
+      },
+    });
   };
 
   const getInitials = (name: string): string => {
