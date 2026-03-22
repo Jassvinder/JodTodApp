@@ -17,6 +17,7 @@ import { Colors } from '../constants/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import DatePickerField from '../components/DatePickerField';
 import { useToast } from '../components/Toast';
+import BottomNav from '../components/BottomNav';
 import type { Category, GroupMember, GroupExpense } from '../types/models';
 
 export default function EditGroupExpenseScreen() {
@@ -254,8 +255,9 @@ export default function EditGroupExpenseScreen() {
   const payerName = activeMembers.find((m) => m.id === paidBy)?.name || 'Select';
 
   return (
+    <View style={{ flex: 1, backgroundColor: Colors.background }}>
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: Colors.background }}
+      style={{ flex: 1 }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled">
@@ -341,6 +343,7 @@ export default function EditGroupExpenseScreen() {
             value={expenseDate}
             onChange={setExpenseDate}
             error={errors.expense_date}
+            maxDate={new Date()}
           />
 
           {/* Paid By Picker */}
@@ -629,5 +632,7 @@ export default function EditGroupExpenseScreen() {
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
+    <BottomNav />
+    </View>
   );
 }

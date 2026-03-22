@@ -32,7 +32,22 @@
     },
     "plugins": [
       "expo-router",
-      "expo-secure-store"
-    ]
+      "expo-secure-store",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#6366f1"
+        }
+      ],
+      "@react-native-community/datetimepicker"
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "d0ffc913-61e9-493f-9243-10c7d3d47ed8"
+      }
+    },
+    "owner": "jasscodetools"
   }
 }

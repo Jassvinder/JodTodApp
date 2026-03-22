@@ -311,6 +311,7 @@ export default function AddExpenseScreen() {
             value={expenseDate}
             onChange={setExpenseDate}
             error={errors.expense_date}
+            maxDate={new Date()}
           />
 
           {/* Receipt Photo (optional) */}

@@ -222,6 +222,7 @@ export default function EditIncomeScreen() {
             value={incomeDate}
             onChange={setIncomeDate}
             error={errors.income_date}
+            maxDate={new Date()}
           />
 
           {/* Save Button */}

@@ -16,6 +16,7 @@ import { Colors } from '../constants/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useToast } from '../components/Toast';
 import { useConfirm } from '../components/ConfirmDialog';
+import BottomNav from '../components/BottomNav';
 import type { Contact } from '../types/models';
 
 export default function ContactsScreen() {
@@ -230,6 +231,7 @@ export default function ContactsScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: Colors.background }}>
+      <View style={{ flex: 1 }}>
         <FlatList
           data={contacts}
           renderItem={renderContactItem}
@@ -243,7 +245,6 @@ export default function ContactsScreen() {
           onEndReachedThreshold={0.3}
         />
 
-        {/* FAB - Add Contact */}
         <TouchableOpacity
           onPress={() => router.push('/contacts-add')}
           style={{
@@ -261,10 +262,13 @@ export default function ContactsScreen() {
             shadowOffset: { width: 0, height: 3 },
             shadowOpacity: 0.25,
             shadowRadius: 4,
+            zIndex: 10,
           }}
         >
           <Ionicons name="person-add" size={24} color="#fff" />
         </TouchableOpacity>
+      </View>
+      <BottomNav />
     </View>
   );
 }

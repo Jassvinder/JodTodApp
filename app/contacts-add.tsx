@@ -14,6 +14,7 @@ import { resolveUrl } from '../utils/format';
 import { Colors } from '../constants/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useToast } from '../components/Toast';
+import BottomNav from '../components/BottomNav';
 import type { SearchUser } from '../types/models';
 
 export default function ContactsAddScreen() {
@@ -159,6 +160,7 @@ export default function ContactsAddScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: Colors.background }}>
+      <View style={{ flex: 1 }}>
         {/* Search Input */}
         <View style={{ padding: 16, paddingBottom: 0 }}>
           <View style={{
@@ -207,6 +209,8 @@ export default function ContactsAddScreen() {
           ListEmptyComponent={renderEmpty}
           contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 20 }}
         />
+      </View>
+      <BottomNav />
     </View>
   );
 }

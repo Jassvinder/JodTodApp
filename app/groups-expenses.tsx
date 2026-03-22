@@ -16,6 +16,7 @@ import { Colors } from '../constants/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useToast } from '../components/Toast';
 import { useConfirm } from '../components/ConfirmDialog';
+import BottomNav from '../components/BottomNav';
 import type { GroupExpense, Category } from '../types/models';
 
 export default function GroupExpensesScreen() {
@@ -285,6 +286,7 @@ export default function GroupExpensesScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: Colors.background }}>
+      <View style={{ flex: 1 }}>
       <FlatList
         data={expenses}
         renderItem={renderExpenseItem}
@@ -320,6 +322,8 @@ export default function GroupExpensesScreen() {
       >
         <Ionicons name="add" size={28} color="#fff" />
       </TouchableOpacity>
+      </View>
+      <BottomNav />
     </View>
   );
 }

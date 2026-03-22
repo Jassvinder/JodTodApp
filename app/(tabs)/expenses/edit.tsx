@@ -360,6 +360,7 @@ export default function EditExpenseScreen() {
             value={expenseDate}
             onChange={setExpenseDate}
             error={errors.expense_date}
+            maxDate={new Date()}
           />
 
           {/* Image Upload */}

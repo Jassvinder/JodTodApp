@@ -20,6 +20,7 @@ import { Colors } from '../constants/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import DatePickerField from '../components/DatePickerField';
 import { useToast } from '../components/Toast';
+import BottomNav from '../components/BottomNav';
 import type { TodoCategory, Contact } from '../types/models';
 
 const PRIORITY_COLORS = {
@@ -130,8 +131,9 @@ export default function AddTodoScreen() {
   }
 
   return (
+    <View style={{ flex: 1, backgroundColor: Colors.background }}>
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: Colors.background }}
+      style={{ flex: 1 }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled">
@@ -289,26 +291,14 @@ export default function AddTodoScreen() {
             )}
           </View>
 
-          {/* Reminder Date Input */}
-          <View style={{ marginBottom: 20 }}>
-            <Text style={{ fontSize: 13, fontWeight: '500', color: Colors.text, marginBottom: 6 }}>Reminder</Text>
-            <TextInput
-              value={reminderAt}
-              onChangeText={setReminderAt}
-              placeholder="YYYY-MM-DD HH:MM"
-              placeholderTextColor={Colors.textMuted}
-              style={{
-                backgroundColor: Colors.surface,
-                borderWidth: 1,
-                borderColor: errors.reminder_at ? Colors.error : Colors.border,
-                borderRadius: 10,
-                padding: 12,
-                fontSize: 15,
-                color: Colors.text,
-              }}
-            />
-            {errors.reminder_at && <Text style={{ color: Colors.error, fontSize: 12, marginTop: 4 }}>{errors.reminder_at}</Text>}
-          </View>
+          {/* Reminder */}
+          <DatePickerField
+            label="Reminder"
+            value={reminderAt}
+            onChange={setReminderAt}
+            error={errors.reminder_at}
+            mode="datetime"
+          />
 
           {/* Save Button */}
           <TouchableOpacity
@@ -395,5 +385,7 @@ export default function AddTodoScreen() {
         </View>
       </Modal>
     </KeyboardAvoidingView>
+    <BottomNav />
+    </View>
   );
 }

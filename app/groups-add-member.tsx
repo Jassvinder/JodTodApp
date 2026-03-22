@@ -13,6 +13,7 @@ import { resolveUrl } from '../utils/format';
 import { Colors } from '../constants/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useToast } from '../components/Toast';
+import BottomNav from '../components/BottomNav';
 
 interface ContactItem {
   id: number;
@@ -172,6 +173,7 @@ export default function AddMemberScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: Colors.background }}>
+      <View style={{ flex: 1 }}>
       <FlatList
         data={contacts}
         renderItem={renderContactItem}
@@ -179,6 +181,8 @@ export default function AddMemberScreen() {
         ListEmptyComponent={renderEmpty}
         contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
       />
+      </View>
+      <BottomNav />
     </View>
   );
 }
