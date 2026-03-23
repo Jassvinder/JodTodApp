@@ -34,6 +34,12 @@ yarn-error.*
 .env
 .env*.local
 
+# Secret/credential files
+docs/*firebase*.json
+docs/*service-account*.json
+docs/_tmp_*.json
+google-services.json
+
 # typescript
 *.tsbuildinfo
 
