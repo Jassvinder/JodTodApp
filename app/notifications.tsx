@@ -12,6 +12,7 @@ import { notificationService } from '../services/notifications';
 import { Colors } from '../constants/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useToast } from '../components/Toast';
+import BottomNav from '../components/BottomNav';
 import type { AppNotification } from '../types/models';
 
 function formatTimeAgo(dateStr: string): string {
@@ -293,6 +294,7 @@ export default function NotificationsScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: Colors.background }}>
+      <View style={{ flex: 1 }}>
       <FlatList
         data={notifications}
         renderItem={renderNotificationItem}
@@ -305,6 +307,8 @@ export default function NotificationsScreen() {
         onEndReached={loadMore}
         onEndReachedThreshold={0.3}
       />
+      </View>
+      <BottomNav />
     </View>
   );
 }

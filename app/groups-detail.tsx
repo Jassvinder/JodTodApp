@@ -21,6 +21,7 @@ import * as Clipboard from 'expo-clipboard';
 import type { GroupMember, GroupExpense, MemberBalance } from '../types/models';
 import { useToast } from '../components/Toast';
 import { useConfirm } from '../components/ConfirmDialog';
+import BottomNav from '../components/BottomNav';
 
 export default function GroupDetailScreen() {
   const router = useRouter();
@@ -221,8 +222,10 @@ export default function GroupDetailScreen() {
   if (!group) return null;
 
   return (
+    <View style={{ flex: 1, backgroundColor: Colors.background }}>
+      <View style={{ flex: 1 }}>
     <ScrollView
-      style={{ flex: 1, backgroundColor: Colors.background }}
+      style={{ flex: 1 }}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Colors.primary]} />}
     >
       <View style={{ padding: 16 }}>
@@ -644,5 +647,8 @@ export default function GroupDetailScreen() {
         </View>
       </View>
     </ScrollView>
+      </View>
+      <BottomNav />
+    </View>
   );
 }

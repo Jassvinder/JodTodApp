@@ -14,6 +14,7 @@ import { groupService } from '../services/groups';
 import { Colors } from '../constants/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useToast } from '../components/Toast';
+import BottomNav from '../components/BottomNav';
 
 export default function JoinGroupScreen() {
   const router = useRouter();
@@ -45,8 +46,9 @@ export default function JoinGroupScreen() {
   };
 
   return (
+    <View style={{ flex: 1, backgroundColor: Colors.background }}>
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: Colors.background }}
+      style={{ flex: 1 }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled">
@@ -116,5 +118,7 @@ export default function JoinGroupScreen() {
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
+    <BottomNav />
+    </View>
   );
 }

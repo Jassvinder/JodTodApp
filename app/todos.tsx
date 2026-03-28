@@ -15,15 +15,69 @@ import { Colors } from '../constants/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useToast } from '../components/Toast';
 import { useConfirm } from '../components/ConfirmDialog';
+import BottomNav from '../components/BottomNav';
 import type { Todo, TodoCategory } from '../types/models';
 
-const PRIORITY_COLORS = {
+const PRIORITY_COLORS: Record<string, string> = {
   high: '#ef4444',
   medium: '#f59e0b',
   low: '#22c55e',
 };
 
 type StatusFilter = 'all' | 'pending' | 'completed' | 'assigned_to_me' | 'assigned_by_me';
+
+function FilterDropdown({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      style={{
+        flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+        backgroundColor: active ? Colors.primary : Colors.surface,
+        borderWidth: 1, borderColor: active ? Colors.primary : Colors.border,
+        borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10,
+      }}
+    >
+      <Text style={{ fontSize: 12, fontWeight: '500', color: active ? '#fff' : Colors.text }} numberOfLines={1}>{label}</Text>
+      <Ionicons name="chevron-down" size={14} color={active ? '#fff' : Colors.textMuted} style={{ marginLeft: 4 }} />
+    </TouchableOpacity>
+  );
+}
+
+function PickerModal({ visible, onClose, options, selected, onSelect }: {
+  visible: boolean; onClose: () => void;
+  options: { key: string; label: string; color?: string }[];
+  selected: string | number | undefined;
+  onSelect: (key: any) => void;
+}) {
+  if (!visible) return null;
+  return (
+    <TouchableOpacity
+      activeOpacity={1} onPress={onClose}
+      style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.3)', zIndex: 50, justifyContent: 'center', padding: 32 }}
+    >
+      <View style={{ backgroundColor: Colors.surface, borderRadius: 14, overflow: 'hidden', maxHeight: 350 }}>
+        <FlatList
+          data={options}
+          keyExtractor={(item) => String(item.key)}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              onPress={() => { onSelect(item.key); onClose(); }}
+              style={{
+                flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14,
+                borderBottomWidth: 1, borderBottomColor: Colors.border,
+                backgroundColor: String(selected) === String(item.key) ? '#eef2ff' : undefined,
+              }}
+            >
+              {item.color && <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: item.color, marginRight: 10 }} />}
+              <Text style={{ fontSize: 14, flex: 1, fontWeight: String(selected) === String(item.key) ? '600' : '400', color: String(selected) === String(item.key) ? Colors.primary : Colors.text }}>{item.label}</Text>
+              {String(selected) === String(item.key) && <Ionicons name="checkmark" size={18} color={Colors.primary} />}
+            </TouchableOpacity>
+          )}
+        />
+      </View>
+    </TouchableOpacity>
+  );
+}
 
 export default function TodosScreen() {
   const router = useRouter();
@@ -41,6 +95,9 @@ export default function TodosScreen() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<number | undefined>(undefined);
+  const [showStatusPicker, setShowStatusPicker] = useState(false);
+  const [showPriorityPicker, setShowPriorityPicker] = useState(false);
+  const [showCategoryPicker, setShowCategoryPicker] = useState(false);
 
   const fetchCategories = async () => {
     try {
@@ -151,110 +208,45 @@ export default function TodosScreen() {
     );
   }
 
-  const statusFilters: { key: StatusFilter; label: string }[] = [
-    { key: 'all', label: 'All' },
+  const statusOptions: { key: StatusFilter; label: string }[] = [
+    { key: 'all', label: 'All Status' },
     { key: 'pending', label: 'Pending' },
     { key: 'completed', label: 'Completed' },
     { key: 'assigned_to_me', label: 'Assigned to me' },
     { key: 'assigned_by_me', label: 'Assigned by me' },
   ];
 
-  const priorityFilters = [
-    { key: 'all', label: 'All', color: Colors.textSecondary },
-    { key: 'high', label: 'High', color: PRIORITY_COLORS.high },
-    { key: 'medium', label: 'Medium', color: PRIORITY_COLORS.medium },
-    { key: 'low', label: 'Low', color: PRIORITY_COLORS.low },
+  const priorityOptions = [
+    { key: 'all', label: 'All Priority' },
+    { key: 'high', label: 'High' },
+    { key: 'medium', label: 'Medium' },
+    { key: 'low', label: 'Low' },
   ];
+
+  const statusLabel = statusOptions.find((s) => s.key === statusFilter)?.label || 'All Status';
+  const priorityLabel = priorityOptions.find((p) => p.key === priorityFilter)?.label || 'All Priority';
+  const categoryLabel = categoryFilter ? categories.find((c) => c.id === categoryFilter)?.name || 'Category' : 'All Categories';
+
+  const hasActiveFilters = statusFilter !== 'all' || priorityFilter !== 'all' || categoryFilter !== undefined;
 
   const renderHeader = () => (
     <View>
-      {/* Status Filter Chips */}
-      <View style={{ marginBottom: 10 }}>
-        <FlatList
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          data={statusFilters}
-          keyExtractor={(item) => item.key}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              onPress={() => { setStatusFilter(item.key); setLoading(true); setPage(1); }}
-              style={{
-                paddingHorizontal: 14,
-                paddingVertical: 8,
-                borderRadius: 20,
-                backgroundColor: statusFilter === item.key ? Colors.primary : Colors.surface,
-                borderWidth: 1,
-                borderColor: statusFilter === item.key ? Colors.primary : Colors.border,
-                marginRight: 8,
-              }}
-            >
-              <Text style={{ fontSize: 13, fontWeight: '500', color: statusFilter === item.key ? '#fff' : Colors.text }}>
-                {item.label}
-              </Text>
-            </TouchableOpacity>
-          )}
-        />
+      {/* Filter Dropdowns */}
+      <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
+        <FilterDropdown label={statusLabel} active={statusFilter !== 'all'} onPress={() => setShowStatusPicker(true)} />
+        <FilterDropdown label={priorityLabel} active={priorityFilter !== 'all'} onPress={() => setShowPriorityPicker(true)} />
+        {categories.length > 0 && (
+          <FilterDropdown label={categoryLabel} active={!!categoryFilter} onPress={() => setShowCategoryPicker(true)} />
+        )}
       </View>
-
-      {/* Priority Filter Chips */}
-      <View style={{ flexDirection: 'row', marginBottom: 10, gap: 8 }}>
-        {priorityFilters.map((pf) => (
-          <TouchableOpacity
-            key={pf.key}
-            onPress={() => { setPriorityFilter(pf.key); setLoading(true); setPage(1); }}
-            style={{
-              paddingHorizontal: 12,
-              paddingVertical: 6,
-              borderRadius: 16,
-              backgroundColor: priorityFilter === pf.key ? pf.color : Colors.surface,
-              borderWidth: 1,
-              borderColor: priorityFilter === pf.key ? pf.color : Colors.border,
-            }}
-          >
-            <Text style={{ fontSize: 12, fontWeight: '500', color: priorityFilter === pf.key ? '#fff' : pf.color }}>
-              {pf.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {/* Category Filter Chips */}
-      {categories.length > 0 && (
-        <View style={{ marginBottom: 12 }}>
-          <FlatList
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            data={[{ id: 0, name: 'All', color: Colors.textSecondary }, ...categories]}
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                onPress={() => { setCategoryFilter(item.id === 0 ? undefined : item.id); setLoading(true); setPage(1); }}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  paddingHorizontal: 12,
-                  paddingVertical: 6,
-                  borderRadius: 16,
-                  backgroundColor: (item.id === 0 && !categoryFilter) || categoryFilter === item.id ? Colors.primary : Colors.surface,
-                  borderWidth: 1,
-                  borderColor: (item.id === 0 && !categoryFilter) || categoryFilter === item.id ? Colors.primary : Colors.border,
-                  marginRight: 8,
-                }}
-              >
-                {item.id !== 0 && (
-                  <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: item.color, marginRight: 6 }} />
-                )}
-                <Text style={{
-                  fontSize: 12,
-                  fontWeight: '500',
-                  color: (item.id === 0 && !categoryFilter) || categoryFilter === item.id ? '#fff' : Colors.text,
-                }}>
-                  {item.name}
-                </Text>
-              </TouchableOpacity>
-            )}
-          />
-        </View>
+      {hasActiveFilters && (
+        <TouchableOpacity
+          onPress={() => { setStatusFilter('all'); setPriorityFilter('all'); setCategoryFilter(undefined); setLoading(true); setPage(1); }}
+          style={{ alignSelf: 'flex-start', marginBottom: 10, flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.error, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16 }}
+        >
+          <Ionicons name="close-circle" size={14} color="#fff" style={{ marginRight: 4 }} />
+          <Text style={{ fontSize: 12, fontWeight: '600', color: '#fff' }}>Clear</Text>
+        </TouchableOpacity>
       )}
     </View>
   );
@@ -341,7 +333,7 @@ export default function TodosScreen() {
                 marginLeft: 3,
                 fontWeight: !item.is_completed && isOverdue(item.due_date) ? '600' : '400',
               }}>
-                {item.due_date}
+                {new Date(item.due_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
               </Text>
             </View>
           )}
@@ -398,6 +390,7 @@ export default function TodosScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: Colors.background }}>
+      <View style={{ flex: 1 }}>
       <FlatList
         data={todos}
         renderItem={renderTodoItem}
@@ -433,6 +426,31 @@ export default function TodosScreen() {
       >
         <Ionicons name="add" size={28} color="#fff" />
       </TouchableOpacity>
+
+      {/* Filter Picker Modals */}
+      <PickerModal
+        visible={showStatusPicker}
+        onClose={() => setShowStatusPicker(false)}
+        options={statusOptions.map((s) => ({ key: s.key, label: s.label }))}
+        selected={statusFilter}
+        onSelect={(key: StatusFilter) => { setStatusFilter(key); setLoading(true); setPage(1); }}
+      />
+      <PickerModal
+        visible={showPriorityPicker}
+        onClose={() => setShowPriorityPicker(false)}
+        options={priorityOptions.map((p) => ({ key: p.key, label: p.label }))}
+        selected={priorityFilter}
+        onSelect={(key: string) => { setPriorityFilter(key); setLoading(true); setPage(1); }}
+      />
+      <PickerModal
+        visible={showCategoryPicker}
+        onClose={() => setShowCategoryPicker(false)}
+        options={[{ key: 'all', label: 'All Categories' }, ...categories.map((c) => ({ key: String(c.id), label: c.name, color: c.color }))]}
+        selected={categoryFilter ? String(categoryFilter) : 'all'}
+        onSelect={(key: string) => { setCategoryFilter(key === 'all' ? undefined : parseInt(key)); setLoading(true); setPage(1); }}
+      />
+      </View>
+      <BottomNav />
     </View>
   );
 }

@@ -14,6 +14,7 @@ import { Colors } from '../constants/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useToast } from '../components/Toast';
 import { useConfirm } from '../components/ConfirmDialog';
+import BottomNav from '../components/BottomNav';
 import type { TodoCategory } from '../types/models';
 
 const PRESET_COLORS = [
@@ -175,6 +176,7 @@ export default function TodoCategoriesScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: Colors.background }}>
+      <View style={{ flex: 1 }}>
       {/* Add/Edit Form - outside FlatList to prevent keyboard dismiss on re-render */}
       {showForm && (
         <View style={{
@@ -289,6 +291,8 @@ export default function TodoCategoriesScreen() {
           <Ionicons name="add" size={28} color="#fff" />
         </TouchableOpacity>
       )}
+      </View>
+      <BottomNav />
     </View>
   );
 }

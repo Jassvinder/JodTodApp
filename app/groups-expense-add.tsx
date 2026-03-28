@@ -21,6 +21,7 @@ import { Colors } from '../constants/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useToast } from '../components/Toast';
 import { useConfirm } from '../components/ConfirmDialog';
+import BottomNav from '../components/BottomNav';
 import type { Category, GroupMember } from '../types/models';
 
 let ImagePicker: typeof import('expo-image-picker') | null = null;
@@ -299,8 +300,9 @@ export default function AddGroupExpenseScreen() {
   const payerName = activeMembers.find((m) => m.id === paidBy)?.name || 'Select';
 
   return (
+    <View style={{ flex: 1, backgroundColor: Colors.background }}>
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: Colors.background }}
+      style={{ flex: 1 }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled">
@@ -386,6 +388,7 @@ export default function AddGroupExpenseScreen() {
             value={expenseDate}
             onChange={setExpenseDate}
             error={errors.expense_date}
+            maxDate={new Date()}
           />
 
           {/* Paid By Picker */}
@@ -705,5 +708,7 @@ export default function AddGroupExpenseScreen() {
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
+    <BottomNav />
+    </View>
   );
 }

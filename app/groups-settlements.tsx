@@ -17,6 +17,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import CollapsibleSection from '../components/CollapsibleSection';
 import { useToast } from '../components/Toast';
 import { useConfirm } from '../components/ConfirmDialog';
+import BottomNav from '../components/BottomNav';
 import type { MemberBalance, SuggestedTransaction, Settlement } from '../types/models';
 
 export default function SettlementsScreen() {
@@ -597,6 +598,7 @@ export default function SettlementsScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: Colors.background }}>
+      <View style={{ flex: 1 }}>
       <FlatList
         data={historyOpen ? settlements : []}
         renderItem={renderSettlementItem}
@@ -609,6 +611,8 @@ export default function SettlementsScreen() {
         onEndReached={loadMore}
         onEndReachedThreshold={0.3}
       />
+      </View>
+      <BottomNav />
     </View>
   );
 }

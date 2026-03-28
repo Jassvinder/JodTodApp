@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import * as SecureStore from 'expo-secure-store';
 import { authService } from '../services/auth';
+import { unregisterPushToken } from '../services/pushNotifications';
 import type { User, LoginPayload, RegisterPayload } from '../types/models';
 
 interface AuthState {
@@ -66,6 +67,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   logout: async () => {
+    try {
+      await unregisterPushToken();
+    } catch {
+      // Best effort token cleanup
+    }
     try {
       await authService.logout();
     } catch {

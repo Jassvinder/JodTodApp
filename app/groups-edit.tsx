@@ -17,6 +17,7 @@ import { resolveUrl } from '../utils/format';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useToast } from '../components/Toast';
 import { useConfirm } from '../components/ConfirmDialog';
+import BottomNav from '../components/BottomNav';
 
 let ImagePicker: typeof import('expo-image-picker') | null = null;
 try {
@@ -161,8 +162,9 @@ export default function EditGroupScreen() {
   const displayUri = photo ? photo.uri : existingPhotoUrl;
 
   return (
+    <View style={{ flex: 1, backgroundColor: Colors.background }}>
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: Colors.background }}
+      style={{ flex: 1 }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled">
@@ -279,5 +281,7 @@ export default function EditGroupScreen() {
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
+    <BottomNav />
+    </View>
   );
 }

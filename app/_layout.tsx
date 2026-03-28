@@ -3,10 +3,14 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useAuthStore } from '../stores/authStore';
+import { registerForPushNotifications, setupNotificationHandler, addNotificationResponseListener } from '../services/pushNotifications';
 import { View, ActivityIndicator } from 'react-native';
 import { Colors } from '../constants/colors';
 import ToastContainer from '../components/Toast';
 import ConfirmDialog from '../components/ConfirmDialog';
+
+// Setup notification display handler (safe in Expo Go)
+setupNotificationHandler();
 
 export default function RootLayout() {
   const { isAuthenticated, isLoading, user, loadToken } = useAuthStore();
@@ -15,6 +19,35 @@ export default function RootLayout() {
 
   useEffect(() => {
     loadToken();
+  }, []);
+
+  // Register push notifications when authenticated
+  useEffect(() => {
+    if (isAuthenticated && user?.email_verified_at) {
+      registerForPushNotifications();
+    }
+  }, [isAuthenticated, user]);
+
+  // Handle notification tap - navigate to relevant screen
+  useEffect(() => {
+    const cleanup = addNotificationResponseListener((data) => {
+      const type = data.type as string;
+      const groupId = data.group_id;
+
+      if (type === 'todo_reminder' || type === 'todo_assigned') {
+        router.push('/todos');
+      } else if (type === 'group_expense_added' && groupId) {
+        router.push({ pathname: '/groups-expenses', params: { groupId } } as any);
+      } else if ((type === 'settlement_requested' || type === 'settlement_completed') && groupId) {
+        router.push({ pathname: '/groups-settlements', params: { groupId } } as any);
+      } else if (groupId) {
+        router.push({ pathname: '/groups-detail', params: { id: groupId } } as any);
+      } else {
+        router.push('/notifications');
+      }
+    });
+
+    return cleanup;
   }, []);
 
   useEffect(() => {
