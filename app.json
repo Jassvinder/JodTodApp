@@ -8,7 +8,7 @@
     "userInterfaceStyle": "light",
     "scheme": "jodtod",
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#6366f1"
     },
@@ -20,9 +20,7 @@
       "package": "com.jodtod.app",
       "adaptiveIcon": {
         "backgroundColor": "#6366f1",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "foregroundImage": "./assets/icon.png"
       },
       "predictiveBackGestureEnabled": false
     },
@@ -43,7 +41,9 @@
       "@react-native-community/datetimepicker"
     ],
     "extra": {
-      "router": {},
+      "router": {
+        "origin": "https://jodtod.co.in"
+      },
       "eas": {
         "projectId": "d0ffc913-61e9-493f-9243-10c7d3d47ed8"
       }
