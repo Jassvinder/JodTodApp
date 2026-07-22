@@ -8,10 +8,12 @@
 - Keep completed tasks in descending task number order.
 - Example: `- [X] Task title (21-05-2026)`
 - If a task is completed from Current Tasks, add a new empty task with the next number in Current Tasks.
+- If you're asked to check a screenshot for any task, look for it in the following directory:
+  D:\Development\Projects\JodTodApp\Docs\Screenshots
 
 ## Current Tasks
 
-- [] **Task 1502**
+- [] **Task 1503**
 
 - [] **Task 18** profile
   A. Photo upload option
@@ -19,8 +21,6 @@
 
 - [] **Task 19** group
   A. If group created by other person except current user. there should be group admin name in front of group name.
-
-
 
 ## PENDING
 
@@ -187,7 +187,13 @@
 
 ## Completed Current Tasks
 
-- [X] **Task 1501** (21-07-2026)
+- [X] **Task 1502** (21-07-2026)
+      A. Reviewed `Docs/Screenshots/1.jpeg` and identified two separate native notification issues: an invalid custom `default` sound setting and an uninitialized Firebase Android application.
+      B. Removed the custom sound setting from the Android notification channel so the system default sound is used.
+      C. Confirmed the Firebase package name matches `com.jodtod.app`, then ran `npx expo prebuild --platform android` to synchronize native configuration. The generated Android project now includes the Google Services Gradle plugin and `android/app/google-services.json`.
+      D. Documented the required fresh-build and device retest procedure. A previous APK must be replaced with a new build after the native configuration change.
+
+- [x] **Task 1501** (21-07-2026)
       A. Root cause identified: Expo SDK 53+ does not support Android remote push notifications in Expo Go. The fallback log was expected and did not indicate a missing package.
       B. Verified Expo 55-compatible `expo-notifications`, `expo-device`, and `expo-constants` dependencies, the notification config plugin, and the configured EAS project ID.
       C. Updated push setup to provide an accurate Expo Go message, create the Android channel before requesting permission, and resolve the EAS project ID in both development and production builds.

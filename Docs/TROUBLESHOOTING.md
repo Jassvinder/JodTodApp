@@ -125,6 +125,34 @@ npx expo start --clear
 
 ---
 
+## 8. "Default FirebaseApp is not initialized" when registering a push token
+
+**Cause:** The Android build was created before Firebase configuration was applied. The project may contain `google-services.json`, but the generated Android project still needs the Google Services Gradle plugin and a copy of that file at `android/app/google-services.json`.
+
+**Fix:**
+
+1. Confirm the Firebase Android application package is exactly `com.jodtod.app`.
+2. Keep the downloaded `google-services.json` at the project root and set `expo.android.googleServicesFile` to `./google-services.json` in `app.json`.
+3. Regenerate native Android configuration:
+   ```bash
+   npx expo prebuild --platform android
+   ```
+4. Create and install a fresh debug build. Do not reuse an APK installed before the prebuild:
+   ```bash
+   npx expo run:android
+   ```
+5. Open the rebuilt app, sign in, grant notification permission, and confirm that an `ExpoPushToken` is registered with the backend.
+
+The JodTod Android project was synchronized with this configuration on 21-07-2026. The regenerated project includes the Google Services Gradle plugin and `android/app/google-services.json`.
+
+## 9. "Custom sound 'default' not found in native app"
+
+**Cause:** The Android notification channel was configured with `sound: 'default'`, which Expo treats as a custom bundled sound name.
+
+**Fix:** Do not add `default` to the notification plugin sound list. The channel now omits the custom sound setting and uses the Android system default. Rebuild the native app after pulling this change.
+
+---
+
 ## Dev Setup Checklist (for new machine / fresh start)
 
 1. `cd D:\Development\Projects\JodTodApp && npm install --legacy-peer-deps`

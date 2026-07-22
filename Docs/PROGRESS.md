@@ -19,6 +19,11 @@
 - The app has Expo SDK 55-compatible notification dependencies, the `expo-notifications` config plugin, and an EAS project ID. Push registration now creates the Android notification channel before requesting permission and reads the project ID from either Expo or EAS runtime config.
 - Before the first Android development build, configure Firebase Cloud Messaging V1 credentials in EAS and set `expo.android.googleServicesFile` to the downloaded `google-services.json` file. The Firebase service-account JSON is secret and must not be committed.
 
+## Android Firebase Native Sync (21-07-2026)
+- Investigated the `Default FirebaseApp is not initialized` error from the Task 1502 development-build test. The Firebase file and `app.json` path were present, but the existing Android native project had not been regenerated with them.
+- Ran `npx expo prebuild --platform android`. The Android project now applies `com.google.gms.google-services` and includes `android/app/google-services.json`, allowing Firebase to initialize in the next fresh build.
+- Removed the channel-level `sound: 'default'` configuration because Expo interpreted it as a missing custom sound. The platform default notification sound is now used.
+
 ## Tech Stack
 
 - React Native 0.83 + Expo 55 (expo-router for file-based routing)

@@ -39,6 +39,7 @@ docs/*firebase*.json
 docs/*service-account*.json
 docs/_tmp_*.json
 google-services.json
+fcm-service-account.json
 
 # typescript
 *.tsbuildinfo
