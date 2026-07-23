@@ -24,6 +24,10 @@
 - Ran `npx expo prebuild --platform android`. The Android project now applies `com.google.gms.google-services` and includes `android/app/google-services.json`, allowing Firebase to initialize in the next fresh build.
 - Removed the channel-level `sound: 'default'` configuration because Expo interpreted it as a missing custom sound. The platform default notification sound is now used.
 
+## Todo Categories API Contract Fix (23-07-2026)
+- Aligned Todo category handling with the backend schema field `todo_category_id`. The mobile create and edit screens now send this field, and the Todo model type reads it when pre-filling edits.
+- The backend categories endpoint now queries `todos.todo_category_id`, fixing the Manage Categories SQL error and allowing newly created categories to load in the Add Task screen.
+
 ## Tech Stack
 
 - React Native 0.83 + Expo 55 (expo-router for file-based routing)

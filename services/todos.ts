@@ -15,7 +15,7 @@ export interface CreateTodoData {
   title: string;
   priority: 'low' | 'medium' | 'high';
   due_date?: string | null;
-  category_id?: number | null;
+  todo_category_id?: number | null;
   assigned_to?: number | null;
   reminder_at?: string | null;
 }
