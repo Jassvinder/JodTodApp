@@ -7,6 +7,12 @@
 - **Docs:** `D:\Development\Projects\JodTodApp\Docs\`
 - **Web Backend (API):** `D:\Development\Projects\JodTod` (Laravel - same DB, shared API)
 
+## Expenses Search Stability (25-07-2026)
+
+- Completed Task 1503. The Expenses screen's `FlatList` header previously used an inline render function, so every search-text update recreated the header and remounted its `TextInput`, dismissing the keyboard.
+- Replaced the inline header with a stable component, added a visible search action, and kept the expense list mounted during searches.
+- Expense list requests now accept an AbortSignal. A new search, clear action, category change, or unmount cancels the preceding request so stale requests cannot leave the UI in a loading state or overwrite the default list.
+
 ## Environment Audit (20-07-2026)
 
 - Active Node.js updated to `24.18.0`; the previous `20.18.0` version is unsupported by current Expo tooling (minimum `20.19.4`).

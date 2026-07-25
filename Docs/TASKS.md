@@ -13,7 +13,7 @@
 
 ## Current Tasks
 
-- [] **Task 1503**
+- [] **Task 1504**
 
 - [] **Task 18** profile
   A. Photo upload option
@@ -187,7 +187,13 @@
 
 ## Completed Current Tasks
 
-- [X] **Task 1502** (21-07-2026)
+- [X] **Task 1503** (25-07-2026)
+      A. Fixed the Expenses search input focus loss. The inline FlatList header was recreated on every text state update, which remounted the TextInput and dismissed the keyboard. The header is now a stable component.
+      B. Added a visible Search icon button that performs the same action as the keyboard search key.
+      C. Added cancellable expense requests with AbortController. Starting a new search, clearing the search, changing the category, or leaving the screen cancels the previous request and prevents stale responses from changing state.
+      D. Clearing restores the unfiltered list immediately without replacing the screen with a blocking loader.
+
+- [x] **Task 1502** (21-07-2026)
       A. Reviewed `Docs/Screenshots/1.jpeg` and identified two separate native notification issues: an invalid custom `default` sound setting and an uninitialized Firebase Android application.
       B. Removed the custom sound setting from the Android notification channel so the system default sound is used.
       C. Confirmed the Firebase package name matches `com.jodtod.app`, then ran `npx expo prebuild --platform android` to synchronize native configuration. The generated Android project now includes the Google Services Gradle plugin and `android/app/google-services.json`.

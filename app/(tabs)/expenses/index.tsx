@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -18,9 +18,102 @@ import { useToast } from '../../../components/Toast';
 import { useConfirm } from '../../../components/ConfirmDialog';
 import type { Expense, Category, ExpenseSummary } from '../../../types/models';
 
+interface ExpenseListHeaderProps {
+  summary: ExpenseSummary | null;
+  categories: Category[];
+  selectedCategory?: number;
+  selectedCategoryName: string;
+  searchText: string;
+  searching: boolean;
+  showCategoryPicker: boolean;
+  onToggleCategoryPicker: () => void;
+  onCategorySelect: (categoryId: number | undefined) => void;
+  onSearchTextChange: (text: string) => void;
+  onSearch: () => void;
+  onClearSearch: () => void;
+}
+
+function ExpenseListHeader({
+  summary,
+  categories,
+  selectedCategory,
+  selectedCategoryName,
+  searchText,
+  searching,
+  showCategoryPicker,
+  onToggleCategoryPicker,
+  onCategorySelect,
+  onSearchTextChange,
+  onSearch,
+  onClearSearch,
+}: ExpenseListHeaderProps) {
+  const pct = percentChange(summary?.monthly_total || 0, summary?.last_month_total || 0);
+
+  return (
+    <View>
+      {summary && (
+        <View style={{ backgroundColor: Colors.surface, borderRadius: 12, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: Colors.border }}>
+          <Text style={{ fontSize: 13, color: Colors.textSecondary, marginBottom: 4 }}>This Month</Text>
+          <Text style={{ fontSize: 24, fontWeight: '700', color: Colors.text }}>{formatCurrency(summary.monthly_total)}</Text>
+          {summary.last_month_total > 0 && (
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+              <Ionicons name={pct > 0 ? 'trending-up' : pct < 0 ? 'trending-down' : 'remove-outline'} size={16} color={pct > 0 ? Colors.error : pct < 0 ? Colors.success : Colors.textMuted} />
+              <Text style={{ fontSize: 13, color: pct > 0 ? Colors.error : pct < 0 ? Colors.success : Colors.textMuted, marginLeft: 4 }}>
+                {pct !== 0 ? `${Math.abs(pct)}% ${pct > 0 ? 'more' : 'less'} than last month` : 'Same as last month'}
+              </Text>
+            </View>
+          )}
+        </View>
+      )}
+
+      <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
+        <TouchableOpacity onPress={onToggleCategoryPicker} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.surface, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, borderWidth: 1, borderColor: selectedCategory ? Colors.primary : Colors.border, flex: 1 }}>
+          <Ionicons name="funnel-outline" size={16} color={selectedCategory ? Colors.primary : Colors.textSecondary} />
+          <Text style={{ fontSize: 14, color: selectedCategory ? Colors.primary : Colors.textSecondary, marginLeft: 6, flex: 1 }} numberOfLines={1}>{selectedCategoryName}</Text>
+          <Ionicons name="chevron-down" size={14} color={Colors.textMuted} />
+        </TouchableOpacity>
+
+        <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.surface, borderRadius: 10, paddingLeft: 12, borderWidth: 1, borderColor: Colors.border, flex: 1.5 }}>
+          <Ionicons name="search-outline" size={16} color={Colors.textMuted} />
+          <TextInput
+            value={searchText}
+            onChangeText={onSearchTextChange}
+            onSubmitEditing={onSearch}
+            placeholder="Search..."
+            placeholderTextColor={Colors.textMuted}
+            returnKeyType="search"
+            style={{ flex: 1, fontSize: 14, color: Colors.text, paddingVertical: 10, paddingHorizontal: 8 }}
+          />
+          {searchText.length > 0 && (
+            <TouchableOpacity onPress={onClearSearch} hitSlop={8} style={{ padding: 4 }}>
+              <Ionicons name="close-circle" size={18} color={Colors.textMuted} />
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity onPress={onSearch} disabled={searching} accessibilityLabel="Search expenses" style={{ alignSelf: 'stretch', width: 38, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.primary, borderTopRightRadius: 9, borderBottomRightRadius: 9, opacity: searching ? 0.7 : 1 }}>
+            {searching ? <ActivityIndicator size="small" color="#fff" /> : <Ionicons name="search" size={17} color="#fff" />}
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {showCategoryPicker && (
+        <View style={{ backgroundColor: Colors.surface, borderRadius: 10, borderWidth: 1, borderColor: Colors.border, marginBottom: 12, overflow: 'hidden' }}>
+          <TouchableOpacity onPress={() => onCategorySelect(undefined)} style={{ paddingHorizontal: 14, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: Colors.border, backgroundColor: !selectedCategory ? '#eef2ff' : undefined }}>
+            <Text style={{ fontSize: 14, color: !selectedCategory ? Colors.primary : Colors.text, fontWeight: !selectedCategory ? '600' : '400' }}>All Categories</Text>
+          </TouchableOpacity>
+          {categories.map((category) => (
+            <TouchableOpacity key={category.id} onPress={() => onCategorySelect(category.id)} style={{ paddingHorizontal: 14, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: Colors.border, backgroundColor: selectedCategory === category.id ? '#eef2ff' : undefined }}>
+              <Text style={{ fontSize: 14, color: selectedCategory === category.id ? Colors.primary : Colors.text, fontWeight: selectedCategory === category.id ? '600' : '400' }}>{category.icon ? `${category.icon} ` : ''}{category.name}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+    </View>
+  );
+}
+
 export default function ExpensesScreen() {
   const router = useRouter();
-  const toast = useToast();
+  const showToast = useToast((state) => state.show);
   const confirm = useConfirm();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [summary, setSummary] = useState<ExpenseSummary | null>(null);
@@ -36,6 +129,9 @@ export default function ExpensesScreen() {
   const [searchText, setSearchText] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+  const [searching, setSearching] = useState(false);
+  const requestControllerRef = useRef<AbortController | null>(null);
+  const filtersRef = useRef({ category: selectedCategory, search: searchQuery });
 
   const fetchCategories = async () => {
     try {
@@ -46,13 +142,22 @@ export default function ExpensesScreen() {
     }
   };
 
-  const fetchExpenses = async (pageNum: number = 1, append: boolean = false) => {
+  const fetchExpenses = useCallback(async (
+    pageNum: number = 1,
+    append: boolean = false,
+    filters = filtersRef.current,
+  ) => {
+    requestControllerRef.current?.abort();
+    const controller = new AbortController();
+    requestControllerRef.current = controller;
+
     try {
       const params: ExpenseListParams = { page: pageNum };
-      if (selectedCategory) params.category = selectedCategory;
-      if (searchQuery.trim()) params.search = searchQuery.trim();
+      if (filters.category) params.category = filters.category;
+      if (filters.search.trim()) params.search = filters.search.trim();
 
-      const response = await expenseService.getExpenses(params);
+      const response = await expenseService.getExpenses(params, controller.signal);
+      if (controller.signal.aborted) return;
       const { data, meta, summary: summaryData } = response.data;
 
       if (append) {
@@ -63,33 +168,40 @@ export default function ExpensesScreen() {
       setSummary(summaryData);
       setPage(meta.current_page);
       setLastPage(meta.last_page);
-    } catch (error: any) {
-      toast.show(error.response?.data?.message || 'Failed to load expenses.', 'error');
+    } catch (error: unknown) {
+      if (!controller.signal.aborted) {
+        const message = (error as { response?: { data?: { message?: string } } }).response?.data?.message;
+        showToast(message || 'Failed to load expenses.', 'error');
+      }
     } finally {
-      setLoading(false);
-      setRefreshing(false);
-      setLoadingMore(false);
+      if (!controller.signal.aborted) {
+        setLoading(false);
+        setRefreshing(false);
+        setLoadingMore(false);
+        setSearching(false);
+      }
     }
-  };
+  }, [showToast]);
 
   useEffect(() => {
     fetchCategories();
   }, []);
 
+  useEffect(() => () => requestControllerRef.current?.abort(), []);
+
   // Refetch on focus (when coming back from add/edit)
   useFocusEffect(
     useCallback(() => {
-      setLoading(true);
       setPage(1);
       fetchExpenses(1);
-    }, [selectedCategory, searchQuery])
+    }, [fetchExpenses])
   );
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     setPage(1);
     fetchExpenses(1);
-  }, [selectedCategory, searchQuery]);
+  }, [fetchExpenses]);
 
   const loadMore = () => {
     if (loadingMore || page >= lastPage) return;
@@ -98,16 +210,32 @@ export default function ExpensesScreen() {
   };
 
   const handleSearch = () => {
-    setSearchQuery(searchText);
-    setLoading(true);
+    const nextSearchQuery = searchText.trim();
+    const filters = { category: selectedCategory, search: nextSearchQuery };
+    filtersRef.current = filters;
+    setSearchQuery(nextSearchQuery);
+    setSearching(true);
     setPage(1);
+    fetchExpenses(1, false, filters);
+  };
+
+  const handleClearSearch = () => {
+    const filters = { category: selectedCategory, search: '' };
+    filtersRef.current = filters;
+    setSearchText('');
+    setSearchQuery('');
+    setSearching(false);
+    setPage(1);
+    fetchExpenses(1, false, filters);
   };
 
   const handleCategorySelect = (catId: number | undefined) => {
+    const filters = { category: catId, search: searchQuery };
+    filtersRef.current = filters;
     setSelectedCategory(catId);
     setShowCategoryPicker(false);
-    setLoading(true);
     setPage(1);
+    fetchExpenses(1, false, filters);
   };
 
   const handleDelete = (expense: Expense) => {
@@ -121,7 +249,7 @@ export default function ExpensesScreen() {
           await expenseService.deleteExpense(expense.id);
           setExpenses((prev) => prev.filter((e) => e.id !== expense.id));
         } catch (error: any) {
-          toast.show(error.response?.data?.message || 'Failed to delete expense.', 'error');
+          showToast(error.response?.data?.message || 'Failed to delete expense.', 'error');
         }
       },
     });
@@ -131,8 +259,6 @@ export default function ExpensesScreen() {
     ? categories.find((c) => c.id === selectedCategory)?.name || 'Category'
     : 'All Categories';
 
-  const pct = percentChange(summary?.monthly_total || 0, summary?.last_month_total || 0);
-
   if (loading && !refreshing) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background }}>
@@ -140,109 +266,6 @@ export default function ExpensesScreen() {
       </View>
     );
   }
-
-  const renderHeader = () => (
-    <View>
-      {/* Monthly Summary Card */}
-      {summary && (
-        <View style={{ backgroundColor: Colors.surface, borderRadius: 12, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: Colors.border }}>
-          <Text style={{ fontSize: 13, color: Colors.textSecondary, marginBottom: 4 }}>This Month</Text>
-          <Text style={{ fontSize: 24, fontWeight: '700', color: Colors.text }}>{formatCurrency(summary.monthly_total)}</Text>
-          {summary.last_month_total > 0 && (
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
-              <Ionicons
-                name={pct > 0 ? 'trending-up' : pct < 0 ? 'trending-down' : 'remove-outline'}
-                size={16}
-                color={pct > 0 ? Colors.error : pct < 0 ? Colors.success : Colors.textMuted}
-              />
-              <Text style={{ fontSize: 13, color: pct > 0 ? Colors.error : pct < 0 ? Colors.success : Colors.textMuted, marginLeft: 4 }}>
-                {pct !== 0 ? `${Math.abs(pct)}% ${pct > 0 ? 'more' : 'less'} than last month` : 'Same as last month'}
-              </Text>
-            </View>
-          )}
-        </View>
-      )}
-
-      {/* Filters */}
-      <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
-        {/* Category Dropdown */}
-        <TouchableOpacity
-          onPress={() => setShowCategoryPicker(!showCategoryPicker)}
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            backgroundColor: Colors.surface,
-            borderRadius: 10,
-            paddingHorizontal: 12,
-            paddingVertical: 10,
-            borderWidth: 1,
-            borderColor: selectedCategory ? Colors.primary : Colors.border,
-            flex: 1,
-          }}
-        >
-          <Ionicons name="funnel-outline" size={16} color={selectedCategory ? Colors.primary : Colors.textSecondary} />
-          <Text
-            style={{ fontSize: 14, color: selectedCategory ? Colors.primary : Colors.textSecondary, marginLeft: 6, flex: 1 }}
-            numberOfLines={1}
-          >
-            {selectedCategoryName}
-          </Text>
-          <Ionicons name="chevron-down" size={14} color={Colors.textMuted} />
-        </TouchableOpacity>
-
-        {/* Search */}
-        <View style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          backgroundColor: Colors.surface,
-          borderRadius: 10,
-          paddingHorizontal: 12,
-          borderWidth: 1,
-          borderColor: Colors.border,
-          flex: 1.5,
-        }}>
-          <Ionicons name="search-outline" size={16} color={Colors.textMuted} />
-          <TextInput
-            value={searchText}
-            onChangeText={setSearchText}
-            onSubmitEditing={handleSearch}
-            placeholder="Search..."
-            placeholderTextColor={Colors.textMuted}
-            returnKeyType="search"
-            style={{ flex: 1, fontSize: 14, color: Colors.text, paddingVertical: 10, paddingHorizontal: 8 }}
-          />
-          {searchText.length > 0 && (
-            <TouchableOpacity onPress={() => { setSearchText(''); setSearchQuery(''); setLoading(true); setPage(1); }}>
-              <Ionicons name="close-circle" size={18} color={Colors.textMuted} />
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
-
-      {/* Category Picker Dropdown */}
-      {showCategoryPicker && (
-        <View style={{ backgroundColor: Colors.surface, borderRadius: 10, borderWidth: 1, borderColor: Colors.border, marginBottom: 12, overflow: 'hidden' }}>
-          <TouchableOpacity
-            onPress={() => handleCategorySelect(undefined)}
-            style={{ paddingHorizontal: 14, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: Colors.border, backgroundColor: !selectedCategory ? '#eef2ff' : undefined }}
-          >
-            <Text style={{ fontSize: 14, color: !selectedCategory ? Colors.primary : Colors.text, fontWeight: !selectedCategory ? '600' : '400' }}>All Categories</Text>
-          </TouchableOpacity>
-          {categories.map((cat) => (
-            <TouchableOpacity
-              key={cat.id}
-              onPress={() => handleCategorySelect(cat.id)}
-              style={{ paddingHorizontal: 14, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: Colors.border, backgroundColor: selectedCategory === cat.id ? '#eef2ff' : undefined }}
-            >
-              <Text style={{ fontSize: 14, color: selectedCategory === cat.id ? Colors.primary : Colors.text, fontWeight: selectedCategory === cat.id ? '600' : '400' }}>
-                {cat.icon ? `${cat.icon} ` : ''}{cat.name}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      )}
-    </View>
-  );
 
   const renderExpenseItem = ({ item }: { item: Expense }) => (
     <TouchableOpacity
@@ -314,7 +337,22 @@ export default function ExpensesScreen() {
         data={expenses}
         renderItem={renderExpenseItem}
         keyExtractor={(item) => item.id.toString()}
-        ListHeaderComponent={renderHeader}
+        ListHeaderComponent={
+          <ExpenseListHeader
+            summary={summary}
+            categories={categories}
+            selectedCategory={selectedCategory}
+            selectedCategoryName={selectedCategoryName}
+            searchText={searchText}
+            searching={searching}
+            showCategoryPicker={showCategoryPicker}
+            onToggleCategoryPicker={() => setShowCategoryPicker((visible) => !visible)}
+            onCategorySelect={handleCategorySelect}
+            onSearchTextChange={setSearchText}
+            onSearch={handleSearch}
+            onClearSearch={handleClearSearch}
+          />
+        }
         ListEmptyComponent={renderEmpty}
         ListFooterComponent={renderFooter}
         contentContainerStyle={{ padding: 16, paddingBottom: 80 }}
