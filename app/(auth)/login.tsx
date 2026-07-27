@@ -133,38 +133,28 @@ export default function LoginScreen() {
   // --- Tab Component ---
   const renderTabs = () => (
     <View style={{ flexDirection: 'row', backgroundColor: Colors.border, borderRadius: 12, padding: 4, marginBottom: 24 }}>
-      {(['email', 'otp'] as AuthTab[]).map((tab) => (
-        <TouchableOpacity
-          key={tab}
-          onPress={() => {
-            setActiveTab(tab);
-            setErrors({});
-            setOtpStep('phone');
-            setOtp('');
-            setOtpDebug(null);
-          }}
-          style={{
-            flex: 1,
-            paddingVertical: 10,
-            borderRadius: 10,
-            backgroundColor: activeTab === tab ? Colors.surface : 'transparent',
-            alignItems: 'center',
-            ...(activeTab === tab
-              ? { shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 2 }
-              : {}),
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 14,
-              fontWeight: '600',
-              color: activeTab === tab ? Colors.primary : Colors.textSecondary,
-            }}
-          >
-            {tab === 'email' ? 'Email & Password' : 'OTP Login'}
-          </Text>
-        </TouchableOpacity>
-      ))}
+      {/* Email tab - active */}
+      <TouchableOpacity
+        onPress={() => { setActiveTab('email'); setErrors({}); }}
+        style={{
+          flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center',
+          backgroundColor: activeTab === 'email' ? Colors.surface : 'transparent',
+          ...(activeTab === 'email' ? { shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 2 } : {}),
+        }}
+      >
+        <Text style={{ fontSize: 14, fontWeight: '600', color: activeTab === 'email' ? Colors.primary : Colors.textSecondary }}>
+          Email & Password
+        </Text>
+      </TouchableOpacity>
+      {/* OTP tab - disabled with Coming Soon */}
+      <View style={{ flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center', opacity: 0.5 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+          <Text style={{ fontSize: 14, fontWeight: '600', color: Colors.textMuted }}>OTP Login</Text>
+          <View style={{ backgroundColor: '#fef3c7', paddingHorizontal: 5, paddingVertical: 1, borderRadius: 6 }}>
+            <Text style={{ fontSize: 9, fontWeight: '700', color: '#d97706' }}>SOON</Text>
+          </View>
+        </View>
+      </View>
     </View>
   );
 

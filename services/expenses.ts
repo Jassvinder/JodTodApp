@@ -15,8 +15,8 @@ export interface ExpenseListResponse extends PaginatedResponse<Expense> {
 }
 
 export const expenseService = {
-  getExpenses(params?: ExpenseListParams) {
-    return api.get<ExpenseListResponse>('/expenses', { params });
+  getExpenses(params?: ExpenseListParams, signal?: AbortSignal) {
+    return api.get<ExpenseListResponse>('/expenses', { params, signal });
   },
 
   getExpense(id: number) {

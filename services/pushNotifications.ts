@@ -2,7 +2,8 @@ import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 import api from './api';
 
-// Lazy load - expo-notifications crashes in Expo Go SDK 53+
+// Remote push notifications are unavailable in Expo Go from SDK 53 onward.
+// Keep this lazy so Expo Go can still run the rest of the application.
 let Notifications: typeof import('expo-notifications') | null = null;
 let Device: typeof import('expo-device') | null = null;
 
@@ -15,7 +16,7 @@ try {
 
 /**
  * Setup notification handler (call early in app lifecycle).
- * Safe to call in Expo Go - will silently skip if not available.
+ * Safe to call in Expo Go - remote push setup will be skipped if unavailable.
  */
 export function setupNotificationHandler(): void {
   if (!Notifications) return;
@@ -23,9 +24,10 @@ export function setupNotificationHandler(): void {
   try {
     Notifications.setNotificationHandler({
       handleNotification: async () => ({
-        shouldShowAlert: true,
         shouldPlaySound: true,
         shouldSetBadge: true,
+        shouldShowBanner: true,
+        shouldShowList: true,
       }),
     });
   } catch {
@@ -35,11 +37,13 @@ export function setupNotificationHandler(): void {
 
 /**
  * Register for push notifications and send token to backend.
- * Returns null in Expo Go or when permissions denied.
+ * Returns null in Expo Go or when permissions are denied.
  */
 export async function registerForPushNotifications(): Promise<string | null> {
   if (!Notifications || !Device) {
-    console.log('Push notifications not available (Expo Go or missing package)');
+    console.info(
+      'Remote push notifications are unavailable in Expo Go. Use the preview development build to test them.'
+    );
     return null;
   }
 
@@ -50,6 +54,17 @@ export async function registerForPushNotifications(): Promise<string | null> {
   }
 
   try {
+    // On Android 13+, create the channel before requesting permission so the
+    // operating system can show the notification permission prompt.
+    if (Platform.OS === 'android') {
+      await Notifications.setNotificationChannelAsync('default', {
+        name: 'Default',
+        importance: Notifications.AndroidImportance.HIGH,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: '#6366f1',
+      });
+    }
+
     // Check existing permissions
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
@@ -66,7 +81,11 @@ export async function registerForPushNotifications(): Promise<string | null> {
     }
 
     // Get the Expo push token
-    const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+    const projectId = Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId;
+    if (!projectId) {
+      console.warn('Push notification setup failed: EAS project ID is missing');
+      return null;
+    }
     const tokenData = await Notifications.getExpoPushTokenAsync({
       projectId,
     });
@@ -75,20 +94,9 @@ export async function registerForPushNotifications(): Promise<string | null> {
     // Send token to backend
     await sendTokenToBackend(token);
 
-    // Android: create notification channel
-    if (Platform.OS === 'android') {
-      await Notifications.setNotificationChannelAsync('default', {
-        name: 'Default',
-        importance: Notifications.AndroidImportance.HIGH,
-        vibrationPattern: [0, 250, 250, 250],
-        lightColor: '#6366f1',
-        sound: 'default',
-      });
-    }
-
     return token;
   } catch (error) {
-    console.log('Push notification setup failed (expected in Expo Go):', error);
+    console.warn('Push notification setup failed:', error);
     return null;
   }
 }
@@ -114,7 +122,8 @@ export async function unregisterPushToken(): Promise<void> {
   if (!Notifications) return;
 
   try {
-    const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+    const projectId = Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId;
+    if (!projectId) return;
     const tokenData = await Notifications.getExpoPushTokenAsync({
       projectId,
     });
@@ -142,7 +151,7 @@ export function addNotificationResponseListener(
       if (data) callback(data);
     });
 
-    return () => Notifications!.removeNotificationSubscription(subscription);
+    return () => subscription.remove();
   } catch {
     return () => {};
   }

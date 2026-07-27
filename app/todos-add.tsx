@@ -92,7 +92,7 @@ export default function AddTodoScreen() {
         title: title.trim(),
         priority,
         due_date: dueDate || null,
-        category_id: categoryId,
+        todo_category_id: categoryId,
         assigned_to: assignedTo,
         reminder_at: reminderAt || null,
       });

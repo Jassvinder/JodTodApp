@@ -107,7 +107,7 @@ export interface Todo {
   priority: 'low' | 'medium' | 'high';
   due_date: string | null;
   is_completed: boolean;
-  category_id: number | null;
+  todo_category_id: number | null;
   category?: TodoCategory;
   assigned_to: number | null;
   assigned_user?: { id: number; name: string; avatar: string | null; avatar_url: string | null };

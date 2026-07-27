@@ -90,7 +90,7 @@ export default function EditTodoScreen() {
     setTitle(todo.title);
     setPriority(todo.priority);
     setDueDate(todo.due_date || '');
-    setCategoryId(todo.category_id);
+    setCategoryId(todo.todo_category_id);
     setAssignedTo(todo.assigned_to);
     setAssignedName(todo.assigned_user?.name || '');
     setReminderAt(todo.reminder_at || '');
@@ -119,7 +119,7 @@ export default function EditTodoScreen() {
         title: title.trim(),
         priority,
         due_date: dueDate || null,
-        category_id: categoryId,
+        todo_category_id: categoryId,
         assigned_to: assignedTo,
         reminder_at: reminderAt || null,
       });
