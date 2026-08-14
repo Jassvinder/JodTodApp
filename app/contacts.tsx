@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -19,6 +19,67 @@ import { useConfirm } from '../components/ConfirmDialog';
 import BottomNav from '../components/BottomNav';
 import type { Contact } from '../types/models';
 
+interface ContactListHeaderProps {
+  contactCount: number;
+  searchText: string;
+  searching: boolean;
+  onSearchTextChange: (text: string) => void;
+  onSearch: () => void;
+  onClearSearch: () => void;
+}
+
+function ContactListHeader({
+  contactCount,
+  searchText,
+  searching,
+  onSearchTextChange,
+  onSearch,
+  onClearSearch,
+}: ContactListHeaderProps) {
+  return (
+    <View>
+      <View style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: Colors.surface,
+        borderRadius: 10,
+        paddingLeft: 12,
+        borderWidth: 1,
+        borderColor: Colors.border,
+        marginBottom: 12,
+      }}>
+        <Ionicons name="search-outline" size={16} color={Colors.textMuted} />
+        <TextInput
+          value={searchText}
+          onChangeText={onSearchTextChange}
+          onSubmitEditing={onSearch}
+          placeholder="Search contacts..."
+          placeholderTextColor={Colors.textMuted}
+          returnKeyType="search"
+          style={{ flex: 1, fontSize: 14, color: Colors.text, paddingVertical: 10, paddingHorizontal: 8 }}
+        />
+        {searchText.length > 0 && (
+          <TouchableOpacity onPress={onClearSearch} hitSlop={8} style={{ padding: 4 }}>
+            <Ionicons name="close-circle" size={18} color={Colors.textMuted} />
+          </TouchableOpacity>
+        )}
+        <TouchableOpacity
+          onPress={onSearch}
+          disabled={searching}
+          accessibilityLabel="Search contacts"
+          style={{ alignSelf: 'stretch', width: 38, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.primary, borderTopRightRadius: 9, borderBottomRightRadius: 9, opacity: searching ? 0.7 : 1 }}
+        >
+          {searching ? <ActivityIndicator size="small" color="#fff" /> : <Ionicons name="search" size={17} color="#fff" />}
+        </TouchableOpacity>
+      </View>
+
+      <Text style={{ fontSize: 13, color: Colors.textSecondary, marginBottom: 8 }}>
+        {contactCount} contact{contactCount !== 1 ? 's' : ''}
+      </Text>
+    </View>
+  );
+}
+
 export default function ContactsScreen() {
   const router = useRouter();
   const toast = useToast();
@@ -33,13 +94,25 @@ export default function ContactsScreen() {
   // Search
   const [searchText, setSearchText] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [searching, setSearching] = useState(false);
+  const requestControllerRef = useRef<AbortController | null>(null);
+  const searchQueryRef = useRef(searchQuery);
 
-  const fetchContacts = async (pageNum: number = 1, append: boolean = false) => {
+  const fetchContacts = useCallback(async (
+    pageNum: number = 1,
+    append: boolean = false,
+    search = searchQueryRef.current,
+  ) => {
+    requestControllerRef.current?.abort();
+    const controller = new AbortController();
+    requestControllerRef.current = controller;
+
     try {
       const params: ContactListParams = { page: pageNum };
-      if (searchQuery.trim()) params.search = searchQuery.trim();
+      if (search.trim()) params.search = search.trim();
 
-      const response = await contactService.getContacts(params);
+      const response = await contactService.getContacts(params, controller.signal);
+      if (controller.signal.aborted) return;
       const { data, meta } = response.data;
 
       if (append) {
@@ -49,28 +122,36 @@ export default function ContactsScreen() {
       }
       setPage(meta.current_page);
       setLastPage(meta.last_page);
-    } catch (error: any) {
-      toast.show(error.response?.data?.message || 'Failed to load contacts.', 'error');
+    } catch (error: unknown) {
+      if (!controller.signal.aborted) {
+        const message = (error as { response?: { data?: { message?: string } } }).response?.data?.message;
+        toast.show(message || 'Failed to load contacts.', 'error');
+      }
     } finally {
-      setLoading(false);
-      setRefreshing(false);
-      setLoadingMore(false);
+      if (!controller.signal.aborted) {
+        setLoading(false);
+        setRefreshing(false);
+        setLoadingMore(false);
+        setSearching(false);
+      }
     }
-  };
+  }, [toast]);
+
+  useEffect(() => () => requestControllerRef.current?.abort(), []);
 
   useFocusEffect(
     useCallback(() => {
       setLoading(true);
       setPage(1);
       fetchContacts(1);
-    }, [searchQuery])
+    }, [fetchContacts])
   );
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     setPage(1);
     fetchContacts(1);
-  }, [searchQuery]);
+  }, [fetchContacts]);
 
   const loadMore = () => {
     if (loadingMore || page >= lastPage) return;
@@ -79,9 +160,21 @@ export default function ContactsScreen() {
   };
 
   const handleSearch = () => {
-    setSearchQuery(searchText);
-    setLoading(true);
+    const nextSearchQuery = searchText.trim();
+    searchQueryRef.current = nextSearchQuery;
+    setSearchQuery(nextSearchQuery);
+    setSearching(true);
     setPage(1);
+    fetchContacts(1, false, nextSearchQuery);
+  };
+
+  const handleClearSearch = () => {
+    searchQueryRef.current = '';
+    setSearchText('');
+    setSearchQuery('');
+    setSearching(false);
+    setPage(1);
+    fetchContacts(1, false, '');
   };
 
   const handleRemove = (contact: Contact) => {
@@ -115,43 +208,6 @@ export default function ContactsScreen() {
       </View>
     );
   }
-
-  const renderHeader = () => (
-    <View>
-      {/* Search Bar */}
-      <View style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: Colors.surface,
-        borderRadius: 10,
-        paddingHorizontal: 12,
-        borderWidth: 1,
-        borderColor: Colors.border,
-        marginBottom: 12,
-      }}>
-        <Ionicons name="search-outline" size={16} color={Colors.textMuted} />
-        <TextInput
-          value={searchText}
-          onChangeText={setSearchText}
-          onSubmitEditing={handleSearch}
-          placeholder="Search contacts..."
-          placeholderTextColor={Colors.textMuted}
-          returnKeyType="search"
-          style={{ flex: 1, fontSize: 14, color: Colors.text, paddingVertical: 10, paddingHorizontal: 8 }}
-        />
-        {searchText.length > 0 && (
-          <TouchableOpacity onPress={() => { setSearchText(''); setSearchQuery(''); setLoading(true); setPage(1); }}>
-            <Ionicons name="close-circle" size={18} color={Colors.textMuted} />
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {/* Contact Count */}
-      <Text style={{ fontSize: 13, color: Colors.textSecondary, marginBottom: 8 }}>
-        {contacts.length} contact{contacts.length !== 1 ? 's' : ''}
-      </Text>
-    </View>
-  );
 
   const renderContactItem = ({ item }: { item: Contact }) => (
     <TouchableOpacity
@@ -236,7 +292,16 @@ export default function ContactsScreen() {
           data={contacts}
           renderItem={renderContactItem}
           keyExtractor={(item) => item.id.toString()}
-          ListHeaderComponent={renderHeader}
+          ListHeaderComponent={
+            <ContactListHeader
+              contactCount={contacts.length}
+              searchText={searchText}
+              searching={searching}
+              onSearchTextChange={setSearchText}
+              onSearch={handleSearch}
+              onClearSearch={handleClearSearch}
+            />
+          }
           ListEmptyComponent={renderEmpty}
           ListFooterComponent={renderFooter}
           contentContainerStyle={{ padding: 16, paddingBottom: 80 }}

@@ -197,18 +197,11 @@ export default function ProfileScreen() {
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Ionicons name="mail-outline" size={20} color={Colors.textSecondary} />
-              <Text style={{ fontSize: 14, color: Colors.text, marginLeft: 10 }}>Email Notifications</Text>
+              <Text style={{ fontSize: 14, color: Colors.text, marginLeft: 10 }}>Email Notifications (Weekly Summary & Settlements)</Text>
             </View>
             <Text style={{ fontSize: 13, color: user?.notification_email ? Colors.success : Colors.textMuted }}>
               {user?.notification_email ? 'On' : 'Off'}
             </Text>
-          </View>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Ionicons name="notifications-outline" size={20} color={Colors.textSecondary} />
-              <Text style={{ fontSize: 14, color: Colors.text, marginLeft: 10 }}>Push Notifications</Text>
-            </View>
-            <Text style={{ fontSize: 13, color: Colors.textMuted }}>Coming soon</Text>
           </View>
         </View>
 

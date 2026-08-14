@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
-  TextInput,
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { incomeService, type IncomeListParams } from '../../../services/incomes';
@@ -15,7 +14,47 @@ import { Colors } from '../../../constants/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useToast } from '../../../components/Toast';
 import { useConfirm } from '../../../components/ConfirmDialog';
+import ListSearchBar from '../../../components/ListSearchBar';
 import type { Income, IncomeSummary } from '../../../types/models';
+
+interface IncomeListHeaderProps {
+  summary: IncomeSummary | null;
+  searchText: string;
+  searching: boolean;
+  onSearchTextChange: (text: string) => void;
+  onSearch: () => void;
+  onClearSearch: () => void;
+}
+
+function IncomeListHeader({ summary, searchText, searching, onSearchTextChange, onSearch, onClearSearch }: IncomeListHeaderProps) {
+  const pct = percentChange(summary?.this_month_income || 0, summary?.last_month_income || 0);
+
+  return (
+    <View>
+      {summary && (
+        <View style={{ backgroundColor: Colors.surface, borderRadius: 12, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: Colors.border }}>
+          <Text style={{ fontSize: 13, color: Colors.textSecondary, marginBottom: 4 }}>This Month Income</Text>
+          <Text style={{ fontSize: 24, fontWeight: '700', color: Colors.success }}>{formatCurrency(summary.this_month_income)}</Text>
+          {summary.last_month_income > 0 && (
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+              <Ionicons name={pct > 0 ? 'trending-up' : pct < 0 ? 'trending-down' : 'remove-outline'} size={16} color={pct > 0 ? Colors.success : pct < 0 ? Colors.error : Colors.textMuted} />
+              <Text style={{ fontSize: 13, color: pct > 0 ? Colors.success : pct < 0 ? Colors.error : Colors.textMuted, marginLeft: 4 }}>
+                {pct !== 0 ? `${Math.abs(pct)}% ${pct > 0 ? 'more' : 'less'} than last month` : 'Same as last month'}
+              </Text>
+            </View>
+          )}
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: Colors.border }}>
+            <Ionicons name={summary.this_month_savings >= 0 ? 'wallet-outline' : 'warning-outline'} size={16} color={summary.this_month_savings >= 0 ? Colors.success : Colors.error} />
+            <Text style={{ fontSize: 13, color: summary.this_month_savings >= 0 ? Colors.success : Colors.error, marginLeft: 4 }}>
+              {summary.this_month_savings >= 0 ? `Savings: ${formatCurrency(summary.this_month_savings)}` : `Loss: ${formatCurrency(Math.abs(summary.this_month_savings))}`}
+            </Text>
+          </View>
+        </View>
+      )}
+      <ListSearchBar value={searchText} placeholder="Search by source..." searching={searching} color={Colors.success} accessibilityLabel="Search incomes" onChangeText={onSearchTextChange} onSearch={onSearch} onClear={onClearSearch} />
+    </View>
+  );
+}
 
 export default function IncomesScreen() {
   const router = useRouter();
@@ -32,13 +71,20 @@ export default function IncomesScreen() {
   // Filters
   const [searchText, setSearchText] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [searching, setSearching] = useState(false);
+  const requestControllerRef = useRef<AbortController | null>(null);
+  const searchQueryRef = useRef(searchQuery);
 
-  const fetchIncomes = async (pageNum: number = 1, append: boolean = false) => {
+  const fetchIncomes = useCallback(async (pageNum: number = 1, append: boolean = false, search = searchQueryRef.current) => {
+    requestControllerRef.current?.abort();
+    const controller = new AbortController();
+    requestControllerRef.current = controller;
     try {
       const params: IncomeListParams = { page: pageNum };
-      if (searchQuery.trim()) params.search = searchQuery.trim();
+      if (search.trim()) params.search = search.trim();
 
-      const response = await incomeService.getIncomes(params);
+      const response = await incomeService.getIncomes(params, controller.signal);
+      if (controller.signal.aborted) return;
       const { data, meta, summary: summaryData } = response.data;
 
       if (append) {
@@ -49,14 +95,22 @@ export default function IncomesScreen() {
       setSummary(summaryData);
       setPage(meta.current_page);
       setLastPage(meta.last_page);
-    } catch (error: any) {
-      toast.show(error.response?.data?.message || 'Failed to load incomes.', 'error');
+    } catch (error: unknown) {
+      if (!controller.signal.aborted) {
+        const message = (error as { response?: { data?: { message?: string } } }).response?.data?.message;
+        toast.show(message || 'Failed to load incomes.', 'error');
+      }
     } finally {
-      setLoading(false);
-      setRefreshing(false);
-      setLoadingMore(false);
+      if (!controller.signal.aborted) {
+        setLoading(false);
+        setRefreshing(false);
+        setLoadingMore(false);
+        setSearching(false);
+      }
     }
-  };
+  }, [toast]);
+
+  useEffect(() => () => requestControllerRef.current?.abort(), []);
 
   // Refetch on focus (when coming back from add/edit)
   useFocusEffect(
@@ -64,14 +118,14 @@ export default function IncomesScreen() {
       setLoading(true);
       setPage(1);
       fetchIncomes(1);
-    }, [searchQuery])
+    }, [fetchIncomes])
   );
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     setPage(1);
     fetchIncomes(1);
-  }, [searchQuery]);
+  }, [fetchIncomes]);
 
   const loadMore = () => {
     if (loadingMore || page >= lastPage) return;
@@ -80,9 +134,21 @@ export default function IncomesScreen() {
   };
 
   const handleSearch = () => {
-    setSearchQuery(searchText);
-    setLoading(true);
+    const nextSearchQuery = searchText.trim();
+    searchQueryRef.current = nextSearchQuery;
+    setSearchQuery(nextSearchQuery);
+    setSearching(true);
     setPage(1);
+    fetchIncomes(1, false, nextSearchQuery);
+  };
+
+  const handleClearSearch = () => {
+    searchQueryRef.current = '';
+    setSearchText('');
+    setSearchQuery('');
+    setSearching(false);
+    setPage(1);
+    fetchIncomes(1, false, '');
   };
 
   const handleDelete = (income: Income) => {
@@ -102,8 +168,6 @@ export default function IncomesScreen() {
     });
   };
 
-  const pct = percentChange(summary?.this_month_income || 0, summary?.last_month_income || 0);
-
   if (loading && !refreshing) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background }}>
@@ -111,71 +175,6 @@ export default function IncomesScreen() {
       </View>
     );
   }
-
-  const renderHeader = () => (
-    <View>
-      {/* Monthly Summary Card */}
-      {summary && (
-        <View style={{ backgroundColor: Colors.surface, borderRadius: 12, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: Colors.border }}>
-          <Text style={{ fontSize: 13, color: Colors.textSecondary, marginBottom: 4 }}>This Month Income</Text>
-          <Text style={{ fontSize: 24, fontWeight: '700', color: Colors.success }}>{formatCurrency(summary.this_month_income)}</Text>
-          {summary.last_month_income > 0 && (
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
-              <Ionicons
-                name={pct > 0 ? 'trending-up' : pct < 0 ? 'trending-down' : 'remove-outline'}
-                size={16}
-                color={pct > 0 ? Colors.success : pct < 0 ? Colors.error : Colors.textMuted}
-              />
-              <Text style={{ fontSize: 13, color: pct > 0 ? Colors.success : pct < 0 ? Colors.error : Colors.textMuted, marginLeft: 4 }}>
-                {pct !== 0 ? `${Math.abs(pct)}% ${pct > 0 ? 'more' : 'less'} than last month` : 'Same as last month'}
-              </Text>
-            </View>
-          )}
-          {/* Savings indicator */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: Colors.border }}>
-            <Ionicons
-              name={summary.this_month_savings >= 0 ? 'wallet-outline' : 'warning-outline'}
-              size={16}
-              color={summary.this_month_savings >= 0 ? Colors.success : Colors.error}
-            />
-            <Text style={{ fontSize: 13, color: summary.this_month_savings >= 0 ? Colors.success : Colors.error, marginLeft: 4 }}>
-              {summary.this_month_savings >= 0
-                ? `Savings: ${formatCurrency(summary.this_month_savings)}`
-                : `Loss: ${formatCurrency(Math.abs(summary.this_month_savings))}`}
-            </Text>
-          </View>
-        </View>
-      )}
-
-      {/* Search */}
-      <View style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: Colors.surface,
-        borderRadius: 10,
-        paddingHorizontal: 12,
-        borderWidth: 1,
-        borderColor: Colors.border,
-        marginBottom: 12,
-      }}>
-        <Ionicons name="search-outline" size={16} color={Colors.textMuted} />
-        <TextInput
-          value={searchText}
-          onChangeText={setSearchText}
-          onSubmitEditing={handleSearch}
-          placeholder="Search by source..."
-          placeholderTextColor={Colors.textMuted}
-          returnKeyType="search"
-          style={{ flex: 1, fontSize: 14, color: Colors.text, paddingVertical: 10, paddingHorizontal: 8 }}
-        />
-        {searchText.length > 0 && (
-          <TouchableOpacity onPress={() => { setSearchText(''); setSearchQuery(''); setLoading(true); setPage(1); }}>
-            <Ionicons name="close-circle" size={18} color={Colors.textMuted} />
-          </TouchableOpacity>
-        )}
-      </View>
-    </View>
-  );
 
   const renderIncomeItem = ({ item }: { item: Income }) => (
     <TouchableOpacity
@@ -247,7 +246,7 @@ export default function IncomesScreen() {
         data={incomes}
         renderItem={renderIncomeItem}
         keyExtractor={(item) => item.id.toString()}
-        ListHeaderComponent={renderHeader}
+        ListHeaderComponent={<IncomeListHeader summary={summary} searchText={searchText} searching={searching} onSearchTextChange={setSearchText} onSearch={handleSearch} onClearSearch={handleClearSearch} />}
         ListEmptyComponent={renderEmpty}
         ListFooterComponent={renderFooter}
         contentContainerStyle={{ padding: 16, paddingBottom: 80 }}

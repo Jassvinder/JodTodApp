@@ -7,6 +7,28 @@
 - **Docs:** `D:\Development\Projects\JodTodApp\Docs\`
 - **Web Backend (API):** `D:\Development\Projects\JodTod` (Laravel - same DB, shared API)
 
+## Task 602 Mobile Verification Flow (03-08-2026)
+
+- Removed the Push Notifications row and clarified the remaining Email Notifications label in Profile.
+- Fixed Verify Your Email logout and added Change Email. Both use the same logout cleanup, clearing the API token, in-memory user state, and registered push token before navigating to Login or Register.
+- Updated the root auth guard so an unauthenticated app restart redirects away from Verify Your Email to Login.
+
+## Contacts Search Stability (27-07-2026)
+
+- Completed Task 1504 by applying the Task 1503 search stability behavior to Contacts.
+- The Contacts FlatList now uses a stable header, so typing no longer remounts its search input or dismisses the keyboard.
+- Contact list requests accept an AbortSignal. New searches, clearing search, and unmounting cancel previous requests, preventing stale results or a stuck loading state.
+
+## Income Edit API Fix (27-07-2026)
+
+- Completed Task 1506. The income edit screen requested `GET /api/v1/incomes/{id}`, but the Laravel API exposed only index, store, update, and delete routes.
+- Added the missing authenticated income show route and controller action, including the existing ownership authorization check, so edit forms can load the selected income record.
+
+## Dashboard Collapsible Section Stability (27-07-2026)
+
+- Completed Task 1505. Replaced the shared collapsible section's hidden duplicate-content measurement and fixed-height animation with deterministic conditional rendering.
+- Dashboard content, including the Expenses summary, now remains visible after toggling My Tasks and refreshing the Home screen.
+
 ## Expenses Search Stability (25-07-2026)
 
 - Completed Task 1503. The Expenses screen's `FlatList` header previously used an inline render function, so every search-text update recreated the header and remounted its `TextInput`, dismissing the keyboard.

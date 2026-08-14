@@ -13,14 +13,62 @@
 
 ## Current Tasks
 
-- [] **Task 1504**
+- [] **Task 1508**
+  Task #1507 completly done hai recheck karo or btao. kyunki beech me he limit khatam ho gai thi?
+
+  option to login with google on mobile.
 
 - [] **Task 18** profile
   A. Photo upload option
   B. Phone number add/update option
 
-- [] **Task 19** group
-  A. If group created by other person except current user. there should be group admin name in front of group name.
+## Testing
+
+- [] **Task 1200**
+  1. Add login/continue with googl option in mobile app as well. (already implemented on webapp)
+  2. Logo not showing in yopmail. fine in gmail.
+  3. [x] Fixed logout on the Verify Your Email screen. Added Change Email, with both actions clearing authentication state before redirecting. (03-08-2026)
+  4. Resend verification email showing "unauthenticated".
+
+  Implement the following tasks. Keep changes minimal and limited to the specified behavior. Reuse existing patterns/components where possible.
+
+- [ ] **Task 1201 — Home**
+  1. Remove the "Home" title from the Home screen and fix the header behavior on scroll.
+  2. In "Recent Activity", show both income and expenses; currently only expenses appear.
+  3. Keep only the Summary section expanded by default; collapse all other sections.
+
+- [ ] **Task 1202 — Expenses**
+  1. Every time the Expenses screen opens, reset Category to "All Categories" and clear Search.
+  2. Save expense date in the database as date only, without time. **Backend task.**
+
+- [ ] **Task 1203 — Tasks**
+  1. Refresh the Tasks screen on every visit so all filters reset on each visit.
+  2. Show default categories on the Add Task screen.
+  3. Fix task reminders; they are currently not working.
+  4. When adding a new category while creating a task, immediately show/select that category in the same task without requiring task edit.
+  5. Add an arrow indicator beside every task to clearly indicate it is editable.
+  6. Make Status, Priority, and Category dropdowns behave/look like the Expenses category dropdown. Replace the current popup behavior.
+  7. Add "Market" and "Home" as default Task Categories. They must not be deletable; update the database if required.
+  8. Highlight the "Manage" link on the Add Task screen's Category section so it is clearly noticeable.
+  9. On Task Categories, replace long-press deletion with a visible Delete icon beside Edit.
+
+- [ ] **Task 1204 — Group**
+  1. On every Group screen visit, keep Members, Member Shares, and Recent Expenses collapsed by default.
+  2. Add a Cancel button to the Group Edit screen.
+  3. When selecting a category after entering an expense amount, the first tap currently only closes the keyboard. Fix this so the category is also selected on the same tap. Apply this behavior consistently across the entire app wherever the keyboard is open, including search, name, description, etc.
+  4. Add an "Add Member" button beside the Members heading.
+  5. Remove "Recent" from "Recent Expenses" and add the "Add Expense" button in the same position/style as the Members "Add Member" button.
+  6. Implement edit/update functionality for Group Expenses.
+  7. Show an alert when the Settlement button is clicked.
+
+- [ ] **Task 1205 — Contacts**
+  1. While typing a contact, the processing indicator currently appears above the contact list, causing the list to move up/down. Move the processing indicator into the same input area, replacing or appearing before the Clear/Close button.
+  2. Review and redesign the Add Member flow. Currently, anyone can type a random name and potentially view another person's email and phone number. Prevent this privacy/security issue and ensure contact information cannot be exposed through arbitrary name searches.
+  3. Require approval when adding a contact.
+
+- [ ] **Task 1206 — Screen State Reset**
+  1. Every time the Expenses, Income, or Profile screen opens, it must start fresh.
+  2. Do not retain filters, search text, selections, or other state from the previous visit.
 
 ## PENDING
 
@@ -185,9 +233,30 @@
 
 ## COMPLETED =================================================
 
+## Completed Featured Tasks
+
 ## Completed Current Tasks
 
-- [X] **Task 1503** (25-07-2026)
+- [x] **Task 1507** (27-07-2026)
+      A. Standardized Income search with a stable header, explicit Search button, clear action, and cancellable requests.
+      B. Added backend-wired search to both Tasks listing entry points. The existing Todo API `search` parameter filters task titles and now receives the submitted query.
+      C. Audited the remaining search screens and aligned Group Expenses with the same submit, clear, keyboard, and stale-request behavior. Contact add-user search remains intentionally real-time with its existing debounce.
+      D. Added the reusable `ListSearchBar` component for consistent search controls.
+
+- [x] **Task 1506** (27-07-2026)
+      A. Reviewed `Docs/Screenshots/4.jpeg` and traced the income edit failure to the missing `GET /api/v1/incomes/{income}` Laravel route.
+      B. Added the authenticated income show endpoint and ownership authorization so the mobile edit form can load its record before updating it.
+
+- [x] **Task 1505** (27-07-2026)
+      A. Fixed the shared collapsible section implementation that could leave dashboard content at zero height after toggling My Tasks.
+      B. Dashboard sections now conditionally render their content instead of relying on a hidden duplicate measurer and animated fixed height, so Expenses remain visible after collapse, expand, and refresh.
+
+- [x] **Task 1504** (27-07-2026)
+      A. Fixed Contacts search input focus loss by replacing the inline FlatList header with a stable component.
+      B. Added a visible Search button and kept the contact list mounted while a search runs.
+      C. Added cancellable Contacts requests so a new search, clear action, or unmount cancels the preceding request and prevents stale responses from changing the list state.
+
+- [x] **Task 1503** (25-07-2026)
       A. Fixed the Expenses search input focus loss. The inline FlatList header was recreated on every text state update, which remounted the TextInput and dismissed the keyboard. The header is now a stable component.
       B. Added a visible Search icon button that performs the same action as the keyboard search key.
       C. Added cancellable expense requests with AbortController. Starting a new search, clearing the search, changing the category, or leaving the screen cancels the previous request and prevents stale responses from changing state.

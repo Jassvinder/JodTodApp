@@ -8,8 +8,8 @@ export interface ContactListParams {
 }
 
 export const contactService = {
-  getContacts(params?: ContactListParams) {
-    return api.get<PaginatedResponse<Contact>>('/contacts', { params });
+  getContacts(params?: ContactListParams, signal?: AbortSignal) {
+    return api.get<PaginatedResponse<Contact>>('/contacts', { params, signal });
   },
 
   searchUsers(query: string) {

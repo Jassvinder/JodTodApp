@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -15,6 +15,7 @@ import { Colors } from '../../../constants/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useToast } from '../../../components/Toast';
 import { useConfirm } from '../../../components/ConfirmDialog';
+import ListSearchBar from '../../../components/ListSearchBar';
 import type { Todo, TodoCategory } from '../../../types/models';
 
 const PRIORITY_COLORS: Record<string, string> = {
@@ -96,6 +97,11 @@ export default function TodosTabScreen() {
   const [showStatusPicker, setShowStatusPicker] = useState(false);
   const [showPriorityPicker, setShowPriorityPicker] = useState(false);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+  const [searchText, setSearchText] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searching, setSearching] = useState(false);
+  const requestControllerRef = useRef<AbortController | null>(null);
+  const searchQueryRef = useRef(searchQuery);
 
   const fetchCategories = async () => {
     try {
@@ -106,7 +112,10 @@ export default function TodosTabScreen() {
     }
   };
 
-  const fetchTodos = async (pageNum: number = 1, append: boolean = false) => {
+  const fetchTodos = async (pageNum: number = 1, append: boolean = false, search = searchQueryRef.current) => {
+    requestControllerRef.current?.abort();
+    const controller = new AbortController();
+    requestControllerRef.current = controller;
     try {
       const params: TodoListParams = { page: pageNum };
       if (statusFilter === 'pending') params.status = 'pending';
@@ -115,8 +124,10 @@ export default function TodosTabScreen() {
       else if (statusFilter === 'assigned_by_me') params.scope = 'assigned_by_me';
       if (priorityFilter !== 'all') params.priority = priorityFilter as 'low' | 'medium' | 'high';
       if (categoryFilter) params.category_id = categoryFilter;
+      if (search.trim()) params.search = search.trim();
 
-      const response = await todoService.getTodos(params);
+      const response = await todoService.getTodos(params, controller.signal);
+      if (controller.signal.aborted) return;
       const { data, meta } = response.data;
       if (append) {
         setTodos((prev) => [...prev, ...data]);
@@ -125,14 +136,22 @@ export default function TodosTabScreen() {
       }
       setPage(meta.current_page);
       setLastPage(meta.last_page);
-    } catch (error: any) {
-      toast.show(error.response?.data?.message || 'Failed to load tasks.', 'error');
+    } catch (error: unknown) {
+      if (!controller.signal.aborted) {
+        const message = (error as { response?: { data?: { message?: string } } }).response?.data?.message;
+        toast.show(message || 'Failed to load tasks.', 'error');
+      }
     } finally {
-      setLoading(false);
-      setRefreshing(false);
-      setLoadingMore(false);
+      if (!controller.signal.aborted) {
+        setLoading(false);
+        setRefreshing(false);
+        setLoadingMore(false);
+        setSearching(false);
+      }
     }
   };
+
+  useEffect(() => () => requestControllerRef.current?.abort(), []);
 
   useFocusEffect(
     useCallback(() => {
@@ -153,6 +172,24 @@ export default function TodosTabScreen() {
     if (loadingMore || page >= lastPage) return;
     setLoadingMore(true);
     fetchTodos(page + 1, true);
+  };
+
+  const handleSearch = () => {
+    const nextSearchQuery = searchText.trim();
+    searchQueryRef.current = nextSearchQuery;
+    setSearchQuery(nextSearchQuery);
+    setSearching(true);
+    setPage(1);
+    fetchTodos(1, false, nextSearchQuery);
+  };
+
+  const handleClearSearch = () => {
+    searchQueryRef.current = '';
+    setSearchText('');
+    setSearchQuery('');
+    setSearching(false);
+    setPage(1);
+    fetchTodos(1, false, '');
   };
 
   const handleToggle = async (todo: Todo) => {
@@ -322,7 +359,7 @@ export default function TodosTabScreen() {
       <Ionicons name="checkbox-outline" size={48} color={Colors.textMuted} />
       <Text style={{ fontSize: 16, fontWeight: '600', color: Colors.text, marginTop: 12 }}>No tasks yet</Text>
       <Text style={{ fontSize: 14, color: Colors.textSecondary, marginTop: 4, textAlign: 'center' }}>
-        {statusFilter !== 'all' || priorityFilter !== 'all' || categoryFilter
+        {statusFilter !== 'all' || priorityFilter !== 'all' || categoryFilter || searchQuery
           ? 'Try changing your filters'
           : 'Tap + to add your first task'}
       </Text>
@@ -340,6 +377,9 @@ export default function TodosTabScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: Colors.background }}>
+      <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
+        <ListSearchBar value={searchText} placeholder="Search tasks..." searching={searching} accessibilityLabel="Search tasks" onChangeText={setSearchText} onSearch={handleSearch} onClear={handleClearSearch} />
+      </View>
       <FlatList
         data={todos}
         renderItem={renderTodoItem}

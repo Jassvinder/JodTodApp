@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState } from "react";
 import {
   View,
   Text,
@@ -9,18 +9,19 @@ import {
   ScrollView,
   ActivityIndicator,
   Image,
-} from 'react-native';
-import { Link } from 'expo-router';
-import { useAuthStore } from '../../stores/authStore';
-import { Colors } from '../../constants/colors';
-import { getDeviceName } from '../../utils/device';
-import { useToast } from '../../components/Toast';
+} from "react-native";
+import { Link } from "expo-router";
+import { useAuthStore } from "../../stores/authStore";
+import { Colors } from "../../constants/colors";
+import { getDeviceName } from "../../utils/device";
+import { useToast } from "../../components/Toast";
+import AppLogo from "./AppLogo";
 
 export default function RegisterScreen() {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [passwordConfirmation, setPasswordConfirmation] = useState('');
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [passwordConfirmation, setPasswordConfirmation] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -30,13 +31,17 @@ export default function RegisterScreen() {
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
-    if (!name.trim()) newErrors.name = 'Name is required';
-    else if (name.trim().length < 2) newErrors.name = 'Name must be at least 2 characters';
-    if (!email.trim()) newErrors.email = 'Email is required';
-    else if (!/\S+@\S+\.\S+/.test(email)) newErrors.email = 'Enter a valid email';
-    if (!password) newErrors.password = 'Password is required';
-    else if (password.length < 8) newErrors.password = 'Password must be at least 8 characters';
-    if (password !== passwordConfirmation) newErrors.password_confirmation = 'Passwords do not match';
+    if (!name.trim()) newErrors.name = "Name is required";
+    else if (name.trim().length < 2)
+      newErrors.name = "Name must be at least 2 characters";
+    if (!email.trim()) newErrors.email = "Email is required";
+    else if (!/\S+@\S+\.\S+/.test(email))
+      newErrors.email = "Enter a valid email";
+    if (!password) newErrors.password = "Password is required";
+    else if (password.length < 8)
+      newErrors.password = "Password must be at least 8 characters";
+    if (password !== passwordConfirmation)
+      newErrors.password_confirmation = "Passwords do not match";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -54,7 +59,9 @@ export default function RegisterScreen() {
         device_name: getDeviceName(),
       });
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Something went wrong. Please try again.';
+      const message =
+        error.response?.data?.message ||
+        "Something went wrong. Please try again.";
       const fieldErrors = error.response?.data?.errors;
       if (fieldErrors) {
         const mapped: Record<string, string> = {};
@@ -63,7 +70,7 @@ export default function RegisterScreen() {
         }
         setErrors(mapped);
       } else {
-        toast.show(message, 'error');
+        toast.show(message, "error");
       }
     } finally {
       setLoading(false);
@@ -78,13 +85,22 @@ export default function RegisterScreen() {
     options: {
       placeholder: string;
       secureTextEntry?: boolean;
-      keyboardType?: TextInput['props']['keyboardType'];
-      autoCapitalize?: TextInput['props']['autoCapitalize'];
-      autoComplete?: TextInput['props']['autoComplete'];
+      keyboardType?: TextInput["props"]["keyboardType"];
+      autoCapitalize?: TextInput["props"]["autoCapitalize"];
+      autoComplete?: TextInput["props"]["autoComplete"];
     },
   ) => (
     <View style={{ marginBottom: 16 }}>
-      <Text style={{ fontSize: 14, fontWeight: '500', color: Colors.text, marginBottom: 6 }}>{label}</Text>
+      <Text
+        style={{
+          fontSize: 14,
+          fontWeight: "500",
+          color: Colors.text,
+          marginBottom: 6,
+        }}
+      >
+        {label}
+      </Text>
       <TextInput
         value={value}
         onChangeText={onChangeText}
@@ -105,65 +121,79 @@ export default function RegisterScreen() {
         }}
       />
       {errors[field] && (
-        <Text style={{ color: Colors.error, fontSize: 13, marginTop: 4 }}>{errors[field]}</Text>
+        <Text style={{ color: Colors.error, fontSize: 13, marginTop: 4 }}>
+          {errors[field]}
+        </Text>
       )}
     </View>
   );
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={{ flex: 1, backgroundColor: Colors.background }}
     >
       <ScrollView
-        contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 24 }}
+        contentContainerStyle={{
+          flexGrow: 1,
+          justifyContent: "center",
+          padding: 24,
+        }}
         keyboardShouldPersistTaps="handled"
       >
         {/* Logo */}
-        <View style={{ alignItems: 'center', marginBottom: 32 }}>
-          <Image
-            source={require('../../assets/images/logo.png')}
-            style={{ width: 80, height: 64, marginBottom: 12 }}
-            resizeMode="contain"
-          />
-          <Text style={{ fontSize: 28, fontWeight: '700', color: Colors.text }}>Create Account</Text>
-          <Text style={{ fontSize: 15, color: Colors.textSecondary, marginTop: 4 }}>
+        <View style={{ alignItems: "center", marginBottom: 32 }}>
+          <AppLogo />
+          <Text style={{ fontSize: 28, fontWeight: "700", color: Colors.text }}>
+            Create Account
+          </Text>
+          <Text
+            style={{ fontSize: 15, color: Colors.textSecondary, marginTop: 4 }}
+          >
             Start tracking your expenses with JodTod
           </Text>
         </View>
 
-        {renderInput('Full Name', name, setName, 'name', {
-          placeholder: 'Enter your name',
-          autoCapitalize: 'words',
-          autoComplete: 'name',
+        {renderInput("Full Name", name, setName, "name", {
+          placeholder: "Enter your name",
+          autoCapitalize: "words",
+          autoComplete: "name",
         })}
 
-        {renderInput('Email', email, setEmail, 'email', {
-          placeholder: 'you@example.com',
-          keyboardType: 'email-address',
-          autoCapitalize: 'none',
-          autoComplete: 'email',
+        {renderInput("Email", email, setEmail, "email", {
+          placeholder: "you@example.com",
+          keyboardType: "email-address",
+          autoCapitalize: "none",
+          autoComplete: "email",
         })}
 
-        {renderInput('Password', password, setPassword, 'password', {
-          placeholder: 'Minimum 8 characters',
+        {renderInput("Password", password, setPassword, "password", {
+          placeholder: "Minimum 8 characters",
           secureTextEntry: true,
-          autoComplete: 'new-password',
+          autoComplete: "new-password",
         })}
 
-        {renderInput('Confirm Password', passwordConfirmation, setPasswordConfirmation, 'password_confirmation', {
-          placeholder: 'Re-enter your password',
-          secureTextEntry: true,
-          autoComplete: 'new-password',
-        })}
+        {renderInput(
+          "Confirm Password",
+          passwordConfirmation,
+          setPasswordConfirmation,
+          "password_confirmation",
+          {
+            placeholder: "Re-enter your password",
+            secureTextEntry: true,
+            autoComplete: "new-password",
+          },
+        )}
 
         {/* Show/Hide Password Toggle */}
         <TouchableOpacity
           onPress={() => setShowPassword(!showPassword)}
-          style={{ alignSelf: 'flex-end', marginBottom: 24, marginTop: -8 }}
+          style={{ alignSelf: "flex-end", marginBottom: 24, marginTop: -8 }}
         >
-          <Text style={{ color: Colors.primary, fontWeight: '600', fontSize: 14 }}>
-            {showPassword ? 'Hide Passwords' : 'Show Passwords'}
+          <Text
+            style={{ color: Colors.primary, fontWeight: "600", fontSize: 14 }}
+          >
+            {showPassword ? "Hide Passwords" : "Show Passwords"}
           </Text>
         </TouchableOpacity>
 
@@ -175,23 +205,35 @@ export default function RegisterScreen() {
             backgroundColor: loading ? Colors.primaryLight : Colors.primary,
             borderRadius: 12,
             padding: 16,
-            alignItems: 'center',
+            alignItems: "center",
             marginBottom: 24,
           }}
         >
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>Create Account</Text>
+            <Text style={{ color: "#fff", fontSize: 16, fontWeight: "600" }}>
+              Create Account
+            </Text>
           )}
         </TouchableOpacity>
 
         {/* Login Link */}
-        <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
-          <Text style={{ color: Colors.textSecondary, fontSize: 15 }}>Already have an account? </Text>
+        <View style={{ flexDirection: "row", justifyContent: "center" }}>
+          <Text style={{ color: Colors.textSecondary, fontSize: 15 }}>
+            Already have an account?{" "}
+          </Text>
           <Link href="/(auth)/login" asChild>
             <TouchableOpacity>
-              <Text style={{ color: Colors.primary, fontWeight: '600', fontSize: 15 }}>Login</Text>
+              <Text
+                style={{
+                  color: Colors.primary,
+                  fontWeight: "600",
+                  fontSize: 15,
+                }}
+              >
+                Login
+              </Text>
             </TouchableOpacity>
           </Link>
         </View>

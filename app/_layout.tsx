@@ -53,10 +53,12 @@ export default function RootLayout() {
   useEffect(() => {
     if (isLoading) return;
 
-    const inAuthGroup = segments[0] === '(auth)';
-    const onVerifyScreen = (segments as string[]).includes('verify-email');
+    const currentSegments = segments as string[];
+    const inAuthGroup = currentSegments[0] === '(auth)';
+    const onVerifyScreen = currentSegments.includes('verify-email');
+    const onPublicAuthScreen = ['login', 'register', 'forgot-password'].some((screen) => currentSegments.includes(screen));
 
-    if (!isAuthenticated && !inAuthGroup) {
+    if (!isAuthenticated && !onPublicAuthScreen) {
       router.replace('/(auth)/login');
     } else if (isAuthenticated && !user?.email_verified_at && !onVerifyScreen) {
       router.replace('/(auth)/verify-email');

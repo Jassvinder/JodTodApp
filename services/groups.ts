@@ -122,8 +122,8 @@ export const groupService = {
   },
 
   // Group Expenses
-  getGroupExpenses(groupId: number, params?: GroupExpenseListParams) {
-    return api.get<PaginatedResponse<GroupExpense>>(`/groups/${groupId}/expenses`, { params });
+  getGroupExpenses(groupId: number, params?: GroupExpenseListParams, signal?: AbortSignal) {
+    return api.get<PaginatedResponse<GroupExpense>>(`/groups/${groupId}/expenses`, { params, signal });
   },
 
   createGroupExpense(groupId: number, data: GroupExpensePayload) {

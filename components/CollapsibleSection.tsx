@@ -1,5 +1,5 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Animated } from 'react-native';
+import { useState, useCallback } from 'react';
+import { View, Text, TouchableOpacity } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Colors } from '../constants/colors';
 
@@ -31,36 +31,10 @@ export default function CollapsibleSection({
   style,
 }: CollapsibleSectionProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
-  const [contentHeight, setContentHeight] = useState(0);
-  const [measured, setMeasured] = useState(false);
-  const animValue = useRef(new Animated.Value(defaultOpen ? 1 : 0)).current;
-
-  useEffect(() => {
-    Animated.timing(animValue, {
-      toValue: isOpen ? 1 : 0,
-      duration: 250,
-      useNativeDriver: false,
-    }).start();
-  }, [isOpen]);
 
   const toggle = useCallback(() => {
     setIsOpen((prev) => !prev);
   }, []);
-
-  const rotation = animValue.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '180deg'],
-  });
-
-  const heightAnim = animValue.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, contentHeight],
-  });
-
-  const opacityAnim = animValue.interpolate({
-    inputRange: [0, 0.5, 1],
-    outputRange: [0, 0, 1],
-  });
 
   return (
     <View style={[{
@@ -99,47 +73,14 @@ export default function CollapsibleSection({
             <Text style={{ fontSize: 13, fontWeight: '400', color: Colors.textSecondary }}> ({count})</Text>
           )}
         </Text>
-        <Animated.View style={{ transform: [{ rotate: rotation }] }}>
-          <Ionicons name="chevron-up" size={18} color={Colors.textMuted} />
-        </Animated.View>
+        <Ionicons name={isOpen ? 'chevron-up' : 'chevron-down'} size={18} color={Colors.textMuted} />
       </TouchableOpacity>
 
-      {/* Hidden measurer */}
-      {!measured && (
-        <View
-          style={{ position: 'absolute', opacity: 0, zIndex: -1 }}
-          onLayout={(e) => {
-            const h = e.nativeEvent.layout.height;
-            if (h > 0) {
-              setContentHeight(h);
-              setMeasured(true);
-            }
-          }}
-        >
-          <View style={{ paddingHorizontal: 14, paddingBottom: 14 }}>
-            {children}
-          </View>
-        </View>
-      )}
-
-      <Animated.View style={{
-        height: measured ? heightAnim : (isOpen ? undefined : 0),
-        opacity: measured ? opacityAnim : (isOpen ? 1 : 0),
-        overflow: 'hidden',
-      }}>
-        <View
-          style={{ paddingHorizontal: 14, paddingBottom: 14 }}
-          onLayout={(e) => {
-            const h = e.nativeEvent.layout.height;
-            if (h > 0 && h !== contentHeight) {
-              setContentHeight(h);
-              setMeasured(true);
-            }
-          }}
-        >
+      {isOpen && (
+        <View style={{ paddingHorizontal: 14, paddingBottom: 14 }}>
           {children}
         </View>
-      </Animated.View>
+      )}
     </View>
   );
 }

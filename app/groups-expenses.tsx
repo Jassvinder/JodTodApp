@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
-  TextInput,
 } from 'react-native';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { groupService, type GroupExpenseListParams } from '../services/groups';
@@ -17,6 +16,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useToast } from '../components/Toast';
 import { useConfirm } from '../components/ConfirmDialog';
 import BottomNav from '../components/BottomNav';
+import ListSearchBar from '../components/ListSearchBar';
 import type { GroupExpense, Category } from '../types/models';
 
 export default function GroupExpensesScreen() {
@@ -39,6 +39,9 @@ export default function GroupExpensesScreen() {
   const [searchText, setSearchText] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+  const [searching, setSearching] = useState(false);
+  const requestControllerRef = useRef<AbortController | null>(null);
+  const searchQueryRef = useRef(searchQuery);
 
   const fetchCategories = async () => {
     try {
@@ -49,13 +52,17 @@ export default function GroupExpensesScreen() {
     }
   };
 
-  const fetchExpenses = async (pageNum: number = 1, append: boolean = false) => {
+  const fetchExpenses = async (pageNum: number = 1, append: boolean = false, search = searchQueryRef.current) => {
+    requestControllerRef.current?.abort();
+    const controller = new AbortController();
+    requestControllerRef.current = controller;
     try {
       const params: GroupExpenseListParams = { page: pageNum };
       if (selectedCategory) params.category = selectedCategory;
-      if (searchQuery.trim()) params.search = searchQuery.trim();
+      if (search.trim()) params.search = search.trim();
 
-      const response = await groupService.getGroupExpenses(groupId, params);
+      const response = await groupService.getGroupExpenses(groupId, params, controller.signal);
+      if (controller.signal.aborted) return;
       const { data, meta } = response.data;
 
       if (append) {
@@ -65,14 +72,22 @@ export default function GroupExpensesScreen() {
       }
       setPage(meta.current_page);
       setLastPage(meta.last_page);
-    } catch (error: any) {
-      toast.show(error.response?.data?.message || 'Failed to load expenses.', 'error');
+    } catch (error: unknown) {
+      if (!controller.signal.aborted) {
+        const message = (error as { response?: { data?: { message?: string } } }).response?.data?.message;
+        toast.show(message || 'Failed to load expenses.', 'error');
+      }
     } finally {
-      setLoading(false);
-      setRefreshing(false);
-      setLoadingMore(false);
+      if (!controller.signal.aborted) {
+        setLoading(false);
+        setRefreshing(false);
+        setLoadingMore(false);
+        setSearching(false);
+      }
     }
   };
+
+  useEffect(() => () => requestControllerRef.current?.abort(), []);
 
   useFocusEffect(
     useCallback(() => {
@@ -80,14 +95,14 @@ export default function GroupExpensesScreen() {
       setLoading(true);
       setPage(1);
       fetchExpenses(1);
-    }, [selectedCategory, searchQuery])
+    }, [selectedCategory])
   );
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     setPage(1);
     fetchExpenses(1);
-  }, [selectedCategory, searchQuery]);
+  }, [selectedCategory]);
 
   const loadMore = () => {
     if (loadingMore || page >= lastPage) return;
@@ -96,9 +111,21 @@ export default function GroupExpensesScreen() {
   };
 
   const handleSearch = () => {
-    setSearchQuery(searchText);
-    setLoading(true);
+    const nextSearchQuery = searchText.trim();
+    searchQueryRef.current = nextSearchQuery;
+    setSearchQuery(nextSearchQuery);
+    setSearching(true);
     setPage(1);
+    fetchExpenses(1, false, nextSearchQuery);
+  };
+
+  const handleClearSearch = () => {
+    searchQueryRef.current = '';
+    setSearchText('');
+    setSearchQuery('');
+    setSearching(false);
+    setPage(1);
+    fetchExpenses(1, false, '');
   };
 
   const handleCategorySelect = (catId: number | undefined) => {
@@ -166,33 +193,6 @@ export default function GroupExpensesScreen() {
           <Ionicons name="chevron-down" size={14} color={Colors.textMuted} />
         </TouchableOpacity>
 
-        {/* Search */}
-        <View style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          backgroundColor: Colors.surface,
-          borderRadius: 10,
-          paddingHorizontal: 12,
-          borderWidth: 1,
-          borderColor: Colors.border,
-          flex: 1.5,
-        }}>
-          <Ionicons name="search-outline" size={16} color={Colors.textMuted} />
-          <TextInput
-            value={searchText}
-            onChangeText={setSearchText}
-            onSubmitEditing={handleSearch}
-            placeholder="Search..."
-            placeholderTextColor={Colors.textMuted}
-            returnKeyType="search"
-            style={{ flex: 1, fontSize: 14, color: Colors.text, paddingVertical: 10, paddingHorizontal: 8 }}
-          />
-          {searchText.length > 0 && (
-            <TouchableOpacity onPress={() => { setSearchText(''); setSearchQuery(''); setLoading(true); setPage(1); }}>
-              <Ionicons name="close-circle" size={18} color={Colors.textMuted} />
-            </TouchableOpacity>
-          )}
-        </View>
       </View>
 
       {/* Category Picker Dropdown */}
@@ -287,6 +287,9 @@ export default function GroupExpensesScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: Colors.background }}>
       <View style={{ flex: 1 }}>
+      <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
+        <ListSearchBar value={searchText} placeholder="Search group expenses..." searching={searching} accessibilityLabel="Search group expenses" onChangeText={setSearchText} onSearch={handleSearch} onClear={handleClearSearch} />
+      </View>
       <FlatList
         data={expenses}
         renderItem={renderExpenseItem}

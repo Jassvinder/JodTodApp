@@ -1,20 +1,22 @@
-import { useState } from 'react';
+import { useState } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   ActivityIndicator,
   Image,
-} from 'react-native';
-import { useRouter } from 'expo-router';
-import { useAuthStore } from '../../stores/authStore';
-import { Colors } from '../../constants/colors';
-import api from '../../services/api';
-import { useToast } from '../../components/Toast';
+} from "react-native";
+import { useRouter } from "expo-router";
+import { useAuthStore } from "../../stores/authStore";
+import { Colors } from "../../constants/colors";
+import api from "../../services/api";
+import { useToast } from "../../components/Toast";
+import AppLogo from "./AppLogo";
 
 export default function VerifyEmailScreen() {
   const [loading, setLoading] = useState(false);
   const [resent, setResent] = useState(false);
+  const [leaving, setLeaving] = useState(false);
   const { user, logout, loadToken } = useAuthStore();
   const router = useRouter();
   const toast = useToast();
@@ -22,11 +24,14 @@ export default function VerifyEmailScreen() {
   const handleResend = async () => {
     setLoading(true);
     try {
-      const response = await api.post('/email/verification-notification');
-      toast.show(response.data.message || 'Verification email sent.');
+      const response = await api.post("/email/verification-notification");
+      toast.show(response.data.message || "Verification email sent.");
       setResent(true);
     } catch (error: any) {
-      toast.show(error.response?.data?.message || 'Failed to resend verification email.', 'error');
+      toast.show(
+        error.response?.data?.message || "Failed to resend verification email.",
+        "error",
+      );
     } finally {
       setLoading(false);
     }
@@ -38,43 +43,92 @@ export default function VerifyEmailScreen() {
       await loadToken();
       // loadToken fetches fresh user data - if verified, root layout will redirect to tabs
     } catch {
-      toast.show('Could not check verification status.', 'error');
+      toast.show("Could not check verification status.", "error");
     } finally {
       setLoading(false);
     }
   };
 
+  const leaveVerification = async (
+    destination: "/(auth)/login" | "/(auth)/register",
+  ) => {
+    setLeaving(true);
+    try {
+      await logout();
+      router.replace(destination);
+    } finally {
+      setLeaving(false);
+    }
+  };
+
   return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, backgroundColor: Colors.background }}>
-      <Image
-        source={require('../../assets/images/logo.png')}
-        style={{ width: 80, height: 64, marginBottom: 24 }}
-        resizeMode="contain"
-      />
+    <View
+      style={{
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        padding: 24,
+        backgroundColor: Colors.background,
+      }}
+    >
+      <AppLogo />
 
       <View
         style={{
           width: 72,
           height: 72,
           borderRadius: 36,
-          backgroundColor: '#fef3c7',
-          justifyContent: 'center',
-          alignItems: 'center',
+          backgroundColor: "#fef3c7",
+          justifyContent: "center",
+          alignItems: "center",
           marginBottom: 24,
         }}
       >
         <Text style={{ fontSize: 32 }}>✉️</Text>
       </View>
 
-      <Text style={{ fontSize: 22, fontWeight: '700', color: Colors.text, marginBottom: 8 }}>Verify Your Email</Text>
-      <Text style={{ fontSize: 15, color: Colors.textSecondary, textAlign: 'center', lineHeight: 22, marginBottom: 8 }}>
+      <Text
+        style={{
+          fontSize: 22,
+          fontWeight: "700",
+          color: Colors.text,
+          marginBottom: 8,
+        }}
+      >
+        Verify Your Email
+      </Text>
+      <Text
+        style={{
+          fontSize: 15,
+          color: Colors.textSecondary,
+          textAlign: "center",
+          lineHeight: 22,
+          marginBottom: 8,
+        }}
+      >
         We've sent a verification link to
       </Text>
-      <Text style={{ fontSize: 15, fontWeight: '600', color: Colors.text, marginBottom: 24 }}>
+      <Text
+        style={{
+          fontSize: 15,
+          fontWeight: "600",
+          color: Colors.text,
+          marginBottom: 24,
+        }}
+      >
         {user?.email}
       </Text>
-      <Text style={{ fontSize: 14, color: Colors.textSecondary, textAlign: 'center', lineHeight: 20, marginBottom: 32 }}>
-        Please check your inbox and click the verification link. Then tap the button below to continue.
+      <Text
+        style={{
+          fontSize: 14,
+          color: Colors.textSecondary,
+          textAlign: "center",
+          lineHeight: 20,
+          marginBottom: 32,
+        }}
+      >
+        Please check your inbox and click the verification link. Then tap the
+        button below to continue.
       </Text>
 
       <TouchableOpacity
@@ -85,15 +139,17 @@ export default function VerifyEmailScreen() {
           borderRadius: 12,
           paddingHorizontal: 32,
           paddingVertical: 14,
-          width: '100%',
-          alignItems: 'center',
+          width: "100%",
+          alignItems: "center",
           marginBottom: 16,
         }}
       >
         {loading ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>I've Verified My Email</Text>
+          <Text style={{ color: "#fff", fontSize: 16, fontWeight: "600" }}>
+            I've Verified My Email
+          </Text>
         )}
       </TouchableOpacity>
 
@@ -102,13 +158,34 @@ export default function VerifyEmailScreen() {
         disabled={loading}
         style={{ marginBottom: 24 }}
       >
-        <Text style={{ color: Colors.primary, fontWeight: '600', fontSize: 14 }}>
-          {resent ? 'Email Resent! Send Again?' : 'Resend Verification Email'}
+        <Text
+          style={{ color: Colors.primary, fontWeight: "600", fontSize: 14 }}
+        >
+          {resent ? "Email Resent! Send Again?" : "Resend Verification Email"}
         </Text>
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={logout}>
-        <Text style={{ color: Colors.textMuted, fontSize: 14 }}>Logout</Text>
+      <TouchableOpacity
+        onPress={() => leaveVerification("/(auth)/login")}
+        disabled={loading || leaving}
+        style={{ marginBottom: 16 }}
+      >
+        {leaving ? (
+          <ActivityIndicator size="small" color={Colors.textMuted} />
+        ) : (
+          <Text style={{ color: Colors.textMuted, fontSize: 14 }}>Logout</Text>
+        )}
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        onPress={() => leaveVerification("/(auth)/register")}
+        disabled={loading || leaving}
+      >
+        <Text
+          style={{ color: Colors.primary, fontSize: 14, fontWeight: "600" }}
+        >
+          Change Email
+        </Text>
       </TouchableOpacity>
     </View>
   );

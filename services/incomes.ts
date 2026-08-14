@@ -21,8 +21,8 @@ export interface IncomePayload {
 }
 
 export const incomeService = {
-  getIncomes(params?: IncomeListParams) {
-    return api.get<IncomeListResponse>('/incomes', { params });
+  getIncomes(params?: IncomeListParams, signal?: AbortSignal) {
+    return api.get<IncomeListResponse>('/incomes', { params, signal });
   },
 
   getIncome(id: number) {

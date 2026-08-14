@@ -28,8 +28,8 @@ export interface CreateCategoryData {
 }
 
 export const todoService = {
-  getTodos(params?: TodoListParams) {
-    return api.get<PaginatedResponse<Todo>>('/todos', { params });
+  getTodos(params?: TodoListParams, signal?: AbortSignal) {
+    return api.get<PaginatedResponse<Todo>>('/todos', { params, signal });
   },
 
   createTodo(data: CreateTodoData) {
