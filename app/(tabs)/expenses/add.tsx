@@ -13,6 +13,7 @@ import {
 import { useRouter } from 'expo-router';
 import DatePickerField from '../../../components/DatePickerField';
 import { expenseService } from '../../../services/expenses';
+import { formatLocalDateTime } from '../../../utils/format';
 import { Colors } from '../../../constants/colors';
 import { API_BASE_URL } from '../../../constants/config';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -36,7 +37,7 @@ export default function AddExpenseScreen() {
   const [amount, setAmount] = useState('');
   const [categoryId, setCategoryId] = useState<number | null>(null);
   const [description, setDescription] = useState('');
-  const [expenseDate, setExpenseDate] = useState(new Date().toISOString().split('T')[0]);
+  const [expenseDate, setExpenseDate] = useState(formatLocalDateTime());
   const [image, setImage] = useState<{ uri: string; name: string; type: string } | null>(null);
 
   // UI state
@@ -160,7 +161,7 @@ export default function AddExpenseScreen() {
     const newErrors: Record<string, string> = {};
     if (!amount || parseFloat(amount) <= 0) newErrors.amount = 'Enter a valid amount';
     if (!categoryId) newErrors.category_id = 'Select a category';
-    if (!expenseDate) newErrors.expense_date = 'Select a date';
+    if (!expenseDate) newErrors.expense_date = 'Select a date and time';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -305,12 +306,13 @@ export default function AddExpenseScreen() {
             {errors.description && <Text style={{ color: Colors.error, fontSize: 12, marginTop: 4 }}>{errors.description}</Text>}
           </View>
 
-          {/* Date Picker */}
+          {/* Date and Time Picker */}
           <DatePickerField
-            label="Date *"
+            label="Date & Time *"
             value={expenseDate}
             onChange={setExpenseDate}
             error={errors.expense_date}
+            mode="datetime"
             maxDate={new Date()}
           />
 

@@ -36,7 +36,7 @@ export interface GroupsSummary {
 }
 
 export interface RecentActivity {
-  type: 'personal_expense' | 'group_expense' | 'settlement';
+  type: 'personal_expense' | 'group_expense' | 'income' | 'settlement';
   description: string;
   amount: number;
   date: string;

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -12,13 +12,15 @@ import {
   FlatList,
   Image,
 } from 'react-native';
-import { useRouter } from 'expo-router';
-import { todoService } from '../services/todos';
+import { useRouter, useFocusEffect } from 'expo-router';
+import { getTodoCategoriesWithDefaults, todoService } from '../services/todos';
+import { scheduleTodoReminder } from '../services/todoReminders';
 import { contactService } from '../services/contacts';
 import { resolveUrl } from '../utils/format';
 import { Colors } from '../constants/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import DatePickerField from '../components/DatePickerField';
+import TodoCategoryPicker from '../components/TodoCategoryPicker';
 import { useToast } from '../components/Toast';
 import BottomNav from '../components/BottomNav';
 import type { TodoCategory, Contact } from '../types/models';
@@ -49,6 +51,7 @@ export default function AddTodoScreen() {
   const [loadingData, setLoadingData] = useState(true);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showContactPicker, setShowContactPicker] = useState(false);
+  const categoryIdsRef = useRef<Set<number>>(new Set());
 
   useEffect(() => {
     loadData();
@@ -57,10 +60,11 @@ export default function AddTodoScreen() {
   const loadData = async () => {
     try {
       const [catRes, contactRes] = await Promise.all([
-        todoService.getCategories(),
+        getTodoCategoriesWithDefaults(),
         contactService.getContacts({ page: 1 }),
       ]);
       setCategories(catRes.data.data);
+      categoryIdsRef.current = new Set(catRes.data.data.map((category) => category.id));
       setContacts(contactRes.data.data);
     } catch {
       // Silent fail
@@ -68,6 +72,21 @@ export default function AddTodoScreen() {
       setLoadingData(false);
     }
   };
+
+  useFocusEffect(
+    useCallback(() => {
+      if (categoryIdsRef.current.size === 0) return;
+      getTodoCategoriesWithDefaults().then((response) => {
+        const latestCategories = response.data.data;
+        const newCategory = latestCategories.find((category) => !categoryIdsRef.current.has(category.id));
+        setCategories(latestCategories);
+        if (newCategory) setCategoryId(newCategory.id);
+        categoryIdsRef.current = new Set(latestCategories.map((category) => category.id));
+      }).catch(() => {
+        // Keep the existing category list when refresh fails.
+      });
+    }, []),
+  );
 
   const getInitials = (name: string): string => {
     if (!name) return '?';
@@ -88,7 +107,7 @@ export default function AddTodoScreen() {
 
     setSaving(true);
     try {
-      await todoService.createTodo({
+      const response = await todoService.createTodo({
         title: title.trim(),
         priority,
         due_date: dueDate || null,
@@ -96,6 +115,7 @@ export default function AddTodoScreen() {
         assigned_to: assignedTo,
         reminder_at: reminderAt || null,
       });
+      await scheduleTodoReminder(response.data.data.id, title.trim(), reminderAt || null);
       router.back();
     } catch (error: any) {
       const fieldErrors = error.response?.data?.errors;
@@ -193,55 +213,12 @@ export default function AddTodoScreen() {
             error={errors.due_date}
           />
 
-          {/* Category Picker */}
-          <View style={{ marginBottom: 20 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-              <Text style={{ fontSize: 13, fontWeight: '500', color: Colors.text }}>Category</Text>
-              <TouchableOpacity onPress={() => router.push('/todo-categories')}>
-                <Text style={{ fontSize: 13, fontWeight: '500', color: Colors.primary }}>Manage</Text>
-              </TouchableOpacity>
-            </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -4 }}>
-              <TouchableOpacity
-                onPress={() => setCategoryId(null)}
-                style={{
-                  paddingHorizontal: 14,
-                  paddingVertical: 10,
-                  borderRadius: 20,
-                  backgroundColor: categoryId === null ? Colors.primary : Colors.surface,
-                  borderWidth: 1,
-                  borderColor: categoryId === null ? Colors.primary : Colors.border,
-                  marginHorizontal: 4,
-                }}
-              >
-                <Text style={{ fontSize: 13, fontWeight: '500', color: categoryId === null ? '#fff' : Colors.text }}>
-                  None
-                </Text>
-              </TouchableOpacity>
-              {categories.map((cat) => (
-                <TouchableOpacity
-                  key={cat.id}
-                  onPress={() => setCategoryId(cat.id)}
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    paddingHorizontal: 14,
-                    paddingVertical: 10,
-                    borderRadius: 20,
-                    backgroundColor: categoryId === cat.id ? Colors.primary : Colors.surface,
-                    borderWidth: 1,
-                    borderColor: categoryId === cat.id ? Colors.primary : Colors.border,
-                    marginHorizontal: 4,
-                  }}
-                >
-                  <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: cat.color, marginRight: 6 }} />
-                  <Text style={{ fontSize: 13, fontWeight: '500', color: categoryId === cat.id ? '#fff' : Colors.text }}>
-                    {cat.name}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
+          <TodoCategoryPicker
+            categories={categories}
+            value={categoryId}
+            onChange={setCategoryId}
+            onManage={() => router.push('/todo-categories')}
+          />
 
           {/* Assign to Contact */}
           <View style={{ marginBottom: 20 }}>

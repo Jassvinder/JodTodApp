@@ -192,8 +192,15 @@ export default function ExpensesScreen() {
   // Refetch on focus (when coming back from add/edit)
   useFocusEffect(
     useCallback(() => {
+      const defaultFilters = { category: undefined, search: '' };
+      filtersRef.current = defaultFilters;
+      setSelectedCategory(undefined);
+      setSearchText('');
+      setSearchQuery('');
+      setShowCategoryPicker(false);
+      setSearching(false);
       setPage(1);
-      fetchExpenses(1);
+      fetchExpenses(1, false, defaultFilters);
     }, [fetchExpenses])
   );
 

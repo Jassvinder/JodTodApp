@@ -9,7 +9,7 @@ import {
   TextInput,
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
-import { todoService } from '../services/todos';
+import { getTodoCategoriesWithDefaults, todoService } from '../services/todos';
 import { Colors } from '../constants/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useToast } from '../components/Toast';
@@ -38,7 +38,7 @@ export default function TodoCategoriesScreen() {
 
   const fetchCategories = async () => {
     try {
-      const response = await todoService.getCategories();
+      const response = await getTodoCategoriesWithDefaults();
       setCategories(response.data.data);
     } catch (error: any) {
       toast.show(error.response?.data?.message || 'Failed to load categories.', 'error');
@@ -98,6 +98,10 @@ export default function TodoCategoriesScreen() {
   };
 
   const handleDelete = (cat: TodoCategory) => {
+    if (cat.is_default) {
+      toast.show('Default categories cannot be deleted.', 'error');
+      return;
+    }
     confirm.show({
       title: 'Delete Category',
       message: `Are you sure you want to delete "${cat.name}"?`,
@@ -133,7 +137,6 @@ export default function TodoCategoriesScreen() {
   const renderCategoryItem = ({ item }: { item: TodoCategory }) => (
     <TouchableOpacity
       onPress={() => handleEdit(item)}
-      onLongPress={() => handleDelete(item)}
       style={{
         backgroundColor: Colors.surface,
         borderRadius: 12,
@@ -159,8 +162,14 @@ export default function TodoCategoriesScreen() {
         {item.name}
       </Text>
 
-      {/* Edit hint */}
-      <Ionicons name="create-outline" size={18} color={Colors.textMuted} />
+      <TouchableOpacity onPress={() => handleEdit(item)} hitSlop={8} style={{ padding: 6 }}>
+        <Ionicons name="create-outline" size={18} color={Colors.textMuted} />
+      </TouchableOpacity>
+      {!item.is_default && (
+        <TouchableOpacity onPress={() => handleDelete(item)} hitSlop={8} style={{ padding: 6, marginLeft: 4 }}>
+          <Ionicons name="trash-outline" size={18} color={Colors.error} />
+        </TouchableOpacity>
+      )}
     </TouchableOpacity>
   );
 

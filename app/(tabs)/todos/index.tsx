@@ -9,13 +9,15 @@ import {
   Image,
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { todoService, type TodoListParams } from '../../../services/todos';
+import { getTodoCategoriesWithDefaults, todoService, type TodoListParams } from '../../../services/todos';
+import { cancelTodoReminder } from '../../../services/todoReminders';
 import { resolveUrl } from '../../../utils/format';
 import { Colors } from '../../../constants/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useToast } from '../../../components/Toast';
 import { useConfirm } from '../../../components/ConfirmDialog';
 import ListSearchBar from '../../../components/ListSearchBar';
+import TodoFilterBar from '../../../components/TodoFilterBar';
 import type { Todo, TodoCategory } from '../../../types/models';
 
 const PRIORITY_COLORS: Record<string, string> = {
@@ -25,58 +27,10 @@ const PRIORITY_COLORS: Record<string, string> = {
 };
 
 type StatusFilter = 'all' | 'pending' | 'completed' | 'assigned_to_me' | 'assigned_by_me';
-
-function FilterDropdown({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
-  return (
-    <TouchableOpacity
-      onPress={onPress}
-      style={{
-        flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        backgroundColor: active ? Colors.primary : Colors.surface,
-        borderWidth: 1, borderColor: active ? Colors.primary : Colors.border,
-        borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10,
-      }}
-    >
-      <Text style={{ fontSize: 12, fontWeight: '500', color: active ? '#fff' : Colors.text }} numberOfLines={1}>{label}</Text>
-      <Ionicons name="chevron-down" size={14} color={active ? '#fff' : Colors.textMuted} style={{ marginLeft: 4 }} />
-    </TouchableOpacity>
-  );
-}
-
-function PickerModal({ visible, onClose, options, selected, onSelect }: {
-  visible: boolean; onClose: () => void;
-  options: { key: string; label: string; color?: string }[];
-  selected: string | number | undefined;
-  onSelect: (key: any) => void;
-}) {
-  if (!visible) return null;
-  return (
-    <TouchableOpacity
-      activeOpacity={1} onPress={onClose}
-      style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.3)', zIndex: 50, justifyContent: 'center', padding: 32 }}
-    >
-      <View style={{ backgroundColor: Colors.surface, borderRadius: 14, overflow: 'hidden', maxHeight: 350 }}>
-        <FlatList
-          data={options}
-          keyExtractor={(item) => String(item.key)}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              onPress={() => { onSelect(item.key); onClose(); }}
-              style={{
-                flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14,
-                borderBottomWidth: 1, borderBottomColor: Colors.border,
-                backgroundColor: String(selected) === String(item.key) ? '#eef2ff' : undefined,
-              }}
-            >
-              {item.color && <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: item.color, marginRight: 10 }} />}
-              <Text style={{ fontSize: 14, flex: 1, fontWeight: String(selected) === String(item.key) ? '600' : '400', color: String(selected) === String(item.key) ? Colors.primary : Colors.text }}>{item.label}</Text>
-              {String(selected) === String(item.key) && <Ionicons name="checkmark" size={18} color={Colors.primary} />}
-            </TouchableOpacity>
-          )}
-        />
-      </View>
-    </TouchableOpacity>
-  );
+interface TodoFilters {
+  status: StatusFilter;
+  priority: string;
+  category: number | undefined;
 }
 
 export default function TodosTabScreen() {
@@ -94,9 +48,6 @@ export default function TodosTabScreen() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<number | undefined>(undefined);
-  const [showStatusPicker, setShowStatusPicker] = useState(false);
-  const [showPriorityPicker, setShowPriorityPicker] = useState(false);
-  const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [searching, setSearching] = useState(false);
@@ -105,25 +56,26 @@ export default function TodosTabScreen() {
 
   const fetchCategories = async () => {
     try {
-      const response = await todoService.getCategories();
+      const response = await getTodoCategoriesWithDefaults();
       setCategories(response.data.data);
     } catch {
       // Silent fail
     }
   };
 
-  const fetchTodos = async (pageNum: number = 1, append: boolean = false, search = searchQueryRef.current) => {
+  const fetchTodos = async (pageNum: number = 1, append: boolean = false, search = searchQueryRef.current, filters?: TodoFilters) => {
     requestControllerRef.current?.abort();
     const controller = new AbortController();
     requestControllerRef.current = controller;
     try {
       const params: TodoListParams = { page: pageNum };
-      if (statusFilter === 'pending') params.status = 'pending';
-      else if (statusFilter === 'completed') params.status = 'completed';
-      else if (statusFilter === 'assigned_to_me') params.scope = 'assigned_to_me';
-      else if (statusFilter === 'assigned_by_me') params.scope = 'assigned_by_me';
-      if (priorityFilter !== 'all') params.priority = priorityFilter as 'low' | 'medium' | 'high';
-      if (categoryFilter) params.category_id = categoryFilter;
+      const activeFilters = filters || { status: statusFilter, priority: priorityFilter, category: categoryFilter };
+      if (activeFilters.status === 'pending') params.status = 'pending';
+      else if (activeFilters.status === 'completed') params.status = 'completed';
+      else if (activeFilters.status === 'assigned_to_me') params.scope = 'assigned_to_me';
+      else if (activeFilters.status === 'assigned_by_me') params.scope = 'assigned_by_me';
+      if (activeFilters.priority !== 'all') params.priority = activeFilters.priority as 'low' | 'medium' | 'high';
+      if (activeFilters.category) params.category_id = activeFilters.category;
       if (search.trim()) params.search = search.trim();
 
       const response = await todoService.getTodos(params, controller.signal);
@@ -156,10 +108,16 @@ export default function TodosTabScreen() {
   useFocusEffect(
     useCallback(() => {
       fetchCategories();
+      setStatusFilter('all');
+      setPriorityFilter('all');
+      setCategoryFilter(undefined);
+      searchQueryRef.current = '';
+      setSearchText('');
+      setSearchQuery('');
       setLoading(true);
       setPage(1);
-      fetchTodos(1);
-    }, [statusFilter, priorityFilter, categoryFilter])
+      fetchTodos(1, false, '', { status: 'all', priority: 'all', category: undefined });
+    }, [])
   );
 
   const onRefresh = useCallback(() => {
@@ -197,6 +155,7 @@ export default function TodosTabScreen() {
       const response = await todoService.toggleTodo(todo.id);
       const updated = response.data.data;
       setTodos((prev) => prev.map((t) => (t.id === todo.id ? updated : t)));
+      if (updated.is_completed) await cancelTodoReminder(todo.id);
     } catch (error: any) {
       toast.show(error.response?.data?.message || 'Failed to update task.', 'error');
     }
@@ -255,25 +214,24 @@ export default function TodosTabScreen() {
     { key: 'low', label: 'Low' },
   ];
 
-  const statusLabel = statusOptions.find((s) => s.key === statusFilter)?.label || 'All Status';
-  const priorityLabel = priorityOptions.find((p) => p.key === priorityFilter)?.label || 'All Priority';
-  const categoryLabel = categoryFilter ? categories.find((c) => c.id === categoryFilter)?.name || 'Category' : 'All Categories';
-
   const hasActiveFilters = statusFilter !== 'all' || priorityFilter !== 'all' || categoryFilter !== undefined;
 
   const renderHeader = () => (
     <View>
-      {/* Filter Dropdowns */}
-      <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
-        <FilterDropdown label={statusLabel} active={statusFilter !== 'all'} onPress={() => setShowStatusPicker(true)} />
-        <FilterDropdown label={priorityLabel} active={priorityFilter !== 'all'} onPress={() => setShowPriorityPicker(true)} />
-        {categories.length > 0 && (
-          <FilterDropdown label={categoryLabel} active={!!categoryFilter} onPress={() => setShowCategoryPicker(true)} />
-        )}
-      </View>
+      <TodoFilterBar
+        statusOptions={statusOptions}
+        priorityOptions={priorityOptions}
+        categories={categories}
+        status={statusFilter}
+        priority={priorityFilter}
+        categoryId={categoryFilter}
+        onStatusChange={(value) => { const nextStatus = value as StatusFilter; setStatusFilter(nextStatus); setLoading(true); setPage(1); fetchTodos(1, false, searchQueryRef.current, { status: nextStatus, priority: priorityFilter, category: categoryFilter }); }}
+        onPriorityChange={(value) => { setPriorityFilter(value); setLoading(true); setPage(1); fetchTodos(1, false, searchQueryRef.current, { status: statusFilter, priority: value, category: categoryFilter }); }}
+        onCategoryChange={(value) => { setCategoryFilter(value); setLoading(true); setPage(1); fetchTodos(1, false, searchQueryRef.current, { status: statusFilter, priority: priorityFilter, category: value }); }}
+      />
       {hasActiveFilters && (
         <TouchableOpacity
-          onPress={() => { setStatusFilter('all'); setPriorityFilter('all'); setCategoryFilter(undefined); setLoading(true); setPage(1); }}
+          onPress={() => { setStatusFilter('all'); setPriorityFilter('all'); setCategoryFilter(undefined); setLoading(true); setPage(1); fetchTodos(1, false, searchQueryRef.current, { status: 'all', priority: 'all', category: undefined }); }}
           style={{ alignSelf: 'flex-start', marginBottom: 10, flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.error, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16 }}
         >
           <Ionicons name="close-circle" size={14} color="#fff" style={{ marginRight: 4 }} />
@@ -283,13 +241,16 @@ export default function TodosTabScreen() {
     </View>
   );
 
-  const renderTodoItem = ({ item }: { item: Todo }) => (
+  const renderTodoItem = ({ item }: { item: Todo }) => {
+    const overdue = !item.is_completed && isOverdue(item.due_date);
+
+    return (
     <TouchableOpacity
       onPress={() => router.push({ pathname: '/todos-edit', params: { id: item.id } })}
       onLongPress={() => handleDelete(item)}
       style={{
-        backgroundColor: Colors.surface, borderRadius: 12, padding: 14, marginBottom: 8,
-        borderWidth: 1, borderColor: Colors.border, flexDirection: 'row', alignItems: 'center',
+        backgroundColor: overdue ? '#fff7f7' : Colors.surface, borderRadius: 12, padding: 14, marginBottom: 8,
+        borderWidth: 1, borderColor: overdue ? '#fecaca' : Colors.border, flexDirection: 'row', alignItems: 'center',
       }}
     >
       <TouchableOpacity
@@ -328,14 +289,20 @@ export default function TodosTabScreen() {
           )}
           {item.due_date && (
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Ionicons name="calendar-outline" size={11} color={!item.is_completed && isOverdue(item.due_date) ? Colors.error : Colors.textMuted} />
+              <Ionicons name="calendar-outline" size={11} color={overdue ? Colors.error : Colors.textMuted} />
               <Text style={{
                 fontSize: 11, marginLeft: 3,
-                color: !item.is_completed && isOverdue(item.due_date) ? Colors.error : Colors.textMuted,
-                fontWeight: !item.is_completed && isOverdue(item.due_date) ? '600' : '400',
+                color: overdue ? Colors.error : Colors.textMuted,
+                fontWeight: overdue ? '600' : '400',
               }}>
                 {new Date(item.due_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
               </Text>
+            </View>
+          )}
+          {item.reminder_at && <Ionicons name="notifications-outline" size={14} color={Colors.primary} accessibilityLabel="Reminder set" />}
+          {overdue && (
+            <View style={{ paddingHorizontal: 7, paddingVertical: 2, borderRadius: 10, backgroundColor: '#fee2e2' }}>
+              <Text style={{ fontSize: 10, fontWeight: '700', color: Colors.error }}>Overdue</Text>
             </View>
           )}
         </View>
@@ -351,8 +318,10 @@ export default function TodosTabScreen() {
           )}
         </View>
       )}
+      <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} style={{ marginLeft: 8 }} />
     </TouchableOpacity>
-  );
+    );
+  };
 
   const renderEmpty = () => (
     <View style={{ alignItems: 'center', paddingVertical: 60 }}>
@@ -403,28 +372,6 @@ export default function TodosTabScreen() {
         <Ionicons name="add" size={28} color="#fff" />
       </TouchableOpacity>
 
-      {/* Filter Picker Modals */}
-      <PickerModal
-        visible={showStatusPicker}
-        onClose={() => setShowStatusPicker(false)}
-        options={statusOptions.map((s) => ({ key: s.key, label: s.label }))}
-        selected={statusFilter}
-        onSelect={(key: StatusFilter) => { setStatusFilter(key); setLoading(true); setPage(1); }}
-      />
-      <PickerModal
-        visible={showPriorityPicker}
-        onClose={() => setShowPriorityPicker(false)}
-        options={priorityOptions.map((p) => ({ key: p.key, label: p.label }))}
-        selected={priorityFilter}
-        onSelect={(key: string) => { setPriorityFilter(key); setLoading(true); setPage(1); }}
-      />
-      <PickerModal
-        visible={showCategoryPicker}
-        onClose={() => setShowCategoryPicker(false)}
-        options={[{ key: 'all', label: 'All Categories' }, ...categories.map((c) => ({ key: String(c.id), label: c.name, color: c.color }))]}
-        selected={categoryFilter ? String(categoryFilter) : 'all'}
-        onSelect={(key: string) => { setCategoryFilter(key === 'all' ? undefined : parseInt(key)); setLoading(true); setPage(1); }}
-      />
     </View>
   );
 }

@@ -27,6 +27,10 @@ export interface CreateCategoryData {
   color: string;
 }
 
+export async function getTodoCategoriesWithDefaults() {
+  return api.get<ApiResponse<TodoCategory[]>>('/todo-categories');
+}
+
 export const todoService = {
   getTodos(params?: TodoListParams, signal?: AbortSignal) {
     return api.get<PaginatedResponse<Todo>>('/todos', { params, signal });

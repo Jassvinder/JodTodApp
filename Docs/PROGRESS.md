@@ -7,6 +7,42 @@
 - **Docs:** `D:\Development\Projects\JodTodApp\Docs\`
 - **Web Backend (API):** `D:\Development\Projects\JodTod` (Laravel - same DB, shared API)
 
+## Task 1511 Floating Task Filters (19-08-2026)
+
+- Consolidated the Tasks Status, Priority, and Category controls into a reusable floating filter bar.
+- Filter menus now overlay task cards without moving the list through a native top-level transparent overlay, avoiding FlatList Android stacking issues.
+
+## Task 1510 Task Category Dropdown (19-08-2026)
+
+- Replaced the task category chip list with a reusable dropdown in both Add and Edit Task.
+- Category options overlay the form without shifting following content and present the category color before its name.
+- Darkened the Manage Categories action for improved visibility.
+
+## Task 1509 Tasks List Polish (19-08-2026)
+
+- Changed task filter menus to use normal header layout, ensuring every filter option is displayed above the task cards.
+- Added a bell indicator for tasks that have a configured reminder.
+- Added an Overdue badge and subtle red task-card styling for incomplete tasks past their due date.
+
+## Task 1203 Todos (19-08-2026)
+
+- Tasks reset their filters and search on every visit, then reload the complete task list.
+- Home and Market are backend-enforced default categories. They appear on task forms and cannot be deleted.
+- Add and Edit Task now schedule/cancel local reminders correctly, including Android notification-channel setup.
+- Category creation refreshes and selects the new category on return to Add Task; task and category lists received the requested edit/delete affordances and inline dropdown styling.
+
+## Task 1201 Home Improvements (14-08-2026)
+
+- Removed the native Home title and applied safe-area spacing to the custom dashboard header. The navigation controls stay fixed below the status bar while Home content scrolls beneath them.
+- Recent Activity now merges the latest incomes with dashboard activities, sorts the combined feed chronologically, and identifies income with a positive visual treatment.
+- Summary is the only dashboard section expanded by default; all remaining collapsible sections now start closed.
+
+## Task 1202 Expense Reset and Date-Time (15-08-2026)
+
+- Expenses resets its category, search text, submitted search, and category picker whenever the screen is focused, then loads the unfiltered list.
+- Personal expense add and edit forms now use a native date-and-time picker and submit a local date-time value instead of a date-only value.
+- The Laravel `expenses.expense_date` column and Expense model were already configured as `datetime`, so no backend schema change was required.
+
 ## Task 602 Mobile Verification Flow (03-08-2026)
 
 - Removed the Push Notifications row and clarified the remaining Email Notifications label in Profile.

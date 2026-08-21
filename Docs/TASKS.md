@@ -18,6 +18,8 @@
 
   option to login with google on mobile.
 
+- [] **Task 1512**
+
 - [] **Task 18** profile
   A. Photo upload option
   B. Phone number add/update option
@@ -31,26 +33,6 @@
   4. Resend verification email showing "unauthenticated".
 
   Implement the following tasks. Keep changes minimal and limited to the specified behavior. Reuse existing patterns/components where possible.
-
-- [ ] **Task 1201 — Home**
-  1. Remove the "Home" title from the Home screen and fix the header behavior on scroll.
-  2. In "Recent Activity", show both income and expenses; currently only expenses appear.
-  3. Keep only the Summary section expanded by default; collapse all other sections.
-
-- [ ] **Task 1202 — Expenses**
-  1. Every time the Expenses screen opens, reset Category to "All Categories" and clear Search.
-  2. Save expense date in the database as date only, without time. **Backend task.**
-
-- [ ] **Task 1203 — Tasks**
-  1. Refresh the Tasks screen on every visit so all filters reset on each visit.
-  2. Show default categories on the Add Task screen.
-  3. Fix task reminders; they are currently not working.
-  4. When adding a new category while creating a task, immediately show/select that category in the same task without requiring task edit.
-  5. Add an arrow indicator beside every task to clearly indicate it is editable.
-  6. Make Status, Priority, and Category dropdowns behave/look like the Expenses category dropdown. Replace the current popup behavior.
-  7. Add "Market" and "Home" as default Task Categories. They must not be deletable; update the database if required.
-  8. Highlight the "Manage" link on the Add Task screen's Category section so it is clearly noticeable.
-  9. On Task Categories, replace long-press deletion with a visible Delete icon beside Edit.
 
 - [ ] **Task 1204 — Group**
   1. On every Group screen visit, keep Members, Member Shares, and Recent Expenses collapsed by default.
@@ -69,6 +51,9 @@
 - [ ] **Task 1206 — Screen State Reset**
   1. Every time the Expenses, Income, or Profile screen opens, it must start fresh.
   2. Do not retain filters, search text, selections, or other state from the previous visit.
+
+- [ ] **Task 1207 — Top space**
+  1. check screenshot 1.png. jab bhi hum login, register, forgot password pages me kuchh bhi type karte hain niche se keyboard open hota hai to app logo upar phone ke notification baar me chala jata hai. kisi bhi tarah uski limit set karo ke page usse upar na jaye.
 
 ## PENDING
 
@@ -233,9 +218,42 @@
 
 ## COMPLETED =================================================
 
+- [x] **Task 1203 — Todos** (19-08-2026)
+
+      1. Tasks now reset their filters, search, and dropdown state and reload unfiltered data on every visit.
+      2. Home and Market are server-created default categories, shown in task forms and protected from deletion.
+      3. Task reminders now schedule local notifications on create/update and cancel when a task is completed.
+      4. Newly created categories refresh and auto-select when returning to Add Task.
+      5. Added an edit chevron to every task and visible Edit/Delete controls to Task Categories.
+      6. Status, Priority, and Category selectors now use inline Expenses-style dropdown panels instead of popups.
+      7. The Manage Categories action is visibly highlighted.
+
+- [x] **Task 1202 — Expenses** (15-08-2026)
+      A. Reset Category to All Categories, cleared search text, and closed the category picker every time the Expenses screen receives focus before loading the unfiltered list.
+      B. Added date-and-time selection to personal expense add and edit forms. New timestamps are sent in local date-time format, while existing date-only records are normalized to midnight when edited.
+      C. Verified that the existing Laravel expenses migration and Expense model already persist `expense_date` as a datetime value.
+- [x] **Task 1201 — Home** (14-08-2026)
+      A. Removed the native Home title and retained safe-area spacing for the custom dashboard header, so it stays below the status bar and scrolls with Home content.
+      B. Added recent income entries to the mobile activity feed, merged chronologically with dashboard activities and rendered with a distinct positive treatment.
+      C. Changed dashboard section defaults so only Summary is expanded; pending payments, tasks, groups, category breakdown, and recent activity start collapsed.
+
 ## Completed Featured Tasks
 
 ## Completed Current Tasks
+
+- [x] **Task 1511 — Floating task filters** (19-08-2026)
+  1. Status, Priority, and Category task filters now open as floating overlays.
+  2. The dropdown no longer shifts the task list and uses a native top-level overlay for reliable Android layering.
+
+- [x] **Task 1510 — Task category dropdown** (19-08-2026)
+  1. Replaced the category chip list with a reusable dropdown on Add and Edit Task.
+  2. Dropdown options overlay the form and show the category color before its name.
+  3. Darkened the Manage Categories button.
+
+- [x] **Task 1509 — Tasks list filters and indicators** (19-08-2026)
+  1. Filter options now expand above the task list instead of being covered by task cards.
+  2. Tasks with a configured reminder show a bell icon in their metadata.
+  3. Incomplete overdue tasks have a light red card treatment and an Overdue badge.
 
 - [x] **Task 1507** (27-07-2026)
       A. Standardized Income search with a stable header, explicit Search button, clear action, and cancellable requests.
@@ -278,6 +296,7 @@
       A. Updated active Node.js from 20.18.0 (unsupported by Expo tooling) to 24.18.0. `expo-doctor` now passes all 19 checks.
       B. Verified compatible Expo SDK 55.0.28, React 19.2.0, React Native 0.83.6, Expo Router 55.0.17, and Expo Notifications 55.0.25 dependencies.
       C. Configured `ANDROID_HOME`, `ANDROID_SDK_ROOT`, and user PATH for Android SDK platform-tools 37.0.0 / ADB 1.0.41. The connected phone is detected as a USB composite device, but is not exposed as an authorized ADB device; USB debugging and the OEM ADB driver must be enabled on the phone/Windows before Expo Go can use USB.
+
 - [x] **Task 17** (2026-03-23)
       A. Group expense edit: Split section wrapped in CollapsibleSection (defaultOpen=false) matching add page. Title "Split Between" with branch icon, same as add page.
       B. Notifications dark mode: Unread notification background changed from hardcoded #f0f0ff to dark-aware color (#1e1b4b in dark, #f0f0ff in light). Unread items now clearly visible in dark mode.

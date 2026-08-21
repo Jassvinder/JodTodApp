@@ -99,6 +99,7 @@ export interface TodoCategory {
   id: number;
   name: string;
   color: string;
+  is_default: boolean;
 }
 
 export interface Todo {

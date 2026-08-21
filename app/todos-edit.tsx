@@ -13,12 +13,14 @@ import {
   Image,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { todoService } from '../services/todos';
+import { getTodoCategoriesWithDefaults, todoService } from '../services/todos';
+import { scheduleTodoReminder } from '../services/todoReminders';
 import { contactService } from '../services/contacts';
 import { resolveUrl } from '../utils/format';
 import { Colors } from '../constants/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import DatePickerField from '../components/DatePickerField';
+import TodoCategoryPicker from '../components/TodoCategoryPicker';
 import { useToast } from '../components/Toast';
 import BottomNav from '../components/BottomNav';
 import type { TodoCategory, Contact, Todo } from '../types/models';
@@ -59,7 +61,7 @@ export default function EditTodoScreen() {
     try {
       const [todosRes, catRes, contactRes] = await Promise.all([
         todoService.getTodos({ page: 1 }),
-        todoService.getCategories(),
+        getTodoCategoriesWithDefaults(),
         contactService.getContacts({ page: 1 }),
       ]);
 
@@ -115,7 +117,7 @@ export default function EditTodoScreen() {
 
     setSaving(true);
     try {
-      await todoService.updateTodo(parseInt(id!), {
+      const response = await todoService.updateTodo(parseInt(id!), {
         title: title.trim(),
         priority,
         due_date: dueDate || null,
@@ -123,6 +125,7 @@ export default function EditTodoScreen() {
         assigned_to: assignedTo,
         reminder_at: reminderAt || null,
       });
+      await scheduleTodoReminder(response.data.data.id, title.trim(), reminderAt || null);
       router.back();
     } catch (error: any) {
       const fieldErrors = error.response?.data?.errors;
@@ -220,55 +223,12 @@ export default function EditTodoScreen() {
             error={errors.due_date}
           />
 
-          {/* Category Picker */}
-          <View style={{ marginBottom: 20 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-              <Text style={{ fontSize: 13, fontWeight: '500', color: Colors.text }}>Category</Text>
-              <TouchableOpacity onPress={() => router.push('/todo-categories')}>
-                <Text style={{ fontSize: 13, fontWeight: '500', color: Colors.primary }}>Manage</Text>
-              </TouchableOpacity>
-            </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -4 }}>
-              <TouchableOpacity
-                onPress={() => setCategoryId(null)}
-                style={{
-                  paddingHorizontal: 14,
-                  paddingVertical: 10,
-                  borderRadius: 20,
-                  backgroundColor: categoryId === null ? Colors.primary : Colors.surface,
-                  borderWidth: 1,
-                  borderColor: categoryId === null ? Colors.primary : Colors.border,
-                  marginHorizontal: 4,
-                }}
-              >
-                <Text style={{ fontSize: 13, fontWeight: '500', color: categoryId === null ? '#fff' : Colors.text }}>
-                  None
-                </Text>
-              </TouchableOpacity>
-              {categories.map((cat) => (
-                <TouchableOpacity
-                  key={cat.id}
-                  onPress={() => setCategoryId(cat.id)}
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    paddingHorizontal: 14,
-                    paddingVertical: 10,
-                    borderRadius: 20,
-                    backgroundColor: categoryId === cat.id ? Colors.primary : Colors.surface,
-                    borderWidth: 1,
-                    borderColor: categoryId === cat.id ? Colors.primary : Colors.border,
-                    marginHorizontal: 4,
-                  }}
-                >
-                  <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: cat.color, marginRight: 6 }} />
-                  <Text style={{ fontSize: 13, fontWeight: '500', color: categoryId === cat.id ? '#fff' : Colors.text }}>
-                    {cat.name}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
+          <TodoCategoryPicker
+            categories={categories}
+            value={categoryId}
+            onChange={setCategoryId}
+            onManage={() => router.push('/todo-categories')}
+          />
 
           {/* Assign to Contact */}
           <View style={{ marginBottom: 20 }}>

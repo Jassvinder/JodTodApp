@@ -111,7 +111,7 @@ export default function DatePickerField({ label, value, onChange, error, mode = 
         <>
           <DateTimePicker
             value={dateObj}
-            mode={pickerMode}
+            mode={Platform.OS === 'ios' && mode === 'datetime' ? 'datetime' : pickerMode}
             display={Platform.OS === 'ios' ? 'spinner' : 'default'}
             onChange={handleChange}
             maximumDate={maxDate}

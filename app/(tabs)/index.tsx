@@ -9,9 +9,11 @@ import {
   Image,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuthStore } from "../../stores/authStore";
 import { useDrawerStore } from "../../stores/drawerStore";
 import { dashboardService } from "../../services/dashboard";
+import { incomeService } from "../../services/incomes";
 import { notificationService } from "../../services/notifications";
 import {
   formatCurrency,
@@ -23,9 +25,11 @@ import { Colors } from "../../constants/colors";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import CollapsibleSection from "../../components/CollapsibleSection";
 import type { DashboardData } from "../../types/dashboard";
+import type { Income } from "../../types/models";
 import * as Notifications from "expo-notifications";
 
 export default function DashboardScreen() {
+  const insets = useSafeAreaInsets();
   const { user } = useAuthStore();
   const { open: openDrawer } = useDrawerStore();
   const router = useRouter();
@@ -36,8 +40,31 @@ export default function DashboardScreen() {
 
   const fetchData = async () => {
     try {
-      const response = await dashboardService.getData();
-      setData(response.data.data);
+      const dashboardResponse = await dashboardService.getData();
+      const dashboardData = dashboardResponse.data.data;
+      let incomeActivities: DashboardData["recentActivity"] = [];
+
+      try {
+        const incomesResponse = await incomeService.getIncomes({ page: 1 });
+        incomeActivities = incomesResponse.data.data.map((income: Income) => ({
+          type: "income",
+          description: income.description || income.source,
+          amount: income.amount,
+          date: income.created_at,
+          category: income.source,
+          category_icon: null,
+          group_name: null,
+        }));
+      } catch {
+        // Keep the dashboard available when recent incomes cannot be loaded.
+      }
+
+      setData({
+        ...dashboardData,
+        recentActivity: [...dashboardData.recentActivity, ...incomeActivities]
+          .sort((first, second) => new Date(second.date).getTime() - new Date(first.date).getTime())
+          .slice(0, 10),
+      });
     } catch {
       // Silent fail - show empty state
     } finally {
@@ -101,24 +128,21 @@ export default function DashboardScreen() {
   );
 
   return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: Colors.background }}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          colors={[Colors.primary]}
-        />
-      }
-    >
-      <View style={{ padding: 16 }}>
-        {/* Header */}
+    <View style={{ flex: 1, backgroundColor: Colors.background }}>
+      <View
+        style={{
+          backgroundColor: Colors.background,
+          paddingTop: insets.top + 12,
+          paddingHorizontal: 16,
+          paddingBottom: 16,
+        }}
+      >
+        {/* Fixed Header */}
         <View
           style={{
             flexDirection: "row",
             justifyContent: "space-between",
             alignItems: "center",
-            marginBottom: 16,
           }}
         >
           <TouchableOpacity onPress={openDrawer} style={{ padding: 4 }}>
@@ -193,7 +217,19 @@ export default function DashboardScreen() {
             )}
           </TouchableOpacity>
         </View>
+      </View>
 
+      <ScrollView
+        style={{ flex: 1 }}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          colors={[Colors.primary]}
+        />
+      }
+    >
+      <View style={{ padding: 16 }}>
         {/* Summary Cards */}
         <CollapsibleSection
           title="Summary"
@@ -270,7 +306,6 @@ export default function DashboardScreen() {
             backgroundColor="#fef3c7"
             borderColor="#fcd34d"
             titleColor="#92400e"
-            defaultOpen={true}
           >
             {data.pendingSettlements.items.map((s) => (
               <View
@@ -301,7 +336,6 @@ export default function DashboardScreen() {
               icon="checkbox-outline"
               iconColor="#8b5cf6"
               iconBg="#ede9fe"
-              defaultOpen={true}
             >
               <TouchableOpacity
                 onPress={() => router.push("/todos")}
@@ -343,7 +377,6 @@ export default function DashboardScreen() {
             icon="people-outline"
             iconColor="#3b82f6"
             iconBg="#dbeafe"
-            defaultOpen={true}
           >
             {gs.groups.map((g) => (
               <View
@@ -390,7 +423,6 @@ export default function DashboardScreen() {
           <CollapsibleSection
             title="Category Breakdown"
             icon="pie-chart-outline"
-            defaultOpen={true}
           >
             <Text
               style={{
@@ -463,7 +495,6 @@ export default function DashboardScreen() {
         <CollapsibleSection
           title="Recent Activity"
           icon="time-outline"
-          defaultOpen={true}
           style={{ marginBottom: 24 }}
         >
           {data?.recentActivity && data.recentActivity.length > 0 ? (
@@ -489,6 +520,8 @@ export default function DashboardScreen() {
                     backgroundColor:
                       a.type === "personal_expense"
                         ? "#eef2ff"
+                        : a.type === "income"
+                          ? "#dcfce7"
                         : a.type === "group_expense"
                           ? "#dbeafe"
                           : "#dcfce7",
@@ -498,6 +531,8 @@ export default function DashboardScreen() {
                     name={
                       a.type === "personal_expense"
                         ? "wallet-outline"
+                        : a.type === "income"
+                          ? "trending-up-outline"
                         : a.type === "group_expense"
                           ? "people-outline"
                           : "swap-horizontal-outline"
@@ -506,6 +541,8 @@ export default function DashboardScreen() {
                     color={
                       a.type === "personal_expense"
                         ? Colors.primary
+                        : a.type === "income"
+                          ? Colors.success
                         : a.type === "group_expense"
                           ? "#3b82f6"
                           : Colors.success
@@ -528,9 +565,10 @@ export default function DashboardScreen() {
                   style={{
                     fontSize: 14,
                     fontWeight: "600",
-                    color: Colors.text,
+                    color: a.type === "income" ? Colors.success : Colors.text,
                   }}
                 >
+                  {a.type === "income" ? "+" : ""}
                   {formatCurrency(a.amount)}
                 </Text>
               </View>
@@ -549,7 +587,8 @@ export default function DashboardScreen() {
           )}
         </CollapsibleSection>
       </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
