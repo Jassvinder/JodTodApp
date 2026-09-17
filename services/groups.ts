@@ -33,7 +33,7 @@ export interface GroupShowResponse {
   recentExpenses: GroupExpense[];
   totalExpensesCount: number;
   totalExpensesAmount: number;
-  contacts: { id: number; name: string; email: string; phone: string | null; avatar: string | null }[];
+  contacts: { id: number; name: string; email: string; phone: string | null; avatar: string | null; avatar_url: string | null }[];
   membersWithUnsettled: number[];
   pendingMembers: { id: number; name: string; email: string; phone: string | null; avatar: string | null }[];
   memberShares: { user_id: number; name: string; avatar: string | null; total_share: number }[];

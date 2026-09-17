@@ -4,11 +4,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
   ActivityIndicator,
-  Image,
 } from "react-native";
 import { Link } from "expo-router";
 import { useAuthStore } from "../../stores/authStore";
@@ -17,6 +13,7 @@ import { Colors } from "../../constants/colors";
 import { getDeviceName } from "../../utils/device";
 import { useToast } from "../../components/Toast";
 import AppLogo from "./AppLogo";
+import AuthKeyboardScreen from './AuthKeyboardScreen';
 
 type AuthTab = "email" | "otp";
 type OtpStep = "phone" | "verify";
@@ -479,18 +476,7 @@ export default function LoginScreen() {
   );
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={{ flex: 1, backgroundColor: Colors.background }}
-    >
-      <ScrollView
-        contentContainerStyle={{
-          flexGrow: 1,
-          justifyContent: "center",
-          padding: 24,
-        }}
-        keyboardShouldPersistTaps="handled"
-      >
+    <AuthKeyboardScreen>
         {/* Logo */}
         <View style={{ alignItems: "center", marginBottom: 32 }}>
           <AppLogo />
@@ -535,8 +521,7 @@ export default function LoginScreen() {
             </TouchableOpacity>
           </Link>
         </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+    </AuthKeyboardScreen>
   );
 }
 

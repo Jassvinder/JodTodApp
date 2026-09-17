@@ -1,14 +1,12 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
+  InteractionManager,
+  ScrollView,
   View,
   Text,
   TextInput,
   TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
   ActivityIndicator,
-  Image,
 } from "react-native";
 import { Link } from "expo-router";
 import { useAuthStore } from "../../stores/authStore";
@@ -16,8 +14,10 @@ import { Colors } from "../../constants/colors";
 import { getDeviceName } from "../../utils/device";
 import { useToast } from "../../components/Toast";
 import AppLogo from "./AppLogo";
+import AuthKeyboardScreen from './AuthKeyboardScreen';
 
 export default function RegisterScreen() {
+  const scrollViewRef = useRef<ScrollView>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -88,6 +88,7 @@ export default function RegisterScreen() {
       keyboardType?: TextInput["props"]["keyboardType"];
       autoCapitalize?: TextInput["props"]["autoCapitalize"];
       autoComplete?: TextInput["props"]["autoComplete"];
+      onFocus?: () => void;
     },
   ) => (
     <View style={{ marginBottom: 16 }}>
@@ -110,6 +111,7 @@ export default function RegisterScreen() {
         keyboardType={options.keyboardType}
         autoCapitalize={options.autoCapitalize}
         autoComplete={options.autoComplete}
+        onFocus={options.onFocus}
         style={{
           backgroundColor: Colors.surface,
           borderWidth: 1,
@@ -129,18 +131,7 @@ export default function RegisterScreen() {
   );
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={{ flex: 1, backgroundColor: Colors.background }}
-    >
-      <ScrollView
-        contentContainerStyle={{
-          flexGrow: 1,
-          justifyContent: "center",
-          padding: 24,
-        }}
-        keyboardShouldPersistTaps="handled"
-      >
+    <AuthKeyboardScreen scrollViewRef={scrollViewRef}>
         {/* Logo */}
         <View style={{ alignItems: "center", marginBottom: 32 }}>
           <AppLogo />
@@ -182,6 +173,12 @@ export default function RegisterScreen() {
             placeholder: "Re-enter your password",
             secureTextEntry: true,
             autoComplete: "new-password",
+            onFocus: () => {
+              scrollViewRef.current?.scrollToEnd({ animated: true });
+              InteractionManager.runAfterInteractions(() => {
+                scrollViewRef.current?.scrollToEnd({ animated: true });
+              });
+            },
           },
         )}
 
@@ -237,7 +234,6 @@ export default function RegisterScreen() {
             </TouchableOpacity>
           </Link>
         </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+    </AuthKeyboardScreen>
   );
 }

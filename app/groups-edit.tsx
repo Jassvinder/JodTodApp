@@ -167,7 +167,7 @@ export default function EditGroupScreen() {
       style={{ flex: 1 }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled">
+      <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="always">
         <View style={{ padding: 16 }}>
           {/* Group Photo */}
           <View style={{ alignItems: 'center', marginBottom: 20 }}>
@@ -261,23 +261,22 @@ export default function EditGroupScreen() {
             />
           </View>
 
-          <TouchableOpacity
-            onPress={handleSave}
-            disabled={saving}
-            style={{
-              backgroundColor: Colors.primary,
-              borderRadius: 12,
-              padding: 16,
-              alignItems: 'center',
-              marginBottom: 32,
-            }}
-          >
-            {saving ? (
-              <ActivityIndicator color="#fff" size="small" />
-            ) : (
-              <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>Update Group</Text>
-            )}
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', gap: 10, marginBottom: 32 }}>
+            <TouchableOpacity
+              onPress={() => router.back()}
+              disabled={saving}
+              style={{ flex: 1, backgroundColor: Colors.surface, borderRadius: 12, padding: 16, alignItems: 'center', borderWidth: 1, borderColor: Colors.border }}
+            >
+              <Text style={{ color: Colors.text, fontSize: 16, fontWeight: '600' }}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleSave}
+              disabled={saving}
+              style={{ flex: 1, backgroundColor: Colors.primary, borderRadius: 12, padding: 16, alignItems: 'center' }}
+            >
+              {saving ? <ActivityIndicator color="#fff" size="small" /> : <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>Update Group</Text>}
+            </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

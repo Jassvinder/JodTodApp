@@ -133,7 +133,7 @@ export default function EditIncomeScreen() {
       style={{ flex: 1, backgroundColor: Colors.background }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled">
+      <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="always">
         <View style={{ padding: 16 }}>
           {/* Amount Input */}
           <View style={{ marginBottom: 20 }}>

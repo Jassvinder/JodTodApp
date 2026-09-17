@@ -21,20 +21,24 @@ import type { Contact } from '../types/models';
 
 interface ContactListHeaderProps {
   contactCount: number;
+  requestCount: number;
   searchText: string;
   searching: boolean;
   onSearchTextChange: (text: string) => void;
   onSearch: () => void;
   onClearSearch: () => void;
+  onRequests: () => void;
 }
 
 function ContactListHeader({
   contactCount,
+  requestCount,
   searchText,
   searching,
   onSearchTextChange,
   onSearch,
   onClearSearch,
+  onRequests,
 }: ContactListHeaderProps) {
   return (
     <View>
@@ -73,9 +77,15 @@ function ContactListHeader({
         </TouchableOpacity>
       </View>
 
-      <Text style={{ fontSize: 13, color: Colors.textSecondary, marginBottom: 8 }}>
-        {contactCount} contact{contactCount !== 1 ? 's' : ''}
-      </Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+        <Text style={{ fontSize: 13, color: Colors.textSecondary }}>
+          {contactCount} contact{contactCount !== 1 ? 's' : ''}
+        </Text>
+        <TouchableOpacity onPress={onRequests} style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Ionicons name="person-add-outline" size={16} color={Colors.primary} />
+          <Text style={{ fontSize: 13, color: Colors.primary, fontWeight: '600', marginLeft: 4 }}>Requests{requestCount ? ` (${requestCount})` : ''}</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -90,6 +100,7 @@ export default function ContactsScreen() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [page, setPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
+  const [requestCount, setRequestCount] = useState(0);
 
   // Search
   const [searchText, setSearchText] = useState('');
@@ -139,12 +150,22 @@ export default function ContactsScreen() {
 
   useEffect(() => () => requestControllerRef.current?.abort(), []);
 
+  const fetchRequestCount = useCallback(async () => {
+    try {
+      const response = await contactService.getContactRequests();
+      setRequestCount(response.data.data.length);
+    } catch {
+      setRequestCount(0);
+    }
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
       setLoading(true);
       setPage(1);
       fetchContacts(1);
-    }, [fetchContacts])
+      fetchRequestCount();
+    }, [fetchContacts, fetchRequestCount])
   );
 
   const onRefresh = useCallback(() => {
@@ -295,11 +316,13 @@ export default function ContactsScreen() {
           ListHeaderComponent={
             <ContactListHeader
               contactCount={contacts.length}
+              requestCount={requestCount}
               searchText={searchText}
               searching={searching}
               onSearchTextChange={setSearchText}
               onSearch={handleSearch}
               onClearSearch={handleClearSearch}
+              onRequests={() => router.push('/contacts-requests')}
             />
           }
           ListEmptyComponent={renderEmpty}

@@ -22,6 +22,7 @@ import type { GroupMember, GroupExpense, MemberBalance } from '../types/models';
 import { useToast } from '../components/Toast';
 import { useConfirm } from '../components/ConfirmDialog';
 import BottomNav from '../components/BottomNav';
+import GroupExpenseActions from '../components/GroupExpenseActions';
 
 export default function GroupDetailScreen() {
   const router = useRouter();
@@ -34,6 +35,7 @@ export default function GroupDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [data, setData] = useState<GroupShowResponse | null>(null);
+  const [visitKey, setVisitKey] = useState(0);
 
   const fetchGroup = async () => {
     try {
@@ -51,6 +53,7 @@ export default function GroupDetailScreen() {
   useFocusEffect(
     useCallback(() => {
       setLoading(true);
+      setVisitKey((key) => key + 1);
       fetchGroup();
     }, [groupId])
   );
@@ -206,6 +209,46 @@ export default function GroupDetailScreen() {
           router.back();
         } catch (error: any) {
           toast.show(error.response?.data?.message || 'Failed to delete group.', 'error');
+        }
+      },
+    });
+  };
+
+  const showAdminOnlyAlert = () => {
+    confirm.show({
+      title: 'Admin Only',
+      message: 'Only the Group Admin can edit or delete group expenses.',
+      confirmText: 'OK',
+      cancelText: '',
+      danger: false,
+      onConfirm: () => {},
+    });
+  };
+
+  const handleEditExpense = (expense: GroupExpense) => {
+    if (!isAdmin) {
+      showAdminOnlyAlert();
+      return;
+    }
+    router.push({ pathname: '/groups-expense-edit', params: { groupId, expenseId: expense.id } });
+  };
+
+  const handleDeleteExpense = (expense: GroupExpense) => {
+    if (!isAdmin) {
+      showAdminOnlyAlert();
+      return;
+    }
+    confirm.show({
+      title: 'Delete Expense',
+      message: `Are you sure you want to delete this expense of ${formatCurrency(expense.amount)}?`,
+      confirmText: 'Delete',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          await groupService.deleteGroupExpense(groupId, expense.id);
+          fetchGroup();
+        } catch (error: any) {
+          toast.show(error.response?.data?.message || 'Failed to delete expense.', 'error');
         }
       },
     });
@@ -391,18 +434,18 @@ export default function GroupDetailScreen() {
           title="Members"
           count={members.length}
           icon="people-outline"
-          defaultOpen={true}
-        >
-          {isAdmin && (
+          defaultOpen={false}
+          key={`members-${visitKey}`}
+          headerAction={isAdmin ? (
             <TouchableOpacity
               onPress={() => router.push({ pathname: '/groups-add-member', params: { id: groupId } })}
-              style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}
+              style={{ flexDirection: 'row', alignItems: 'center', marginRight: 8 }}
             >
               <Ionicons name="person-add-outline" size={16} color={Colors.primary} />
-              <Text style={{ fontSize: 13, color: Colors.primary, marginLeft: 4 }}>Add Member</Text>
+              <Text style={{ fontSize: 13, fontWeight: '600', color: Colors.primary, marginLeft: 4 }}>Add Member</Text>
             </TouchableOpacity>
-          )}
-
+          ) : undefined}
+        >
           {members.map((member) => (
             <View
               key={member.id}
@@ -500,7 +543,8 @@ export default function GroupDetailScreen() {
             iconBg="#ede9fe"
             backgroundColor="#faf5ff"
             borderColor="#e9d5ff"
-            defaultOpen={true}
+            defaultOpen={false}
+            key={`member-shares-${visitKey}`}
           >
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingBottom: 8, marginBottom: 8, borderBottomWidth: 1, borderBottomColor: '#e9d5ff' }}>
               <Text style={{ fontSize: 12, color: '#7c3aed' }}>Total Expenses</Text>
@@ -520,9 +564,19 @@ export default function GroupDetailScreen() {
 
         {/* Recent Expenses Section */}
         <CollapsibleSection
-          title="Recent Expenses"
+          title="Expenses"
           icon="receipt-outline"
-          defaultOpen={true}
+          defaultOpen={false}
+          key={`expenses-${visitKey}`}
+          headerAction={(
+            <TouchableOpacity
+              onPress={() => router.push({ pathname: '/groups-expense-add', params: { groupId } })}
+              style={{ flexDirection: 'row', alignItems: 'center', marginRight: 8 }}
+            >
+              <Ionicons name="add" size={16} color={Colors.primary} />
+              <Text style={{ fontSize: 13, fontWeight: '600', color: Colors.primary, marginLeft: 4 }}>Add Expense</Text>
+            </TouchableOpacity>
+          )}
         >
           {(data?.totalExpensesCount ?? 0) > 5 && (
             <TouchableOpacity
@@ -569,7 +623,14 @@ export default function GroupDetailScreen() {
                     Paid by {expense.payer?.name || 'Unknown'} · {formatRelativeDate(expense.expense_date)}
                   </Text>
                 </View>
-                <Text style={{ fontSize: 14, fontWeight: '600', color: Colors.text }}>{formatCurrency(expense.amount)}</Text>
+                <View style={{ alignItems: 'flex-end', marginLeft: 8 }}>
+                  <Text style={{ fontSize: 14, fontWeight: '600', color: Colors.text }}>{formatCurrency(expense.amount)}</Text>
+                  <GroupExpenseActions
+                    isAdmin={isAdmin}
+                    onEdit={() => handleEditExpense(expense)}
+                    onDelete={() => handleDeleteExpense(expense)}
+                  />
+                </View>
               </View>
             ))
           )}
@@ -577,26 +638,16 @@ export default function GroupDetailScreen() {
         </CollapsibleSection>
 
         {/* Action Buttons */}
-        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 12 }}>
+        <View style={{ marginBottom: 12 }}>
           <TouchableOpacity
-            onPress={() => router.push({ pathname: '/groups-expense-add', params: { groupId } })}
+            onPress={() => confirm.show({
+              title: 'Settlement',
+              message: 'Review the group balances and settlement options before continuing.',
+              confirmText: 'Open Settlement',
+              danger: false,
+              onConfirm: () => router.push({ pathname: '/groups-settlements', params: { groupId} }),
+            })}
             style={{
-              flex: 1,
-              backgroundColor: Colors.primary,
-              borderRadius: 12,
-              padding: 14,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Ionicons name="add" size={18} color="#fff" />
-            <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600', marginLeft: 6 }}>Add Expense</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => router.push({ pathname: '/groups-settlements', params: { groupId } })}
-            style={{
-              flex: 1,
               backgroundColor: Colors.surface,
               borderRadius: 12,
               padding: 14,

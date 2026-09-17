@@ -14,6 +14,7 @@ interface CollapsibleSectionProps {
   borderColor?: string;
   backgroundColor?: string;
   titleColor?: string;
+  headerAction?: React.ReactNode;
   style?: any;
 }
 
@@ -28,6 +29,7 @@ export default function CollapsibleSection({
   borderColor = Colors.border,
   backgroundColor = Colors.surface,
   titleColor = Colors.text,
+  headerAction,
   style,
 }: CollapsibleSectionProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
@@ -73,6 +75,7 @@ export default function CollapsibleSection({
             <Text style={{ fontSize: 13, fontWeight: '400', color: Colors.textSecondary }}> ({count})</Text>
           )}
         </Text>
+        {headerAction}
         <Ionicons name={isOpen ? 'chevron-up' : 'chevron-down'} size={18} color={Colors.textMuted} />
       </TouchableOpacity>
 

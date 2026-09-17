@@ -1,6 +1,6 @@
 import api from './api';
 import type { ApiResponse, PaginatedResponse } from '../types/api';
-import type { Contact, SearchUser } from '../types/models';
+import type { Contact, ContactRequest, SearchUser } from '../types/models';
 
 export interface ContactListParams {
   search?: string;
@@ -18,6 +18,18 @@ export const contactService = {
 
   addContact(contact_user_id: number) {
     return api.post<ApiResponse<Contact>>('/contacts', { contact_user_id });
+  },
+
+  getContactRequests() {
+    return api.get<ApiResponse<ContactRequest[]>>('/contacts/requests');
+  },
+
+  approveContactRequest(id: number) {
+    return api.post<ApiResponse<null>>(`/contacts/${id}/approve`);
+  },
+
+  rejectContactRequest(id: number) {
+    return api.delete<ApiResponse<null>>(`/contacts/${id}/reject`);
   },
 
   removeContact(id: number) {

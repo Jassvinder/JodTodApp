@@ -51,7 +51,7 @@ export default function JoinGroupScreen() {
       style={{ flex: 1 }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled">
+      <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="always">
         <View style={{ padding: 16 }}>
           {/* Header Illustration */}
           <View style={{ alignItems: 'center', marginVertical: 24 }}>

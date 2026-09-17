@@ -87,6 +87,7 @@ export default function RootLayout() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="contacts" options={{ headerShown: true, title: 'My Contacts', headerStyle: { backgroundColor: Colors.surface }, headerTitleStyle: { fontWeight: '600', color: Colors.text }, headerShadowVisible: false }} />
         <Stack.Screen name="contacts-add" options={{ headerShown: true, title: 'Add Contact', headerStyle: { backgroundColor: Colors.surface }, headerTitleStyle: { fontWeight: '600', color: Colors.text }, headerShadowVisible: false }} />
+        <Stack.Screen name="contacts-requests" options={{ headerShown: true, title: 'Contact Requests', headerStyle: { backgroundColor: Colors.surface }, headerTitleStyle: { fontWeight: '600', color: Colors.text }, headerShadowVisible: false }} />
         <Stack.Screen name="todos" options={{ headerShown: true, title: 'My Tasks', headerStyle: { backgroundColor: Colors.surface }, headerTitleStyle: { fontWeight: '600', color: Colors.text }, headerShadowVisible: false }} />
         <Stack.Screen name="todos-add" options={{ headerShown: true, title: 'Add Task', headerStyle: { backgroundColor: Colors.surface }, headerTitleStyle: { fontWeight: '600', color: Colors.text }, headerShadowVisible: false }} />
         <Stack.Screen name="todos-edit" options={{ headerShown: true, title: 'Edit Task', headerStyle: { backgroundColor: Colors.surface }, headerTitleStyle: { fontWeight: '600', color: Colors.text }, headerShadowVisible: false }} />

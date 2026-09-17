@@ -34,26 +34,17 @@
 
   Implement the following tasks. Keep changes minimal and limited to the specified behavior. Reuse existing patterns/components where possible.
 
-- [ ] **Task 1204 — Group**
-  1. On every Group screen visit, keep Members, Member Shares, and Recent Expenses collapsed by default.
-  2. Add a Cancel button to the Group Edit screen.
-  3. When selecting a category after entering an expense amount, the first tap currently only closes the keyboard. Fix this so the category is also selected on the same tap. Apply this behavior consistently across the entire app wherever the keyboard is open, including search, name, description, etc.
-  4. Add an "Add Member" button beside the Members heading.
-  5. Remove "Recent" from "Recent Expenses" and add the "Add Expense" button in the same position/style as the Members "Add Member" button.
-  6. Implement edit/update functionality for Group Expenses.
-  7. Show an alert when the Settlement button is clicked.
+- [ ] **Task 1205A**
 
-- [ ] **Task 1205 — Contacts**
-  1. While typing a contact, the processing indicator currently appears above the contact list, causing the list to move up/down. Move the processing indicator into the same input area, replacing or appearing before the Clear/Close button.
-  2. Review and redesign the Add Member flow. Currently, anyone can type a random name and potentially view another person's email and phone number. Prevent this privacy/security issue and ensure contact information cannot be exposed through arbitrary name searches.
-  3. Require approval when adding a contact.
+      1. Jis contact ko request ki usko nofication jana chahiye push notification and internal notification ko kya kehte hain wobhi.
+      2. contact list me se phone number hata do, bas email he bahut hai.
+      3. puri app me ek uniid name se ya tumhe theek lage field lo users table me, or ek 3 Alphabets + 3 Numbers (e.g., KRM459) ka pattern random id generate karo fir jab bhi contact search kare to name ke aage ye id show kardo. or ye id humesah unique he rahegi. chahe jitne bhi users ek he time par register kar rahe ho, aisa logic lagana.
+      4. Web me bhi ye request wala UI implement kardo.
 
 - [ ] **Task 1206 — Screen State Reset**
-  1. Every time the Expenses, Income, or Profile screen opens, it must start fresh.
-  2. Do not retain filters, search text, selections, or other state from the previous visit.
 
-- [ ] **Task 1207 — Top space**
-  1. check screenshot 1.png. jab bhi hum login, register, forgot password pages me kuchh bhi type karte hain niche se keyboard open hota hai to app logo upar phone ke notification baar me chala jata hai. kisi bhi tarah uski limit set karo ke page usse upar na jaye.
+      1. Every time the Expenses, Income, or Profile screen opens, it must start fresh.
+      2. Do not retain filters, search text, selections, or other state from the previous visit.
 
 ## PENDING
 
@@ -217,6 +208,23 @@
 - [ ] App store submission
 
 ## COMPLETED =================================================
+
+- [x] **Task 1207 — Top space** (21-08-2026)
+  1. Login, Register, and Forgot Password now use one safe-area-aware auth form container that keeps logo and header content below the status bar while the keyboard is visible.
+  2. Android keyboard layout is configured to resize the content area instead of panning the full screen upward.
+  3. Register now scrolls Confirm Password above the keyboard when the field is focused.
+
+- [x] **Task 1205 — Contacts** (21-08-2026)
+  1. Moved the contact-search processing indicator into the input field so results no longer shift while searching.
+  2. Contact search now uses a minimum three-character name query and exposes only name and avatar; email and phone remain private until approval.
+  3. Adding a contact now sends a request. The recipient can approve or decline it from Contact Requests, and only approved contacts appear in the group Add Member flow.
+
+- [x] **Task 1204 — Group** (21-08-2026)
+  1. Members, Member Shares, and Expenses now reset collapsed on every Group screen visit.
+  2. Added Cancel to Group Edit and header actions for Add Member and Add Expense.
+  3. Category and form taps now persist while the keyboard is open across all form scroll views.
+  4. Group Expense edit/update flow is available from the group detail preview and expense list. Edit and delete controls remain visible to all members, but only the Group Admin can use them; other members see an admin-only alert.
+  5. Settlement navigation now requires a confirmation alert.
 
 - [x] **Task 1203 — Todos** (19-08-2026)
 

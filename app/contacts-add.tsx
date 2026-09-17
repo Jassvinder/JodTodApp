@@ -28,7 +28,7 @@ export default function ContactsAddScreen() {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const searchUsers = useCallback(async (searchQuery: string) => {
-    if (searchQuery.trim().length < 2) {
+    if (searchQuery.trim().length < 3) {
       setResults([]);
       setHasSearched(false);
       return;
@@ -113,14 +113,6 @@ export default function ContactsAddScreen() {
         <Text style={{ fontSize: 15, fontWeight: '500', color: Colors.text }} numberOfLines={1}>
           {item.name}
         </Text>
-        <Text style={{ fontSize: 13, color: Colors.textSecondary, marginTop: 2 }} numberOfLines={1}>
-          {item.email}
-        </Text>
-        {item.phone && (
-          <Text style={{ fontSize: 12, color: Colors.textMuted, marginTop: 1 }}>
-            {item.phone}
-          </Text>
-        )}
       </View>
 
       {/* Add Button */}
@@ -152,7 +144,7 @@ export default function ContactsAddScreen() {
         <Ionicons name="search-outline" size={48} color={Colors.textMuted} />
         <Text style={{ fontSize: 16, fontWeight: '600', color: Colors.text, marginTop: 12 }}>No users found</Text>
         <Text style={{ fontSize: 14, color: Colors.textSecondary, marginTop: 4, textAlign: 'center' }}>
-          Try a different name, email, or phone number
+          Try a different name
         </Text>
       </View>
     );
@@ -177,29 +169,23 @@ export default function ContactsAddScreen() {
             <TextInput
               value={query}
               onChangeText={handleQueryChange}
-              placeholder="Search by name, email, or phone..."
+              placeholder="Search by name..."
               placeholderTextColor={Colors.textMuted}
               autoFocus
               autoCapitalize="none"
               style={{ flex: 1, fontSize: 14, color: Colors.text, paddingVertical: 12, paddingHorizontal: 8 }}
             />
-            {query.length > 0 && (
+            {loading && <ActivityIndicator size="small" color={Colors.primary} style={{ marginRight: 8 }} />}
+            {query.length > 0 && !loading && (
               <TouchableOpacity onPress={() => { setQuery(''); setResults([]); setHasSearched(false); }}>
                 <Ionicons name="close-circle" size={18} color={Colors.textMuted} />
               </TouchableOpacity>
             )}
           </View>
           <Text style={{ fontSize: 12, color: Colors.textMuted, marginBottom: 12 }}>
-            Search JodTod users to add them as contacts (min 2 characters)
+            Search by name to send a contact request (min 3 characters). Contact details are shared only after approval.
           </Text>
         </View>
-
-        {/* Loading indicator */}
-        {loading && (
-          <View style={{ paddingVertical: 20 }}>
-            <ActivityIndicator size="small" color={Colors.primary} />
-          </View>
-        )}
 
         {/* Results */}
         <FlatList

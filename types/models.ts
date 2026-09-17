@@ -89,10 +89,15 @@ export interface Contact {
 export interface SearchUser {
   id: number;
   name: string;
-  email: string;
-  phone: string | null;
   avatar: string | null;
   avatar_url: string | null;
+}
+
+export interface ContactRequest {
+  id: number;
+  user_id: number;
+  user: Pick<SearchUser, 'id' | 'name' | 'avatar' | 'avatar_url'>;
+  created_at: string;
 }
 
 export interface TodoCategory {

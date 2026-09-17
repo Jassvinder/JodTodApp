@@ -260,7 +260,7 @@ export default function EditGroupExpenseScreen() {
       style={{ flex: 1 }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled">
+      <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="always">
         <View style={{ padding: 16 }}>
           {/* Amount Input */}
           <View style={{ marginBottom: 20 }}>
@@ -290,7 +290,7 @@ export default function EditGroupExpenseScreen() {
           {/* Category Picker */}
           <View style={{ marginBottom: 20 }}>
             <Text style={{ fontSize: 13, fontWeight: '500', color: Colors.text, marginBottom: 6 }}>Category *</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -4 }}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="always" style={{ marginHorizontal: -4 }}>
               {categories.map((cat) => (
                 <TouchableOpacity
                   key={cat.id}

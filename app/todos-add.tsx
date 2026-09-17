@@ -156,7 +156,7 @@ export default function AddTodoScreen() {
       style={{ flex: 1 }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled">
+      <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="always">
         <View style={{ padding: 16 }}>
           {/* Title Input */}
           <View style={{ marginBottom: 20 }}>

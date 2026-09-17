@@ -4,16 +4,13 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
   ActivityIndicator,
-  Image,
 } from "react-native";
 import { Link, useRouter } from "expo-router";
 import { authService } from "../../services/auth";
 import { Colors } from "../../constants/colors";
 import AppLogo from "./AppLogo";
+import AuthKeyboardScreen from './AuthKeyboardScreen';
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState("");
@@ -116,18 +113,7 @@ export default function ForgotPasswordScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={{ flex: 1, backgroundColor: Colors.background }}
-    >
-      <ScrollView
-        contentContainerStyle={{
-          flexGrow: 1,
-          justifyContent: "center",
-          padding: 24,
-        }}
-        keyboardShouldPersistTaps="handled"
-      >
+    <AuthKeyboardScreen>
         {/* Back Button */}
         <TouchableOpacity
           onPress={() => router.back()}
@@ -251,7 +237,6 @@ export default function ForgotPasswordScreen() {
             </TouchableOpacity>
           </Link>
         </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+    </AuthKeyboardScreen>
   );
 }

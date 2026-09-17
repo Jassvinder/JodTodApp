@@ -17,6 +17,7 @@ import { useToast } from '../components/Toast';
 import { useConfirm } from '../components/ConfirmDialog';
 import BottomNav from '../components/BottomNav';
 import ListSearchBar from '../components/ListSearchBar';
+import GroupExpenseActions from '../components/GroupExpenseActions';
 import type { GroupExpense, Category } from '../types/models';
 
 export default function GroupExpensesScreen() {
@@ -33,6 +34,7 @@ export default function GroupExpensesScreen() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [page, setPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // Filters
   const [selectedCategory, setSelectedCategory] = useState<number | undefined>(undefined);
@@ -87,11 +89,21 @@ export default function GroupExpensesScreen() {
     }
   };
 
+  const fetchAccess = async () => {
+    try {
+      const response = await groupService.getGroup(groupId);
+      setIsAdmin(response.data.data.isAdmin);
+    } catch {
+      setIsAdmin(false);
+    }
+  };
+
   useEffect(() => () => requestControllerRef.current?.abort(), []);
 
   useFocusEffect(
     useCallback(() => {
       fetchCategories();
+      fetchAccess();
       setLoading(true);
       setPage(1);
       fetchExpenses(1);
@@ -135,7 +147,30 @@ export default function GroupExpensesScreen() {
     setPage(1);
   };
 
+  const showAdminOnlyAlert = () => {
+    confirm.show({
+      title: 'Admin Only',
+      message: 'Only the Group Admin can edit or delete group expenses.',
+      confirmText: 'OK',
+      cancelText: '',
+      danger: false,
+      onConfirm: () => {},
+    });
+  };
+
+  const handleEdit = (expense: GroupExpense) => {
+    if (!isAdmin) {
+      showAdminOnlyAlert();
+      return;
+    }
+    router.push({ pathname: '/groups-expense-edit', params: { groupId, expenseId: expense.id } });
+  };
+
   const handleDelete = (expense: GroupExpense) => {
+    if (!isAdmin) {
+      showAdminOnlyAlert();
+      return;
+    }
     confirm.show({
       title: 'Delete Expense',
       message: `Are you sure you want to delete this expense of ${formatCurrency(expense.amount)}?`,
@@ -222,8 +257,7 @@ export default function GroupExpensesScreen() {
 
   const renderExpenseItem = ({ item }: { item: GroupExpense }) => (
     <TouchableOpacity
-      onPress={() => router.push({ pathname: '/groups-expense-edit', params: { groupId, expenseId: item.id } })}
-      onLongPress={() => handleDelete(item)}
+      onPress={() => handleEdit(item)}
       style={{
         backgroundColor: Colors.surface,
         borderRadius: 12,
@@ -258,10 +292,16 @@ export default function GroupExpensesScreen() {
         </Text>
       </View>
 
-      {/* Amount */}
-      <Text style={{ fontSize: 15, fontWeight: '600', color: Colors.text, marginLeft: 8 }}>
-        {formatCurrency(item.amount)}
-      </Text>
+      <View style={{ alignItems: 'flex-end', marginLeft: 8 }}>
+        <Text style={{ fontSize: 15, fontWeight: '600', color: Colors.text }}>
+          {formatCurrency(item.amount)}
+        </Text>
+        <GroupExpenseActions
+          isAdmin={isAdmin}
+          onEdit={() => handleEdit(item)}
+          onDelete={() => handleDelete(item)}
+        />
+      </View>
     </TouchableOpacity>
   );
 

@@ -7,6 +7,25 @@
 - **Docs:** `D:\Development\Projects\JodTodApp\Docs\`
 - **Web Backend (API):** `D:\Development\Projects\JodTod` (Laravel - same DB, shared API)
 
+## Task 1207 Auth Keyboard Safe Area (21-08-2026)
+
+- Created a shared auth screen container with a fixed blank strip matching the system status-bar inset for Login, Register, and Forgot Password.
+- The forms remain scrollable and vertically centered, but keyboard movement is constrained below the fixed strip; Android is configured to resize for the keyboard.
+- The Register screen now scrolls the Confirm Password field fully above the Android keyboard as soon as it receives focus.
+
+## Task 1205 Contacts Privacy and Approval (21-08-2026)
+
+- The search indicator now stays within the Add Contact input, avoiding list movement during requests.
+- User discovery is restricted to name and avatar, with a three-character minimum query; email and phone are not returned before approval.
+- Contact additions are pending requests. Recipients can approve or decline requests, and group Add Member lists only approved contacts.
+
+## Task 1204 Group Improvements (21-08-2026)
+
+- Members, Member Shares, and Expenses on Group Detail now start collapsed on every visit.
+- Added header-level Add Member and Add Expense actions, renamed Recent Expenses to Expenses, and added a Cancel action to Group Edit.
+- Form selector taps now work on their first press while the keyboard is open across the app's form scroll views.
+- Verified the existing Group Expense edit/update flow from the Group Detail preview and group expenses list, and added a confirmation alert before opening Settlement. Edit and delete controls are visible to every member, but only the Group Admin can use them; other members receive an admin-only alert.
+
 ## Task 1511 Floating Task Filters (19-08-2026)
 
 - Consolidated the Tasks Status, Priority, and Category controls into a reusable floating filter bar.
