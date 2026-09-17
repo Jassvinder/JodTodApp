@@ -11,7 +11,9 @@
 - If you're asked to check a screenshot for any task, look for it in the following directory:
   D:\Development\Projects\JodTodApp\Docs\Screenshots
 
-## Current Tasks
+## Pending Tasks
+
+### Active
 
 - [] **Task 1508**
   Task #1507 completly done hai recheck karo or btao. kyunki beech me he limit khatam ho gai thi?
@@ -20,17 +22,15 @@
 
 - [] **Task 1512**
 
-- [] **Task 18** profile
-  A. Photo upload option
-  B. Phone number add/update option
+- [] **Task 1513**
 
-## Testing
+### Testing / Bug Fixes
 
 - [] **Task 1200**
-  1. Add login/continue with googl option in mobile app as well. (already implemented on webapp)
-  2. Logo not showing in yopmail. fine in gmail.
+  1. Add login/continue with googl option in mobile app as well. (already implemented on webapp) — not started; needs Google Cloud OAuth client IDs (Android/iOS/Web) and a backend `/api/v1/auth/google` endpoint before implementation can start. Same feature as Task 1508/M-110. Please share the OAuth client credentials (or confirm the Google Cloud project to use) so this can proceed.
+  2. [x] Logo not showing in yopmail. fine in gmail. (17-09-2026) — root cause: the verification/notification email template embedded `logo.webp`, and WebP image support is inconsistent across email clients (Gmail renders it, Yopmail's viewer does not). Switched `resources/views/emails/notifications/default.blade.php` to the existing `logo.png` asset, which all email clients support.
   3. [x] Fixed logout on the Verify Your Email screen. Added Change Email, with both actions clearing authentication state before redirecting. (03-08-2026)
-  4. Resend verification email showing "unauthenticated".
+  4. Resend verification email showing "unauthenticated". — investigated but not reproduced: the mobile Resend button posts through the same authenticated `api` client used elsewhere in the app, the token is written to SecureStore before the auth store flips to authenticated, and there's no shared Sanctum/session middleware that would explain a failure isolated to this one endpoint. Need a repro (does it happen right after registering, or after the app has been backgrounded/reopened? does "I've Verified My Email" also fail at the same time?) or a fresh screenshot in `Docs/Screenshots/` to pin down the exact trigger.
 
   Implement the following tasks. Keep changes minimal and limited to the specified behavior. Reuse existing patterns/components where possible.
 
@@ -41,12 +41,9 @@
       3. puri app me ek uniid name se ya tumhe theek lage field lo users table me, or ek 3 Alphabets + 3 Numbers (e.g., KRM459) ka pattern random id generate karo fir jab bhi contact search kare to name ke aage ye id show kardo. or ye id humesah unique he rahegi. chahe jitne bhi users ek he time par register kar rahe ho, aisa logic lagana.
       4. Web me bhi ye request wala UI implement kardo.
 
-- [ ] **Task 1206 — Screen State Reset**
+### Roadmap (legacy phase plan)
 
-      1. Every time the Expenses, Income, or Profile screen opens, it must start fresh.
-      2. Do not retain filters, search text, selections, or other state from the previous visit.
-
-## PENDING
+> Original phase-by-phase build plan. Phases 3–11 are fully shipped (see Completed → Roadmap below). Phase 1's core screens (login, registration, OTP, forgot password, email verification) are shipped and in daily use, so those items just need a checkbox audit rather than fresh build work — except **M-110 (Google OAuth)**, which is genuinely unbuilt and tracked as Task 1508/1200 above. Phase 2's dashboard/profile-view items are shipped too, but a code check on 17-09-2026 found avatar upload and phone verification (M-205, M-206) had no mobile UI at all despite being logged as done under old Task 15/16 — those old log entries were inaccurate. M-205/M-206 are now genuinely implemented (see Task 18 in Completed). Treat any other unchecked item here as "needs a quick recheck," not "unbuilt."
 
 ### Phase 1: Project Setup & Auth (API: Partially Done)
 
@@ -81,11 +78,22 @@
   - Currency & language selection
   - Notification preferences (email/push toggles)
 - [ ] **M-204** - Edit profile (name only, email/phone are verified fields) - API: Need PUT /api/v1/profile
-- [ ] **M-205** - Avatar upload with crop - API: Need POST /api/v1/profile/avatar
-- [ ] **M-206** - Phone verification (OTP flow) - API: Need endpoints
-- [ ] **M-207** - Change password - API: Need PUT /api/v1/password
+- [x] **M-205** - Avatar upload with crop (17-09-2026) — see Task 18 in Completed
+- [x] **M-206** - Phone verification (OTP flow) (17-09-2026) — see Task 18 in Completed
+- [ ] **M-207** - Change password - API: Need PUT /api/v1/password (backend `PUT /api/v1/password` exists; no mobile UI yet)
 - [ ] **M-208** - Delete account - API: Need DELETE /api/v1/profile
 - [ ] **M-209** - Logout - API: POST /api/v1/logout (DONE)
+
+### Release
+
+- [ ] Manual testing of all features
+- [ ] Android build (EAS Build)
+- [ ] iOS build (EAS Build)
+- [ ] App store submission
+
+## Completed
+
+### Roadmap (legacy phase plan) — Phases 3–11
 
 ### Phase 3: Personal Expenses
 
@@ -125,7 +133,7 @@
 - [x] **M-505** - Toggle complete (tap checkbox, strikethrough) (2026-03-19)
 - [x] **M-506** - Delete todo (long press → confirm) (2026-03-19)
 - [x] **M-507** - Todo categories management screen (CRUD with 10 preset color circles) (2026-03-19)
-- [ ] **M-508** - Reminder notifications (local push notifications using expo-notifications)
+- [x] **M-508** - Reminder notifications (local push notifications using expo-notifications) — shipped via Task 1203 (task reminders schedule/cancel local notifications)
 - [x] **M-509** - Overdue visual indicators (red date highlight) (2026-03-19)
 
 ### Phase 6: Contacts
@@ -200,19 +208,17 @@
 - [x] **M-1109** - App icon + splash screen (JodTod branding) (2026-03-23)
 - [x] **M-1110** - Currency formatting (INR with ₹ symbol, Indian number format) (2026-03-23)
 
-### Release
-
-- [ ] Manual testing of all features
-- [ ] Android build (EAS Build)
-- [ ] iOS build (EAS Build)
-- [ ] App store submission
-
-## COMPLETED =================================================
+### Numbered Tasks
 
 - [x] **Task 1207 — Top space** (21-08-2026)
   1. Login, Register, and Forgot Password now use one safe-area-aware auth form container that keeps logo and header content below the status bar while the keyboard is visible.
   2. Android keyboard layout is configured to resize the content area instead of panning the full screen upward.
   3. Register now scrolls Confirm Password above the keyboard when the field is focused.
+
+- [x] **Task 1206 — Screen State Reset** (17-09-2026)
+  1. Expenses already reset filters and search on every focus; audited and left unchanged.
+  2. Income screen now clears search text/query and reloads unfiltered data every time it gains focus (previously it kept the last search across visits).
+  3. Profile screen now resets edit mode, the name field, field errors, and the delete-account panel/password every time it gains focus (previously it had no reset logic at all).
 
 - [x] **Task 1205 — Contacts** (21-08-2026)
   1. Moved the contact-search processing indicator into the input field so results no longer shift while searching.
@@ -244,10 +250,6 @@
       A. Removed the native Home title and retained safe-area spacing for the custom dashboard header, so it stays below the status bar and scrolls with Home content.
       B. Added recent income entries to the mobile activity feed, merged chronologically with dashboard activities and rendered with a distinct positive treatment.
       C. Changed dashboard section defaults so only Summary is expanded; pending payments, tasks, groups, category breakdown, and recent activity start collapsed.
-
-## Completed Featured Tasks
-
-## Completed Current Tasks
 
 - [x] **Task 1511 — Floating task filters** (19-08-2026)
   1. Status, Priority, and Category task filters now open as floating overlays.
@@ -305,6 +307,10 @@
       B. Verified compatible Expo SDK 55.0.28, React 19.2.0, React Native 0.83.6, Expo Router 55.0.17, and Expo Notifications 55.0.25 dependencies.
       C. Configured `ANDROID_HOME`, `ANDROID_SDK_ROOT`, and user PATH for Android SDK platform-tools 37.0.0 / ADB 1.0.41. The connected phone is detected as a USB composite device, but is not exposed as an authorized ADB device; USB debugging and the OEM ADB driver must be enabled on the phone/Windows before Expo Go can use USB.
 
+- [x] **Task 18 — Profile** (17-09-2026)
+  A. Photo upload: added camera/gallery picker (1:1 crop, base64 upload to the existing `POST /profile/avatar` endpoint), a "Change Photo" link below the avatar, and a red X button on the avatar to remove it via `DELETE /profile/avatar`. This closes M-205, which — despite being logged as done under old Task 15/16 — had no actual mobile UI.
+  B. Phone number add/update: added an inline "Add/Change Phone Number" panel on the Profile screen (enter 10-digit number → Send OTP → enter 6-digit code → Verify, dev OTP shown when the API returns one) plus a Remove action, wired to the existing `/profile/phone/send-otp`, `/profile/phone/verify`, and `/profile/phone` endpoints. This closes M-206, which had the same gap as M-205.
+
 - [x] **Task 17** (2026-03-23)
       A. Group expense edit: Split section wrapped in CollapsibleSection (defaultOpen=false) matching add page. Title "Split Between" with branch icon, same as add page.
       B. Notifications dark mode: Unread notification background changed from hardcoded #f0f0ff to dark-aware color (#1e1b4b in dark, #f0f0ff in light). Unread items now clearly visible in dark mode.
@@ -356,5 +362,3 @@
 - [x] **Task 3** Added header with hamburger menu (left) + user avatar (right) on dashboard. Hamburger drawer has all web navigation links. Footer nav: replaced Income tab with Tasks tab. Income accessible from drawer menu. (2026-03-20)
 - [x] **Task 2** Group join by invite code now requires admin approval. Join creates pending request, admin gets notification, can approve/reject from group detail. Implemented on both web and mobile. (2026-03-20)
 - [x] **Task 1** Notification tap now navigates to relevant screen: todo notifications → tasks, group expense → group expenses, settlement → settlements, group → group detail. (2026-03-20)
-
-### Phase 1: Project Setup

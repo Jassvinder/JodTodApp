@@ -112,12 +112,16 @@ export default function IncomesScreen() {
 
   useEffect(() => () => requestControllerRef.current?.abort(), []);
 
-  // Refetch on focus (when coming back from add/edit)
+  // Reset filters and refetch on focus (when coming back from add/edit)
   useFocusEffect(
     useCallback(() => {
+      searchQueryRef.current = '';
+      setSearchText('');
+      setSearchQuery('');
+      setSearching(false);
       setLoading(true);
       setPage(1);
-      fetchIncomes(1);
+      fetchIncomes(1, false, '');
     }, [fetchIncomes])
   );
 
