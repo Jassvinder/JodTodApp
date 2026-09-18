@@ -49,6 +49,9 @@ function getNotificationIcon(type: string): { name: keyof typeof Ionicons.glyphM
   if (type.includes('Weekly') || type.includes('Summary')) {
     return { name: 'bar-chart-outline', color: '#06b6d4', bg: '#cffafe' };
   }
+  if (type.includes('Contact')) {
+    return { name: 'person-add-outline', color: '#ec4899', bg: '#fce7f3' };
+  }
   return { name: 'notifications-outline', color: Colors.primary, bg: '#eef2ff' };
 }
 
@@ -109,6 +112,11 @@ export default function NotificationsScreen() {
     // Todo notifications
     if (type === 'todo_reminder' || type === 'todo_assigned') {
       return { pathname: '/todos' };
+    }
+
+    // Contact request notifications
+    if (type === 'contact_request_received') {
+      return { pathname: '/contacts-requests' };
     }
 
     // Group expense notifications

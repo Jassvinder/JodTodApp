@@ -110,9 +110,14 @@ export default function ContactsAddScreen() {
 
       {/* User Info */}
       <View style={{ flex: 1 }}>
-        <Text style={{ fontSize: 15, fontWeight: '500', color: Colors.text }} numberOfLines={1}>
-          {item.name}
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Text style={{ fontSize: 15, fontWeight: '500', color: Colors.text, flexShrink: 1 }} numberOfLines={1}>
+            {item.name}
+          </Text>
+          <View style={{ backgroundColor: Colors.primaryLight, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 1, marginLeft: 6 }}>
+            <Text style={{ fontSize: 11, fontWeight: '600', color: Colors.primary }}>{item.friend_code}</Text>
+          </View>
+        </View>
       </View>
 
       {/* Add Button */}

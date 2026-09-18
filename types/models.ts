@@ -79,7 +79,7 @@ export interface Contact {
     id: number;
     name: string;
     email: string;
-    phone: string | null;
+    friend_code: string;
     avatar: string | null;
     avatar_url: string | null;
   };
@@ -89,6 +89,7 @@ export interface Contact {
 export interface SearchUser {
   id: number;
   name: string;
+  friend_code: string;
   avatar: string | null;
   avatar_url: string | null;
 }
@@ -96,7 +97,7 @@ export interface SearchUser {
 export interface ContactRequest {
   id: number;
   user_id: number;
-  user: Pick<SearchUser, 'id' | 'name' | 'avatar' | 'avatar_url'>;
+  user: Pick<SearchUser, 'id' | 'name' | 'friend_code' | 'avatar' | 'avatar_url'>;
   created_at: string;
 }
 

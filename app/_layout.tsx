@@ -36,6 +36,8 @@ export default function RootLayout() {
 
       if (type === 'todo_reminder' || type === 'todo_assigned') {
         router.push('/todos');
+      } else if (type === 'contact_request_received') {
+        router.push('/contacts-requests');
       } else if (type === 'group_expense_added' && groupId) {
         router.push({ pathname: '/groups-expenses', params: { groupId } } as any);
       } else if ((type === 'settlement_requested' || type === 'settlement_completed') && groupId) {

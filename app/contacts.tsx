@@ -269,17 +269,17 @@ export default function ContactsScreen() {
 
       {/* Name & Info */}
       <View style={{ flex: 1 }}>
-        <Text style={{ fontSize: 15, fontWeight: '500', color: Colors.text }} numberOfLines={1}>
-          {item.contact_user.name}
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Text style={{ fontSize: 15, fontWeight: '500', color: Colors.text, flexShrink: 1 }} numberOfLines={1}>
+            {item.contact_user.name}
+          </Text>
+          <View style={{ backgroundColor: Colors.primaryLight, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 1, marginLeft: 6 }}>
+            <Text style={{ fontSize: 11, fontWeight: '600', color: Colors.primary }}>{item.contact_user.friend_code}</Text>
+          </View>
+        </View>
         <Text style={{ fontSize: 13, color: Colors.textSecondary, marginTop: 2 }} numberOfLines={1}>
           {item.contact_user.email}
         </Text>
-        {item.contact_user.phone && (
-          <Text style={{ fontSize: 12, color: Colors.textMuted, marginTop: 1 }}>
-            {item.contact_user.phone}
-          </Text>
-        )}
       </View>
 
       {/* Remove icon hint */}

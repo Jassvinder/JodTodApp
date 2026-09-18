@@ -64,7 +64,12 @@ export default function ContactRequestsScreen() {
         renderItem={({ item }) => (
           <View style={{ backgroundColor: Colors.surface, borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: Colors.border, flexDirection: 'row', alignItems: 'center' }}>
             {item.user.avatar_url ? <Image source={{ uri: resolveUrl(item.user.avatar_url)! }} style={{ width: 44, height: 44, borderRadius: 22, marginRight: 12 }} /> : <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.primaryLight, alignItems: 'center', justifyContent: 'center', marginRight: 12 }}><Text style={{ color: '#fff', fontWeight: '700' }}>{initials(item.user.name)}</Text></View>}
-            <Text style={{ flex: 1, fontSize: 15, fontWeight: '500', color: Colors.text }} numberOfLines={1}>{item.user.name}</Text>
+            <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
+              <Text style={{ fontSize: 15, fontWeight: '500', color: Colors.text, flexShrink: 1 }} numberOfLines={1}>{item.user.name}</Text>
+              <View style={{ backgroundColor: Colors.primaryLight, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 1, marginLeft: 6 }}>
+                <Text style={{ fontSize: 11, fontWeight: '600', color: Colors.primary }}>{item.user.friend_code}</Text>
+              </View>
+            </View>
             {processingId === item.id ? <ActivityIndicator color={Colors.primary} /> : <View style={{ flexDirection: 'row', gap: 8 }}><TouchableOpacity onPress={() => handleRequest(item, false)} style={{ padding: 8 }}><Ionicons name="close" size={20} color={Colors.error} /></TouchableOpacity><TouchableOpacity onPress={() => handleRequest(item, true)} style={{ backgroundColor: Colors.primary, borderRadius: 8, paddingHorizontal: 12, justifyContent: 'center' }}><Text style={{ color: '#fff', fontSize: 13, fontWeight: '600' }}>Approve</Text></TouchableOpacity></View>}
           </View>
         )}
