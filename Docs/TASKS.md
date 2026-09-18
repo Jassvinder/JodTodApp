@@ -15,19 +15,16 @@
 
 ### Active
 
-- [] **Task 1508**
-  Task #1507 completly done hai recheck karo or btao. kyunki beech me he limit khatam ho gai thi?
-
-  option to login with google on mobile.
-
 - [] **Task 1512**
 
 - [] **Task 1513**
 
+- [] **Task 1514**
+
 ### Testing / Bug Fixes
 
 - [] **Task 1200**
-  1. Add login/continue with googl option in mobile app as well. (already implemented on webapp) — not started; needs Google Cloud OAuth client IDs (Android/iOS/Web) and a backend `/api/v1/auth/google` endpoint before implementation can start. Same feature as Task 1508/M-110. Please share the OAuth client credentials (or confirm the Google Cloud project to use) so this can proceed.
+  1. [x] Add login/continue with google option in mobile app as well. (already implemented on webapp) (18-09-2026) — see Task 1508 in Completed.
   2. [x] Logo not showing in yopmail. fine in gmail. (17-09-2026) — root cause: the verification/notification email template embedded `logo.webp`, and WebP image support is inconsistent across email clients (Gmail renders it, Yopmail's viewer does not). Switched `resources/views/emails/notifications/default.blade.php` to the existing `logo.png` asset, which all email clients support.
   3. [x] Fixed logout on the Verify Your Email screen. Added Change Email, with both actions clearing authentication state before redirecting. (03-08-2026)
   4. Resend verification email showing "unauthenticated". — investigated but not reproduced: the mobile Resend button posts through the same authenticated `api` client used elsewhere in the app, the token is written to SecureStore before the auth store flips to authenticated, and there's no shared Sanctum/session middleware that would explain a failure isolated to this one endpoint. Need a repro (does it happen right after registering, or after the app has been backgrounded/reopened? does "I've Verified My Email" also fail at the same time?) or a fresh screenshot in `Docs/Screenshots/` to pin down the exact trigger.
@@ -36,7 +33,7 @@
 
 ### Roadmap (legacy phase plan)
 
-> Original phase-by-phase build plan. Phases 3–11 are fully shipped (see Completed → Roadmap below). A full checkbox audit against the actual code ran on 18-09-2026 (previously several of these were wrongly assumed done or wrongly assumed pending — see Task 18's note about M-205/M-206). M-203's currency/language selection and M-207 (change password) were built the same day. The only remaining gap is **M-110 (Google OAuth)**, blocked on Google Cloud OAuth client credentials — see Task 1508/1200.
+> Original phase-by-phase build plan. All Phase 1/2 items are now shipped as of 18-09-2026 — a full checkbox audit that day found several wrongly left unchecked despite being done, plus M-205/M-206 wrongly logged as done when they had no mobile UI, and M-110 (Google OAuth) got built once credentials arrived (see Task 18/19/1508 in Completed). Phases 3–11 were already fully shipped (see Completed → Roadmap below).
 
 ### Phase 1: Project Setup & Auth (API: Partially Done)
 
@@ -51,7 +48,7 @@
 - [x] **M-107** - Forgot Password screen - API: POST /api/v1/forgot-password (DONE)
 - [x] **M-108** - Email verification screen/flow - API: POST /api/v1/email/verification-notification (DONE)
 - [x] **M-109** - Auth navigation flow (splash → auth check → login/home)
-- [ ] **M-110** - Google OAuth login (Expo AuthSession / expo-google-sign-in) - API: Need endpoint. Blocked on Google Cloud OAuth client credentials — see Task 1508/1200.
+- [x] **M-110** - Google OAuth login (Expo AuthSession) (18-09-2026) — see Task 1508 in Completed
 
 ### Phase 2: Dashboard & Profile
 
@@ -257,6 +254,10 @@
   1. Filter options now expand above the task list instead of being covered by task cards.
   2. Tasks with a configured reminder show a bell icon in their metadata.
   3. Incomplete overdue tasks have a light red card treatment and an Overdue badge.
+
+- [x] **Task 1508 — Google login** (18-09-2026)
+  1. Rechecked Task 1507 (its work was interrupted by a session limit at the time) — confirmed genuinely complete: `ListSearchBar` is used consistently across Income, both Task listing entry points, and Group Expenses, matching its logged description.
+  2. Added "Continue with Google" to both Login and Register on mobile, matching the web app. Full detail: new `POST /api/v1/auth/google` backend endpoint (verifies the ID token via Google's tokeninfo endpoint, checking issuer/audience/email_verified against the web+Android+iOS client IDs, then finds-or-creates the user the same way the existing web Google login does) plus a `GoogleSignInButton` component using `expo-auth-session`'s `Google.useIdTokenAuthRequest`. Smoke-tested new-user creation, merging into an existing email/password account, and audience rejection — all correct. Closes M-110.
 
 - [x] **Task 1507** (27-07-2026)
       A. Standardized Income search with a stable header, explicit Search button, clear action, and cancellable requests.
