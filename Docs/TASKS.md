@@ -34,13 +34,6 @@
 
   Implement the following tasks. Keep changes minimal and limited to the specified behavior. Reuse existing patterns/components where possible.
 
-- [ ] **Task 1205A**
-
-      1. Jis contact ko request ki usko nofication jana chahiye push notification and internal notification ko kya kehte hain wobhi.
-      2. contact list me se phone number hata do, bas email he bahut hai.
-      3. puri app me ek uniid name se ya tumhe theek lage field lo users table me, or ek 3 Alphabets + 3 Numbers (e.g., KRM459) ka pattern random id generate karo fir jab bhi contact search kare to name ke aage ye id show kardo. or ye id humesah unique he rahegi. chahe jitne bhi users ek he time par register kar rahe ho, aisa logic lagana.
-      4. Web me bhi ye request wala UI implement kardo.
-
 ### Roadmap (legacy phase plan)
 
 > Original phase-by-phase build plan. Phases 3–11 are fully shipped (see Completed → Roadmap below). Phase 1's core screens (login, registration, OTP, forgot password, email verification) are shipped and in daily use, so those items just need a checkbox audit rather than fresh build work — except **M-110 (Google OAuth)**, which is genuinely unbuilt and tracked as Task 1508/1200 above. Phase 2's dashboard/profile-view items are shipped too, but a code check on 17-09-2026 found avatar upload and phone verification (M-205, M-206) had no mobile UI at all despite being logged as done under old Task 15/16 — those old log entries were inaccurate. M-205/M-206 are now genuinely implemented (see Task 18 in Completed). Treat any other unchecked item here as "needs a quick recheck," not "unbuilt."
@@ -306,6 +299,12 @@
       A. Updated active Node.js from 20.18.0 (unsupported by Expo tooling) to 24.18.0. `expo-doctor` now passes all 19 checks.
       B. Verified compatible Expo SDK 55.0.28, React 19.2.0, React Native 0.83.6, Expo Router 55.0.17, and Expo Notifications 55.0.25 dependencies.
       C. Configured `ANDROID_HOME`, `ANDROID_SDK_ROOT`, and user PATH for Android SDK platform-tools 37.0.0 / ADB 1.0.41. The connected phone is detected as a USB composite device, but is not exposed as an authorized ADB device; USB debugging and the OEM ADB driver must be enabled on the phone/Windows before Expo Go can use USB.
+
+- [x] **Task 1205A** (18-09-2026)
+  1. Added `ContactRequestReceived` notification (database + Expo push, matching the existing `GroupJoinRequest` pattern) dispatched from both the API and web `ContactController::store()`, so the recipient of a contact request gets a push notification and an in-app notification. Notification tap and the in-app notifications list now deep-link to Contact Requests.
+  2. Removed the phone number from the mobile Contacts list, contact-add search results, and Contact Requests screen (email is shown instead); the web Contacts page never showed phone in the approved-contacts list either way, and its search results no longer request phone/email either.
+  3. Added a `friend_code` column to `users` (backend `JodTod` repo) — a random 3-letter + 3-digit code (e.g. `KRM459`) generated on user creation. `User::performInsert()` retries generation on a unique-constraint collision, so uniqueness holds even under concurrent registrations; existing users were backfilled by the migration. The code is now returned by contact search/list/request API responses and shown next to the name on both mobile (Contacts, Add Contact, Contact Requests) and web (Contacts, new Contact Requests page).
+  4. Rebuilt the web `ContactController` and `Contacts/Index.vue` to match the mobile app's request → approve/decline flow (it previously added contacts directly with no approval step), and added a new `Contacts/Requests.vue` page with `contacts.requests` / `contacts.approve` / `contacts.reject` routes.
 
 - [x] **Task 18 — Profile** (17-09-2026)
   A. Photo upload: added camera/gallery picker (1:1 crop, base64 upload to the existing `POST /profile/avatar` endpoint), a "Change Photo" link below the avatar, and a red X button on the avatar to remove it via `DELETE /profile/avatar`. This closes M-205, which — despite being logged as done under old Task 15/16 — had no actual mobile UI.
