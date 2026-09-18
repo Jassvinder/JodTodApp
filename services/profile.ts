@@ -7,8 +7,12 @@ export const profileService = {
     return api.get<ApiResponse<User>>('/profile');
   },
 
-  updateProfile(data: { name: string }) {
+  updateProfile(data: { name: string; currency?: string; language?: string }) {
     return api.patch<ApiResponse<User>>('/profile', data);
+  },
+
+  updatePassword(data: { current_password?: string; password: string; password_confirmation: string }) {
+    return api.put<{ success: boolean; message: string }>('/password', data);
   },
 
   deleteAccount(password: string) {

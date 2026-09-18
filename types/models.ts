@@ -12,6 +12,7 @@ export interface User {
   phone_verified_at: string | null;
   notification_email: boolean;
   notification_push: boolean;
+  has_password: boolean;
 }
 
 export interface AuthData {

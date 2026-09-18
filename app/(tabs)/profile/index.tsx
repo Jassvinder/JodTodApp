@@ -24,6 +24,24 @@ try {
   // expo-image-picker not installed
 }
 
+const CURRENCIES = [
+  { code: 'INR', label: '₹ INR' },
+  { code: 'USD', label: '$ USD' },
+  { code: 'EUR', label: '€ EUR' },
+  { code: 'GBP', label: '£ GBP' },
+  { code: 'AED', label: 'د.إ AED' },
+  { code: 'SAR', label: '﷼ SAR' },
+  { code: 'CAD', label: '$ CAD' },
+  { code: 'AUD', label: '$ AUD' },
+  { code: 'JPY', label: '¥ JPY' },
+  { code: 'SGD', label: '$ SGD' },
+];
+
+const LANGUAGES = [
+  { code: 'en', label: 'English' },
+  { code: 'hi', label: 'Hindi' },
+];
+
 export default function ProfileScreen() {
   const { user, logout, setUser } = useAuthStore();
   const router = useRouter();
@@ -34,8 +52,21 @@ export default function ProfileScreen() {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
+  const [currency, setCurrency] = useState(user?.currency || 'INR');
+  const [language, setLanguage] = useState(user?.language || 'en');
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Change password state
+  const [showPasswordEdit, setShowPasswordEdit] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showCurrentPw, setShowCurrentPw] = useState(false);
+  const [showNewPw, setShowNewPw] = useState(false);
+  const [showConfirmPw, setShowConfirmPw] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [passwordErrors, setPasswordErrors] = useState<Record<string, string>>({});
 
   // Delete account state
   const [showDelete, setShowDelete] = useState(false);
@@ -62,6 +93,8 @@ export default function ProfileScreen() {
       setEditing(false);
       setName(user?.name || '');
       setEmail(user?.email || '');
+      setCurrency(user?.currency || 'INR');
+      setLanguage(user?.language || 'en');
       setErrors({});
       setShowDelete(false);
       setDeletePassword('');
@@ -71,6 +104,11 @@ export default function ProfileScreen() {
       setOtpSent(false);
       setOtpDebug(null);
       setPhoneErrors({});
+      setShowPasswordEdit(false);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setPasswordErrors({});
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user])
   );
@@ -90,7 +128,7 @@ export default function ProfileScreen() {
     setSaving(true);
     setErrors({});
     try {
-      const response = await profileService.updateProfile({ name: name.trim() });
+      const response = await profileService.updateProfile({ name: name.trim(), currency, language });
       setUser(response.data.data);
       setEditing(false);
       toast.show(response.data.message);
@@ -297,6 +335,48 @@ export default function ProfileScreen() {
     });
   };
 
+  const closePasswordEdit = () => {
+    setShowPasswordEdit(false);
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmPassword('');
+    setShowCurrentPw(false);
+    setShowNewPw(false);
+    setShowConfirmPw(false);
+    setPasswordErrors({});
+  };
+
+  const handleChangePassword = async () => {
+    const newErrors: Record<string, string> = {};
+    if (user?.has_password && !currentPassword) newErrors.current_password = 'Current password is required.';
+    if (newPassword.length < 8) newErrors.password = 'Password must be at least 8 characters.';
+    if (newPassword !== confirmPassword) newErrors.password_confirmation = 'Passwords do not match.';
+    if (Object.keys(newErrors).length > 0) { setPasswordErrors(newErrors); return; }
+
+    setPasswordErrors({});
+    setChangingPassword(true);
+    try {
+      const response = await profileService.updatePassword({
+        current_password: user?.has_password ? currentPassword : undefined,
+        password: newPassword,
+        password_confirmation: confirmPassword,
+      });
+      toast.show(response.data.message);
+      closePasswordEdit();
+    } catch (error: any) {
+      const fieldErrors = error.response?.data?.errors;
+      if (fieldErrors) {
+        const mapped: Record<string, string> = {};
+        for (const key in fieldErrors) mapped[key] = fieldErrors[key][0];
+        setPasswordErrors(mapped);
+      } else {
+        toast.show(error.response?.data?.message || 'Failed to change password.', 'error');
+      }
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
   return (
     <ScrollView style={{ flex: 1, backgroundColor: Colors.background }}>
       <View style={{ padding: 16 }}>
@@ -386,9 +466,45 @@ export default function ProfileScreen() {
                 </View>
                 <Text style={{ fontSize: 11, color: Colors.textMuted, marginTop: 4 }}>Phone requires OTP verification and can't be changed here.</Text>
               </View>
+              <View style={{ marginBottom: 16 }}>
+                <Text style={{ fontSize: 13, fontWeight: '500', color: Colors.text, marginBottom: 6 }}>Currency</Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                  {CURRENCIES.map((c) => (
+                    <TouchableOpacity
+                      key={c.code}
+                      onPress={() => setCurrency(c.code)}
+                      style={{
+                        paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8,
+                        backgroundColor: currency === c.code ? Colors.primary : Colors.background,
+                        borderWidth: 1, borderColor: currency === c.code ? Colors.primary : Colors.border,
+                      }}
+                    >
+                      <Text style={{ fontSize: 13, fontWeight: '500', color: currency === c.code ? '#fff' : Colors.text }}>{c.label}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+              <View style={{ marginBottom: 16 }}>
+                <Text style={{ fontSize: 13, fontWeight: '500', color: Colors.text, marginBottom: 6 }}>Language</Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                  {LANGUAGES.map((l) => (
+                    <TouchableOpacity
+                      key={l.code}
+                      onPress={() => setLanguage(l.code)}
+                      style={{
+                        paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8,
+                        backgroundColor: language === l.code ? Colors.primary : Colors.background,
+                        borderWidth: 1, borderColor: language === l.code ? Colors.primary : Colors.border,
+                      }}
+                    >
+                      <Text style={{ fontSize: 13, fontWeight: '500', color: language === l.code ? '#fff' : Colors.text }}>{l.label}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
               <View style={{ flexDirection: 'row', gap: 10 }}>
                 <TouchableOpacity
-                  onPress={() => { setEditing(false); setName(user?.name || ''); setErrors({}); }}
+                  onPress={() => { setEditing(false); setName(user?.name || ''); setCurrency(user?.currency || 'INR'); setLanguage(user?.language || 'en'); setErrors({}); }}
                   style={{ flex: 1, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: Colors.border, alignItems: 'center' }}
                 >
                   <Text style={{ color: Colors.textSecondary, fontWeight: '600' }}>Cancel</Text>
@@ -408,6 +524,7 @@ export default function ProfileScreen() {
               <ProfileRow icon="mail-outline" label="Email" value={user?.email || ''} />
               <ProfileRow icon="call-outline" label="Phone" value={user?.phone ? `+91 ${user.phone}` : 'Not added'} />
               <ProfileRow icon="cash-outline" label="Currency" value={user?.currency || 'INR'} />
+              <ProfileRow icon="language-outline" label="Language" value={LANGUAGES.find((l) => l.code === user?.language)?.label || 'English'} />
               {!showPhoneEdit && (
                 <View style={{ flexDirection: 'row', gap: 16, marginTop: 8 }}>
                   <TouchableOpacity onPress={() => { setPhoneNumber(user?.phone || ''); setShowPhoneEdit(true); }}>
@@ -493,6 +610,80 @@ export default function ProfileScreen() {
               {user?.notification_email ? 'On' : 'Off'}
             </Text>
           </View>
+        </View>
+
+        {/* Change Password */}
+        <View style={{ backgroundColor: Colors.surface, borderRadius: 12, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: Colors.border }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Text style={{ fontSize: 16, fontWeight: '600', color: Colors.text }}>Password</Text>
+            {!showPasswordEdit && (
+              <TouchableOpacity onPress={() => setShowPasswordEdit(true)}>
+                <Text style={{ color: Colors.primary, fontWeight: '600', fontSize: 14 }}>
+                  {user?.has_password ? 'Change' : 'Set Password'}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {showPasswordEdit && (
+            <View style={{ marginTop: 12 }}>
+              {user?.has_password && (
+                <View style={{ marginBottom: 12 }}>
+                  <Text style={{ fontSize: 13, fontWeight: '500', color: Colors.text, marginBottom: 4 }}>Current Password</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.background, borderWidth: 1, borderColor: passwordErrors.current_password ? Colors.error : Colors.border, borderRadius: 10 }}>
+                    <TextInput
+                      value={currentPassword}
+                      onChangeText={setCurrentPassword}
+                      secureTextEntry={!showCurrentPw}
+                      style={{ flex: 1, padding: 12, fontSize: 15, color: Colors.text }}
+                    />
+                    <TouchableOpacity onPress={() => setShowCurrentPw((v) => !v)} style={{ paddingHorizontal: 12 }}>
+                      <Ionicons name={showCurrentPw ? 'eye-off-outline' : 'eye-outline'} size={20} color={Colors.textMuted} />
+                    </TouchableOpacity>
+                  </View>
+                  {passwordErrors.current_password && <Text style={{ color: Colors.error, fontSize: 12, marginTop: 2 }}>{passwordErrors.current_password}</Text>}
+                </View>
+              )}
+              <View style={{ marginBottom: 12 }}>
+                <Text style={{ fontSize: 13, fontWeight: '500', color: Colors.text, marginBottom: 4 }}>New Password</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.background, borderWidth: 1, borderColor: passwordErrors.password ? Colors.error : Colors.border, borderRadius: 10 }}>
+                  <TextInput
+                    value={newPassword}
+                    onChangeText={setNewPassword}
+                    secureTextEntry={!showNewPw}
+                    style={{ flex: 1, padding: 12, fontSize: 15, color: Colors.text }}
+                  />
+                  <TouchableOpacity onPress={() => setShowNewPw((v) => !v)} style={{ paddingHorizontal: 12 }}>
+                    <Ionicons name={showNewPw ? 'eye-off-outline' : 'eye-outline'} size={20} color={Colors.textMuted} />
+                  </TouchableOpacity>
+                </View>
+                {passwordErrors.password && <Text style={{ color: Colors.error, fontSize: 12, marginTop: 2 }}>{passwordErrors.password}</Text>}
+              </View>
+              <View style={{ marginBottom: 16 }}>
+                <Text style={{ fontSize: 13, fontWeight: '500', color: Colors.text, marginBottom: 4 }}>Confirm New Password</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.background, borderWidth: 1, borderColor: passwordErrors.password_confirmation ? Colors.error : Colors.border, borderRadius: 10 }}>
+                  <TextInput
+                    value={confirmPassword}
+                    onChangeText={setConfirmPassword}
+                    secureTextEntry={!showConfirmPw}
+                    style={{ flex: 1, padding: 12, fontSize: 15, color: Colors.text }}
+                  />
+                  <TouchableOpacity onPress={() => setShowConfirmPw((v) => !v)} style={{ paddingHorizontal: 12 }}>
+                    <Ionicons name={showConfirmPw ? 'eye-off-outline' : 'eye-outline'} size={20} color={Colors.textMuted} />
+                  </TouchableOpacity>
+                </View>
+                {passwordErrors.password_confirmation && <Text style={{ color: Colors.error, fontSize: 12, marginTop: 2 }}>{passwordErrors.password_confirmation}</Text>}
+              </View>
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <TouchableOpacity onPress={closePasswordEdit} style={{ flex: 1, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: Colors.border, alignItems: 'center' }}>
+                  <Text style={{ color: Colors.textSecondary, fontWeight: '600' }}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={handleChangePassword} disabled={changingPassword} style={{ flex: 1, padding: 12, borderRadius: 10, backgroundColor: Colors.primary, alignItems: 'center' }}>
+                  {changingPassword ? <ActivityIndicator color="#fff" size="small" /> : <Text style={{ color: '#fff', fontWeight: '600' }}>Save</Text>}
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
         </View>
 
         {/* Quick Links */}
