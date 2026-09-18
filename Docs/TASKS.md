@@ -36,29 +36,29 @@
 
 ### Roadmap (legacy phase plan)
 
-> Original phase-by-phase build plan. Phases 3–11 are fully shipped (see Completed → Roadmap below). Phase 1's core screens (login, registration, OTP, forgot password, email verification) are shipped and in daily use, so those items just need a checkbox audit rather than fresh build work — except **M-110 (Google OAuth)**, which is genuinely unbuilt and tracked as Task 1508/1200 above. Phase 2's dashboard/profile-view items are shipped too, but a code check on 17-09-2026 found avatar upload and phone verification (M-205, M-206) had no mobile UI at all despite being logged as done under old Task 15/16 — those old log entries were inaccurate. M-205/M-206 are now genuinely implemented (see Task 18 in Completed). Treat any other unchecked item here as "needs a quick recheck," not "unbuilt."
+> Original phase-by-phase build plan. Phases 3–11 are fully shipped (see Completed → Roadmap below). A full checkbox audit against the actual code ran on 18-09-2026 (previously several of these were wrongly assumed done or wrongly assumed pending — see Task 18's note about M-205/M-206). Remaining gaps: **M-110 (Google OAuth)** (tracked as Task 1508/1200), **M-203's currency/language selection** (view-only today), and **M-207 (change password)**, none of which have mobile UI yet.
 
 ### Phase 1: Project Setup & Auth (API: Partially Done)
 
 > Auth API controllers already exist (AuthController, OtpController). Need React Native screens.
 
-- [ ] **M-101** - React Native + Expo project setup (folder structure, navigation, theme, dark mode support)
-- [ ] **M-102** - API client setup (Axios instance, base URL, token interceptor, 401 auto-logout, refresh handling)
-- [ ] **M-103** - Secure token storage (expo-secure-store for Sanctum tokens)
-- [ ] **M-104** - Login screen (email/password) - API: POST /api/v1/login (DONE)
-- [ ] **M-105** - OTP Login screen (phone input → OTP verify) - API: POST /api/v1/otp/send, /api/v1/otp/verify (DONE)
-- [ ] **M-106** - Registration screen - API: POST /api/v1/register (DONE)
-- [ ] **M-107** - Forgot Password screen - API: POST /api/v1/forgot-password (DONE)
-- [ ] **M-108** - Email verification screen/flow - API: POST /api/v1/email/verification-notification (DONE)
-- [ ] **M-109** - Auth navigation flow (splash → auth check → login/home)
-- [ ] **M-110** - Google OAuth login (Expo AuthSession / expo-google-sign-in) - API: Need endpoint
+- [x] **M-101** - React Native + Expo project setup (folder structure, navigation, theme, dark mode support)
+- [x] **M-102** - API client setup (Axios instance, base URL, token interceptor, 401 auto-logout, refresh handling)
+- [x] **M-103** - Secure token storage (expo-secure-store for Sanctum tokens)
+- [x] **M-104** - Login screen (email/password) - API: POST /api/v1/login (DONE)
+- [x] **M-105** - OTP Login screen (phone input → OTP verify, tab on Login screen) - API: POST /api/v1/otp/send, /api/v1/otp/verify (DONE)
+- [x] **M-106** - Registration screen - API: POST /api/v1/register (DONE)
+- [x] **M-107** - Forgot Password screen - API: POST /api/v1/forgot-password (DONE)
+- [x] **M-108** - Email verification screen/flow - API: POST /api/v1/email/verification-notification (DONE)
+- [x] **M-109** - Auth navigation flow (splash → auth check → login/home)
+- [ ] **M-110** - Google OAuth login (Expo AuthSession / expo-google-sign-in) - API: Need endpoint. Blocked on Google Cloud OAuth client credentials — see Task 1508/1200.
 
 ### Phase 2: Dashboard & Profile
 
 > Dashboard and Profile controllers already have wantsJson() support (dual-purpose).
 
-- [ ] **M-201** - Bottom tab navigation (Home, Expenses, Groups, Notifications, Profile)
-- [ ] **M-202** - Dashboard/Home screen - API: GET /api/v1/dashboard (PARTIAL - needs JSON response testing)
+- [x] **M-201** - Bottom tab navigation (Home, Expenses, Groups, Notifications, Profile)
+- [x] **M-202** - Dashboard/Home screen - API: GET /api/v1/dashboard
   - Summary cards (Expenses, Income, Savings, You Owe, Owed to You)
   - Income vs Expense bar chart (6 months)
   - Groups overview with balance badges
@@ -67,15 +67,15 @@
   - Tasks widget (pending/overdue count)
   - Quick action buttons (Add Expense, Group Expense)
 - [ ] **M-203** - Profile screen - API: GET /api/v1/user (DONE)
-  - View profile info (name, email, phone, avatar)
-  - Currency & language selection
-  - Notification preferences (email/push toggles)
-- [ ] **M-204** - Edit profile (name only, email/phone are verified fields) - API: Need PUT /api/v1/profile
+  - [x] View profile info (name, email, phone, avatar)
+  - [ ] Currency & language selection — currency is shown read-only, language isn't shown at all; neither is changeable yet
+  - [x] Notification preferences (email/push shown as On/Off status; no in-app toggle to change them)
+- [x] **M-204** - Edit profile (name only, email/phone are verified fields) - API: PATCH /api/v1/profile (DONE)
 - [x] **M-205** - Avatar upload with crop (17-09-2026) — see Task 18 in Completed
 - [x] **M-206** - Phone verification (OTP flow) (17-09-2026) — see Task 18 in Completed
-- [ ] **M-207** - Change password - API: Need PUT /api/v1/password (backend `PUT /api/v1/password` exists; no mobile UI yet)
-- [ ] **M-208** - Delete account - API: Need DELETE /api/v1/profile
-- [ ] **M-209** - Logout - API: POST /api/v1/logout (DONE)
+- [ ] **M-207** - Change password - backend `PUT /api/v1/password` exists; no mobile UI yet
+- [x] **M-208** - Delete account - API: DELETE /api/v1/profile (DONE)
+- [x] **M-209** - Logout - API: POST /api/v1/logout (DONE)
 
 ### Release
 
