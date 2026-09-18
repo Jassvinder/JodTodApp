@@ -56,6 +56,7 @@ export interface ExpenseSummary {
   monthly_total: number;
   last_month_total: number;
   category_breakdown: { category: string; icon: string; total: number }[];
+  daily_trend: { date: string; total: number }[];
 }
 
 export interface Income {
@@ -70,7 +71,10 @@ export interface Income {
 export interface IncomeSummary {
   this_month_income: number;
   last_month_income: number;
+  this_month_expense: number;
   this_month_savings: number;
+  source_breakdown: { source: string; total: number }[];
+  monthly_trend: { month: string; short_month: string; income: number; expense: number; savings: number }[];
 }
 
 export interface Contact {
