@@ -36,7 +36,7 @@
 
 ### Roadmap (legacy phase plan)
 
-> Original phase-by-phase build plan. Phases 3–11 are fully shipped (see Completed → Roadmap below). A full checkbox audit against the actual code ran on 18-09-2026 (previously several of these were wrongly assumed done or wrongly assumed pending — see Task 18's note about M-205/M-206). Remaining gaps: **M-110 (Google OAuth)** (tracked as Task 1508/1200), **M-203's currency/language selection** (view-only today), and **M-207 (change password)**, none of which have mobile UI yet.
+> Original phase-by-phase build plan. Phases 3–11 are fully shipped (see Completed → Roadmap below). A full checkbox audit against the actual code ran on 18-09-2026 (previously several of these were wrongly assumed done or wrongly assumed pending — see Task 18's note about M-205/M-206). M-203's currency/language selection and M-207 (change password) were built the same day. The only remaining gap is **M-110 (Google OAuth)**, blocked on Google Cloud OAuth client credentials — see Task 1508/1200.
 
 ### Phase 1: Project Setup & Auth (API: Partially Done)
 
@@ -66,14 +66,14 @@
   - Recent activity feed
   - Tasks widget (pending/overdue count)
   - Quick action buttons (Add Expense, Group Expense)
-- [ ] **M-203** - Profile screen - API: GET /api/v1/user (DONE)
+- [x] **M-203** - Profile screen - API: GET /api/v1/user (DONE)
   - [x] View profile info (name, email, phone, avatar)
-  - [ ] Currency & language selection — currency is shown read-only, language isn't shown at all; neither is changeable yet
+  - [x] Currency & language selection (18-09-2026) — see Task 19 in Completed
   - [x] Notification preferences (email/push shown as On/Off status; no in-app toggle to change them)
 - [x] **M-204** - Edit profile (name only, email/phone are verified fields) - API: PATCH /api/v1/profile (DONE)
 - [x] **M-205** - Avatar upload with crop (17-09-2026) — see Task 18 in Completed
 - [x] **M-206** - Phone verification (OTP flow) (17-09-2026) — see Task 18 in Completed
-- [ ] **M-207** - Change password - backend `PUT /api/v1/password` exists; no mobile UI yet
+- [x] **M-207** - Change password (18-09-2026) — see Task 19 in Completed
 - [x] **M-208** - Delete account - API: DELETE /api/v1/profile (DONE)
 - [x] **M-209** - Logout - API: POST /api/v1/logout (DONE)
 
@@ -305,6 +305,10 @@
   2. Removed the phone number from the mobile Contacts list, contact-add search results, and Contact Requests screen (email is shown instead); the web Contacts page never showed phone in the approved-contacts list either way, and its search results no longer request phone/email either.
   3. Added a `friend_code` column to `users` (backend `JodTod` repo) — a random 3-letter + 3-digit code (e.g. `KRM459`) generated on user creation. `User::performInsert()` retries generation on a unique-constraint collision, so uniqueness holds even under concurrent registrations; existing users were backfilled by the migration. The code is now returned by contact search/list/request API responses and shown next to the name on both mobile (Contacts, Add Contact, Contact Requests) and web (Contacts, new Contact Requests page).
   4. Rebuilt the web `ContactController` and `Contacts/Index.vue` to match the mobile app's request → approve/decline flow (it previously added contacts directly with no approval step), and added a new `Contacts/Requests.vue` page with `contacts.requests` / `contacts.approve` / `contacts.reject` routes.
+
+- [x] **Task 19 — Profile currency/language + change password** (18-09-2026)
+  A. Currency & language selection: Profile edit form now has chip selectors for currency (10 options, same list as the web app) and language (English/Hindi), wired to the existing `PATCH /profile` endpoint, which already accepted `currency`/`language` but had no mobile UI to send them. Closes the last gap in M-203.
+  B. Change password: added a Password card with an expandable current/new/confirm panel and eye-icon visibility toggles, wired to the existing `PUT /password` endpoint. Current password is only required when the account already has one, so Google-only accounts can set an initial password. Closes M-207.
 
 - [x] **Task 18 — Profile** (17-09-2026)
   A. Photo upload: added camera/gallery picker (1:1 crop, base64 upload to the existing `POST /profile/avatar` endpoint), a "Change Photo" link below the avatar, and a red X button on the avatar to remove it via `DELETE /profile/avatar`. This closes M-205, which — despite being logged as done under old Task 15/16 — had no actual mobile UI.
