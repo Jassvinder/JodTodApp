@@ -15,6 +15,7 @@ import { getDeviceName } from "../../utils/device";
 import { useToast } from "../../components/Toast";
 import AppLogo from "./AppLogo";
 import AuthKeyboardScreen from './AuthKeyboardScreen';
+import GoogleSignInButton from "../../components/GoogleSignInButton";
 
 export default function RegisterScreen() {
   const scrollViewRef = useRef<ScrollView>(null);
@@ -25,9 +26,22 @@ export default function RegisterScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const register = useAuthStore((s) => s.register);
+  const loginWithGoogle = useAuthStore((s) => s.loginWithGoogle);
   const toast = useToast();
+
+  const handleGoogleIdToken = async (idToken: string) => {
+    setGoogleLoading(true);
+    try {
+      await loginWithGoogle({ id_token: idToken, device_name: getDeviceName() });
+    } catch (error: any) {
+      toast.show(error.response?.data?.message || "Google sign-in failed.", "error");
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -214,6 +228,18 @@ export default function RegisterScreen() {
             </Text>
           )}
         </TouchableOpacity>
+
+        {/* Divider */}
+        <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 16 }}>
+          <View style={{ flex: 1, height: 1, backgroundColor: Colors.border }} />
+          <Text style={{ marginHorizontal: 12, color: Colors.textMuted, fontSize: 13 }}>OR</Text>
+          <View style={{ flex: 1, height: 1, backgroundColor: Colors.border }} />
+        </View>
+
+        {/* Google Sign-In */}
+        <View style={{ marginBottom: 24 }}>
+          <GoogleSignInButton onIdToken={handleGoogleIdToken} loading={googleLoading} />
+        </View>
 
         {/* Login Link */}
         <View style={{ flexDirection: "row", justifyContent: "center" }}>

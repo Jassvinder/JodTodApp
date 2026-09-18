@@ -14,6 +14,7 @@ import { getDeviceName } from "../../utils/device";
 import { useToast } from "../../components/Toast";
 import AppLogo from "./AppLogo";
 import AuthKeyboardScreen from './AuthKeyboardScreen';
+import GoogleSignInButton from "../../components/GoogleSignInButton";
 
 type AuthTab = "email" | "otp";
 type OtpStep = "phone" | "verify";
@@ -35,9 +36,21 @@ export default function LoginScreen() {
   // Shared state
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [googleLoading, setGoogleLoading] = useState(false);
 
-  const { login, loginWithOtp } = useAuthStore();
+  const { login, loginWithOtp, loginWithGoogle } = useAuthStore();
   const toast = useToast();
+
+  const handleGoogleIdToken = async (idToken: string) => {
+    setGoogleLoading(true);
+    try {
+      await loginWithGoogle({ id_token: idToken, device_name: getDeviceName() });
+    } catch (error: any) {
+      toast.show(error.response?.data?.message || "Google sign-in failed.", "error");
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
 
   // --- Email Login ---
   const validateEmail = (): boolean => {
@@ -495,6 +508,18 @@ export default function LoginScreen() {
 
         {/* Forms */}
         {activeTab === "email" ? renderEmailForm() : renderOtpForm()}
+
+        {/* Divider */}
+        <View style={{ flexDirection: "row", alignItems: "center", marginTop: 24 }}>
+          <View style={{ flex: 1, height: 1, backgroundColor: Colors.border }} />
+          <Text style={{ marginHorizontal: 12, color: Colors.textMuted, fontSize: 13 }}>OR</Text>
+          <View style={{ flex: 1, height: 1, backgroundColor: Colors.border }} />
+        </View>
+
+        {/* Google Sign-In */}
+        <View style={{ marginTop: 16 }}>
+          <GoogleSignInButton onIdToken={handleGoogleIdToken} loading={googleLoading} />
+        </View>
 
         {/* Register Link */}
         <View

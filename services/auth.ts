@@ -34,4 +34,8 @@ export const authService = {
   verifyOtp(data: { phone: string; otp: string; device_name: string }) {
     return api.post<ApiResponse<AuthData>>('/otp/verify', data);
   },
+
+  loginWithGoogle(data: { id_token: string; device_name: string }) {
+    return api.post<ApiResponse<AuthData>>('/auth/google', data);
+  },
 };

@@ -13,6 +13,7 @@ interface AuthState {
   login: (data: LoginPayload) => Promise<void>;
   register: (data: RegisterPayload) => Promise<void>;
   loginWithOtp: (data: { phone: string; otp: string; device_name: string }) => Promise<void>;
+  loginWithGoogle: (data: { id_token: string; device_name: string }) => Promise<void>;
   logout: () => Promise<void>;
   loadToken: () => Promise<void>;
   setUser: (user: User) => void;
@@ -60,6 +61,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   loginWithOtp: async (data: { phone: string; otp: string; device_name: string }) => {
     const response = await authService.verifyOtp(data);
+    const { token, user } = response.data.data;
+
+    await SecureStore.setItemAsync('auth_token', token);
+    set({ token, user, isAuthenticated: true });
+  },
+
+  loginWithGoogle: async (data: { id_token: string; device_name: string }) => {
+    const response = await authService.loginWithGoogle(data);
     const { token, user } = response.data.data;
 
     await SecureStore.setItemAsync('auth_token', token);
