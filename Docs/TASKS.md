@@ -15,11 +15,11 @@
 
 ### Active
 
-- [] **Task 1512**
-
 - [] **Task 1513**
 
 - [] **Task 1514**
+
+- [] **Task 1515**
 
 ### Testing / Bug Fixes
 
@@ -240,6 +240,12 @@
       A. Removed the native Home title and retained safe-area spacing for the custom dashboard header, so it stays below the status bar and scrolls with Home content.
       B. Added recent income entries to the mobile activity feed, merged chronologically with dashboard activities and rendered with a distinct positive treatment.
       C. Changed dashboard section defaults so only Summary is expanded; pending payments, tasks, groups, category breakdown, and recent activity start collapsed.
+
+- [x] **Task 1512 — Google login on Android devices** (07-10-2026)
+  1. Registered the `com.jodtod.app` redirect scheme in `app.json` (`scheme` is now `["jodtod", "com.jodtod.app"]`) so the Google OAuth redirect `com.jodtod.app:/oauthredirect` returns to the app on Android and iOS builds.
+  2. Added `app/+native-intent.tsx` so Expo Router ignores the OAuth redirect URL (it is consumed by expo-auth-session) instead of showing an Unmatched Route screen.
+  3. Fixed the `SettlementsResponse` type in `services/groups.ts` to match the API (`settlements: { data, meta }`); `npx tsc --noEmit` now passes.
+  4. Google client IDs added to the EAS preview environment; Android OAuth client configured with the local keystore SHA-1 and custom URI scheme. Verified Google login end to end on an Android release build.
 
 - [x] **Task 1511 — Floating task filters** (19-08-2026)
   1. Status, Priority, and Category task filters now open as floating overlays.

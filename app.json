@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "scheme": "jodtod",
+    "scheme": ["jodtod", "com.jodtod.app"],
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",

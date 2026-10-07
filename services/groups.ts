@@ -56,12 +56,14 @@ export interface SettlementsResponse {
   balances: MemberBalance[];
   suggestedTransactions: SuggestedTransaction[];
   memberShares: MemberSharesData;
-  settlements: Settlement[];
-  meta: {
-    current_page: number;
-    last_page: number;
-    per_page: number;
-    total: number;
+  settlements: {
+    data: Settlement[];
+    meta: {
+      current_page: number;
+      last_page: number;
+      per_page: number;
+      total: number;
+    };
   };
 }
 

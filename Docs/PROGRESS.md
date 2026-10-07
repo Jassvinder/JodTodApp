@@ -7,6 +7,12 @@
 - **Docs:** `D:\Development\Projects\JodTodApp\Docs\`
 - **Web Backend (API):** `D:\Development\Projects\JodTod` (Laravel - same DB, shared API)
 
+## Task 1512 Google Login on Android Devices (07-10-2026)
+
+- Added the `com.jodtod.app` URL scheme so the Google OAuth redirect returns to the app, and an Expo Router native-intent hook that keeps the redirect URL from opening an Unmatched Route screen.
+- Corrected the group settlements response type to match the API's paginated `settlements` object; the project typecheck passes again.
+- Google login verified on an Android release build. iOS build and Play Store production setup (Play app signing SHA-1, production EAS env vars, `google-services.json` for EAS builds) are still pending.
+
 ## Task 1207 Auth Keyboard Safe Area (21-08-2026)
 
 - Created a shared auth screen container with a fixed blank strip matching the system status-bar inset for Login, Register, and Forgot Password.
