@@ -14,11 +14,14 @@ import { cancelTodoReminder } from '../services/todoReminders';
 import { resolveUrl } from '../utils/format';
 import { Colors } from '../constants/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import EmptyState from '../components/EmptyState';
+import HeaderAddButton from '../components/HeaderAddButton';
 import { useToast } from '../components/Toast';
 import { useConfirm } from '../components/ConfirmDialog';
 import BottomNav from '../components/BottomNav';
 import ListSearchBar from '../components/ListSearchBar';
 import TodoFilterBar from '../components/TodoFilterBar';
+import TipAnchor from '../components/tips/TipAnchor';
 import type { Todo, TodoCategory } from '../types/models';
 
 const PRIORITY_COLORS: Record<string, string> = {
@@ -224,6 +227,7 @@ export default function TodosScreen() {
 
   const renderHeader = () => (
     <View>
+      <TipAnchor id="todos.filters">
       <TodoFilterBar
         statusOptions={statusOptions}
         priorityOptions={priorityOptions}
@@ -235,6 +239,7 @@ export default function TodosScreen() {
         onPriorityChange={(value) => { setPriorityFilter(value); setLoading(true); setPage(1); fetchTodos(1, false, searchQueryRef.current, { status: statusFilter, priority: value, category: categoryFilter }); }}
         onCategoryChange={(value) => { setCategoryFilter(value); setLoading(true); setPage(1); fetchTodos(1, false, searchQueryRef.current, { status: statusFilter, priority: priorityFilter, category: value }); }}
       />
+      </TipAnchor>
       {hasActiveFilters && (
         <TouchableOpacity
           onPress={() => { setStatusFilter('all'); setPriorityFilter('all'); setCategoryFilter(undefined); setLoading(true); setPage(1); fetchTodos(1, false, searchQueryRef.current, { status: 'all', priority: 'all', category: undefined }); }}
@@ -375,15 +380,17 @@ export default function TodosScreen() {
   };
 
   const renderEmpty = () => (
-    <View style={{ alignItems: 'center', paddingVertical: 60 }}>
-      <Ionicons name="checkbox-outline" size={48} color={Colors.textMuted} />
-      <Text style={{ fontSize: 16, fontWeight: '600', color: Colors.text, marginTop: 12 }}>No tasks yet</Text>
-      <Text style={{ fontSize: 14, color: Colors.textSecondary, marginTop: 4, textAlign: 'center' }}>
-        {statusFilter !== 'all' || priorityFilter !== 'all' || categoryFilter || searchQuery
-          ? 'Try changing your filters'
-          : 'Tap + to add your first task'}
-      </Text>
-    </View>
+    statusFilter !== 'all' || priorityFilter !== 'all' || categoryFilter || searchQuery ? (
+      <EmptyState icon="search-outline" title="No tasks match" text="Try changing your search or filters." />
+    ) : (
+      <EmptyState
+        icon="checkbox-outline"
+        title="Plan your first task"
+        text="Add tasks with due dates and reminders, sort them by category, and assign them to friends from your contacts."
+        actionLabel="Add Task"
+        onAction={() => router.push('/todos-add')}
+      />
+    )
   );
 
   const renderFooter = () => {
@@ -414,28 +421,7 @@ export default function TodosScreen() {
         onEndReachedThreshold={0.3}
       />
 
-      {/* FAB - Add Todo */}
-      <TouchableOpacity
-        onPress={() => router.push('/todos-add')}
-        style={{
-          position: 'absolute',
-          bottom: 20,
-          right: 20,
-          width: 56,
-          height: 56,
-          borderRadius: 28,
-          backgroundColor: Colors.primary,
-          justifyContent: 'center',
-          alignItems: 'center',
-          elevation: 6,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 3 },
-          shadowOpacity: 0.25,
-          shadowRadius: 4,
-        }}
-      >
-        <Ionicons name="add" size={28} color="#fff" />
-      </TouchableOpacity>
+      <HeaderAddButton onPress={() => router.push('/todos-add')} helpScreen="todos" tipId="todos.add" />
 
       </View>
       <BottomNav />

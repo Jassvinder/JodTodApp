@@ -21,6 +21,12 @@
 
 - [] **Task 1515**
 
+- [] **Task 1516** - Set `EXPO_PUBLIC_API_URL=https://jodtod.co.in` in the EAS `preview` environment (currently `http://10.229.181.109:8000`) and create it in the `production` environment (missing, the app throws on startup), then build a new preview APK.
+
+- [] **Task 1517** - After the tunnel fix (backend Task 516), change `.env` back from `http://127.0.0.1:8181` (local testing with `adb reverse tcp:8181 tcp:8181`) to `https://jodtod.co.in`.
+
+- [] **Task 1518** - Test on device: Remember feature (list, add, add date, edit, delete, dashboard card), the 12-10-2026 contacts changes (friend code badge, sent requests and cancel, Requested/Respond in search, empty states, no-contacts notes in groups and tasks), friend code on Profile, and onboarding (welcome slides on first launch, tip bubbles on first visit to each screen, bubble position next to the highlighted button, "?" replay, Help & Tips page actions).
+
 ### Testing / Bug Fixes
 
 - [] **Task 1200**
@@ -82,6 +88,16 @@
 - [ ] App store submission
 
 ## Completed
+
+- [X] Fix tip bubble position on Android (it sat a status bar height too high) (12-10-2026)
+- [X] Helpful empty states with a first action on Expenses, Income, Groups, Tasks, Group Expenses, Remember, Contacts and Notifications (12-10-2026)
+- [X] Task 1519 - In-app onboarding: welcome slides, one-time tip bubbles per screen with "?" replay, and a Help & Tips page (12-10-2026)
+- [X] Show own friend code on the Profile page, tap to copy (12-10-2026)
+- [X] Contacts UX: readable friend code badge, sent requests with cancel, pending users stay in search, first-contact onboarding, and "add contacts first" notes in group and task pickers (12-10-2026)
+- [X] Remember feature: log dates for recurring things (gas cylinder, remote batteries) with history, average gap, and a dashboard count card (11-10-2026)
+- [X] Dashboard summary cards: colored, tappable header with arrow linking to related pages (11-10-2026)
+- [X] Normalize production API URL and add Tasks copy to Register and Dashboard (09-10-2026)
+- [X] Shared `HeaderAddButton` replaces per-screen add buttons with a labeled "+ Add" in the header (09-10-2026)
 
 ### Roadmap (legacy phase plan) — Phases 3–11
 

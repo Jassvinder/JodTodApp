@@ -43,6 +43,31 @@ export function formatRelativeDate(dateStr: string): string {
 }
 
 /**
+ * Format a YYYY-MM-DD date as "02 Oct 2026"
+ */
+export function formatShortDate(dateStr: string): string {
+  return new Date(`${dateStr}T00:00:00`).toLocaleDateString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+/**
+ * Whole days between a YYYY-MM-DD date and today, e.g. "Today", "9 days ago"
+ */
+export function formatDaysAgo(dateStr: string): string {
+  const date = new Date(`${dateStr}T00:00:00`);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const diffDays = Math.round((today.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+
+  if (diffDays <= 0) return 'Today';
+  if (diffDays === 1) return 'Yesterday';
+  return `${diffDays} days ago`;
+}
+
+/**
  * Format a local date for native date-and-time picker fields.
  */
 export function formatLocalDateTime(date: Date = new Date()): string {

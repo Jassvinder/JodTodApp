@@ -8,6 +8,8 @@ import { View, ActivityIndicator } from 'react-native';
 import { Colors } from '../constants/colors';
 import ToastContainer from '../components/Toast';
 import ConfirmDialog from '../components/ConfirmDialog';
+import TipsOverlay from '../components/tips/TipsOverlay';
+import { useTipsStore } from '../stores/tipsStore';
 
 // Setup notification display handler (safe in Expo Go)
 setupNotificationHandler();
@@ -17,8 +19,12 @@ export default function RootLayout() {
   const segments = useSegments();
   const router = useRouter();
 
+  const tipsLoaded = useTipsStore((s) => s.loaded);
+  const introSeen = useTipsStore((s) => s.introSeen);
+
   useEffect(() => {
     loadToken();
+    useTipsStore.getState().load();
   }, []);
 
   // Register push notifications when authenticated
@@ -69,6 +75,14 @@ export default function RootLayout() {
     }
   }, [isAuthenticated, isLoading, user, segments]);
 
+  // Show the intro slides once, after the user first reaches the main app.
+  useEffect(() => {
+    if (!tipsLoaded || introSeen || !isAuthenticated || !user?.email_verified_at) return;
+    if ((segments as string[])[0] === '(tabs)') {
+      router.push('/welcome');
+    }
+  }, [tipsLoaded, introSeen, isAuthenticated, user, segments]);
+
   if (isLoading) {
     return (
       <SafeAreaProvider>
@@ -94,6 +108,8 @@ export default function RootLayout() {
         <Stack.Screen name="todos-add" options={{ headerShown: true, title: 'Add Task', headerStyle: { backgroundColor: Colors.surface }, headerTitleStyle: { fontWeight: '600', color: Colors.text }, headerShadowVisible: false }} />
         <Stack.Screen name="todos-edit" options={{ headerShown: true, title: 'Edit Task', headerStyle: { backgroundColor: Colors.surface }, headerTitleStyle: { fontWeight: '600', color: Colors.text }, headerShadowVisible: false }} />
         <Stack.Screen name="todo-categories" options={{ headerShown: true, title: 'Task Categories', headerStyle: { backgroundColor: Colors.surface }, headerTitleStyle: { fontWeight: '600', color: Colors.text }, headerShadowVisible: false }} />
+        <Stack.Screen name="remember" options={{ headerShown: true, title: 'Remember', headerStyle: { backgroundColor: Colors.surface }, headerTitleStyle: { fontWeight: '600', color: Colors.text }, headerShadowVisible: false }} />
+        <Stack.Screen name="remember-detail" options={{ headerShown: true, title: 'Remember', headerStyle: { backgroundColor: Colors.surface }, headerTitleStyle: { fontWeight: '600', color: Colors.text }, headerShadowVisible: false }} />
         <Stack.Screen name="groups-create" options={{ headerShown: true, title: 'Create Group', headerStyle: { backgroundColor: Colors.surface }, headerTitleStyle: { fontWeight: '600', color: Colors.text }, headerShadowVisible: false }} />
         <Stack.Screen name="groups-detail" options={{ headerShown: true, title: 'Group', headerStyle: { backgroundColor: Colors.surface }, headerTitleStyle: { fontWeight: '600', color: Colors.text }, headerShadowVisible: false }} />
         <Stack.Screen name="groups-edit" options={{ headerShown: true, title: 'Edit Group', headerStyle: { backgroundColor: Colors.surface }, headerTitleStyle: { fontWeight: '600', color: Colors.text }, headerShadowVisible: false }} />
@@ -104,7 +120,10 @@ export default function RootLayout() {
         <Stack.Screen name="groups-expense-edit" options={{ headerShown: true, title: 'Edit Group Expense', headerStyle: { backgroundColor: Colors.surface }, headerTitleStyle: { fontWeight: '600', color: Colors.text }, headerShadowVisible: false }} />
         <Stack.Screen name="groups-settlements" options={{ headerShown: true, title: 'Settlements', headerStyle: { backgroundColor: Colors.surface }, headerTitleStyle: { fontWeight: '600', color: Colors.text }, headerShadowVisible: false }} />
         <Stack.Screen name="notifications" options={{ headerShown: true, title: 'Notifications', headerStyle: { backgroundColor: Colors.surface }, headerTitleStyle: { fontWeight: '600', color: Colors.text }, headerShadowVisible: false }} />
+        <Stack.Screen name="help" options={{ headerShown: true, title: 'Help & Tips', headerStyle: { backgroundColor: Colors.surface }, headerTitleStyle: { fontWeight: '600', color: Colors.text }, headerShadowVisible: false }} />
+        <Stack.Screen name="welcome" options={{ headerShown: false, presentation: 'fullScreenModal' }} />
       </Stack>
+      <TipsOverlay />
     </SafeAreaProvider>
   );
 }

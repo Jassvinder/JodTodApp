@@ -13,6 +13,8 @@ import { expenseService } from '../services/expenses';
 import { formatCurrency, formatRelativeDate } from '../utils/format';
 import { Colors } from '../constants/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import EmptyState from '../components/EmptyState';
+import HeaderAddButton from '../components/HeaderAddButton';
 import { useToast } from '../components/Toast';
 import { useConfirm } from '../components/ConfirmDialog';
 import BottomNav from '../components/BottomNav';
@@ -306,13 +308,17 @@ export default function GroupExpensesScreen() {
   );
 
   const renderEmpty = () => (
-    <View style={{ alignItems: 'center', paddingVertical: 60 }}>
-      <Ionicons name="receipt-outline" size={48} color={Colors.textMuted} />
-      <Text style={{ fontSize: 16, fontWeight: '600', color: Colors.text, marginTop: 12 }}>No expenses yet</Text>
-      <Text style={{ fontSize: 14, color: Colors.textSecondary, marginTop: 4, textAlign: 'center' }}>
-        {searchQuery || selectedCategory ? 'Try changing your filters' : 'Tap + to add a group expense'}
-      </Text>
-    </View>
+    searchQuery || selectedCategory ? (
+      <EmptyState icon="search-outline" title="No expenses match" text="Try changing your search or category filter." />
+    ) : (
+      <EmptyState
+        icon="receipt-outline"
+        title="No shared expenses yet"
+        text="Add the first expense, choose who paid and how to split it. JodTod keeps everyone's balance up to date."
+        actionLabel="Add Expense"
+        onAction={() => router.push({ pathname: '/groups-expense-add', params: { groupId } })}
+      />
+    )
   );
 
   const renderFooter = () => {
@@ -343,28 +349,7 @@ export default function GroupExpensesScreen() {
         onEndReachedThreshold={0.3}
       />
 
-      {/* FAB - Add Group Expense */}
-      <TouchableOpacity
-        onPress={() => router.push({ pathname: '/groups-expense-add', params: { groupId } })}
-        style={{
-          position: 'absolute',
-          bottom: 20,
-          right: 20,
-          width: 56,
-          height: 56,
-          borderRadius: 28,
-          backgroundColor: Colors.primary,
-          justifyContent: 'center',
-          alignItems: 'center',
-          elevation: 6,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 3 },
-          shadowOpacity: 0.25,
-          shadowRadius: 4,
-        }}
-      >
-        <Ionicons name="add" size={28} color="#fff" />
-      </TouchableOpacity>
+      <HeaderAddButton onPress={() => router.push({ pathname: '/groups-expense-add', params: { groupId } })} />
       </View>
       <BottomNav />
     </View>

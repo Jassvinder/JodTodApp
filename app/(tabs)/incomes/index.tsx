@@ -12,6 +12,8 @@ import { incomeService, type IncomeListParams } from '../../../services/incomes'
 import { formatCurrency, formatRelativeDate, percentChange } from '../../../utils/format';
 import { Colors } from '../../../constants/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import EmptyState from '../../../components/EmptyState';
+import HeaderAddButton from '../../../components/HeaderAddButton';
 import { useToast } from '../../../components/Toast';
 import { useConfirm } from '../../../components/ConfirmDialog';
 import ListSearchBar from '../../../components/ListSearchBar';
@@ -226,13 +228,20 @@ export default function IncomesScreen() {
   );
 
   const renderEmpty = () => (
-    <View style={{ alignItems: 'center', paddingVertical: 60 }}>
-      <Ionicons name="trending-up-outline" size={48} color={Colors.textMuted} />
-      <Text style={{ fontSize: 16, fontWeight: '600', color: Colors.text, marginTop: 12 }}>No income yet</Text>
-      <Text style={{ fontSize: 14, color: Colors.textSecondary, marginTop: 4, textAlign: 'center' }}>
-        {searchQuery ? 'Try changing your search' : 'Tap + to add your first income'}
-      </Text>
-    </View>
+    searchQuery ? (
+      <EmptyState icon="search-outline" title="No income matches" text="Try changing your search." iconColor={Colors.success} iconBg="#dcfce7" />
+    ) : (
+      <EmptyState
+        icon="trending-up-outline"
+        title="Add your income"
+        text="Record your salary, freelance work or any other income. JodTod works out your monthly savings for you."
+        iconColor={Colors.success}
+        iconBg="#dcfce7"
+        actionLabel="Add Income"
+        actionColor={Colors.success}
+        onAction={() => router.push('/(tabs)/incomes/add')}
+      />
+    )
   );
 
   const renderFooter = () => {
@@ -259,28 +268,7 @@ export default function IncomesScreen() {
         onEndReachedThreshold={0.3}
       />
 
-      {/* FAB - Add Income */}
-      <TouchableOpacity
-        onPress={() => router.push('/(tabs)/incomes/add')}
-        style={{
-          position: 'absolute',
-          bottom: 20,
-          right: 20,
-          width: 56,
-          height: 56,
-          borderRadius: 28,
-          backgroundColor: Colors.success,
-          justifyContent: 'center',
-          alignItems: 'center',
-          elevation: 6,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 3 },
-          shadowOpacity: 0.25,
-          shadowRadius: 4,
-        }}
-      >
-        <Ionicons name="add" size={28} color="#fff" />
-      </TouchableOpacity>
+      <HeaderAddButton onPress={() => router.push('/(tabs)/incomes/add')} color={Colors.success} helpScreen="incomes" tipId="incomes.add" />
     </View>
   );
 }

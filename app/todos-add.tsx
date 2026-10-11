@@ -23,6 +23,7 @@ import DatePickerField from '../components/DatePickerField';
 import TodoCategoryPicker from '../components/TodoCategoryPicker';
 import { useToast } from '../components/Toast';
 import BottomNav from '../components/BottomNav';
+import NoContactsNote from '../components/NoContactsNote';
 import type { TodoCategory, Contact } from '../types/models';
 
 const PRIORITY_COLORS = {
@@ -313,9 +314,7 @@ export default function AddTodoScreen() {
               keyExtractor={(item) => item.id.toString()}
               contentContainerStyle={{ padding: 16 }}
               ListEmptyComponent={
-                <View style={{ alignItems: 'center', paddingVertical: 40 }}>
-                  <Text style={{ fontSize: 14, color: Colors.textMuted }}>No contacts found</Text>
-                </View>
+                <NoContactsNote purpose="assign tasks to others" onBeforeNavigate={() => setShowContactPicker(false)} />
               }
               renderItem={({ item }) => (
                 <TouchableOpacity

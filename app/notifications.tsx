@@ -11,6 +11,7 @@ import { useRouter } from 'expo-router';
 import { notificationService } from '../services/notifications';
 import { Colors } from '../constants/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import EmptyState from '../components/EmptyState';
 import { useToast } from '../components/Toast';
 import BottomNav from '../components/BottomNav';
 import type { AppNotification } from '../types/models';
@@ -258,13 +259,11 @@ export default function NotificationsScreen() {
   };
 
   const renderEmpty = () => (
-    <View style={{ alignItems: 'center', paddingVertical: 60 }}>
-      <Ionicons name="notifications-off-outline" size={48} color={Colors.textMuted} />
-      <Text style={{ fontSize: 16, fontWeight: '600', color: Colors.text, marginTop: 12 }}>No notifications</Text>
-      <Text style={{ fontSize: 14, color: Colors.textSecondary, marginTop: 4, textAlign: 'center' }}>
-        You're all caught up! We'll notify you when something happens.
-      </Text>
-    </View>
+    <EmptyState
+      icon="notifications-outline"
+      title="You're all caught up"
+      text="Contact requests, task reminders, and group expense and settlement updates will show up here."
+    />
   );
 
   const renderFooter = () => {

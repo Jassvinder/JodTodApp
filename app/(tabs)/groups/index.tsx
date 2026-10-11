@@ -13,6 +13,9 @@ import { groupService } from '../../../services/groups';
 import { formatCurrency, resolveUrl } from '../../../utils/format';
 import { Colors } from '../../../constants/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import EmptyState from '../../../components/EmptyState';
+import HeaderAddButton from '../../../components/HeaderAddButton';
+import TipAnchor from '../../../components/tips/TipAnchor';
 import { useToast } from '../../../components/Toast';
 import type { Group } from '../../../types/models';
 
@@ -130,13 +133,15 @@ export default function GroupsScreen() {
   };
 
   const renderEmpty = () => (
-    <View style={{ alignItems: 'center', paddingVertical: 60 }}>
-      <Ionicons name="people-outline" size={48} color={Colors.textMuted} />
-      <Text style={{ fontSize: 16, fontWeight: '600', color: Colors.text, marginTop: 12 }}>No groups yet</Text>
-      <Text style={{ fontSize: 14, color: Colors.textSecondary, marginTop: 4, textAlign: 'center' }}>
-        Create a group or join one with an invite code
-      </Text>
-    </View>
+    <EmptyState
+      icon="people-outline"
+      title="Split bills with friends"
+      text="Create a group for a trip, flat or event. Add friends, record shared expenses, and JodTod shows who owes whom."
+      actionLabel="Create Group"
+      onAction={() => router.push('/groups-create')}
+      secondaryLabel="Have an invite code? Join a group"
+      onSecondary={() => router.push('/groups-join')}
+    />
   );
 
   return (
@@ -150,55 +155,32 @@ export default function GroupsScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Colors.primary]} />}
       />
 
-      {/* Join Group Button */}
-      <TouchableOpacity
-        onPress={() => router.push('/groups-join')}
-        style={{
-          position: 'absolute',
-          bottom: 20,
-          right: 84,
-          height: 48,
-          paddingHorizontal: 16,
-          borderRadius: 24,
-          backgroundColor: Colors.surface,
-          justifyContent: 'center',
-          alignItems: 'center',
-          flexDirection: 'row',
-          elevation: 4,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.15,
-          shadowRadius: 3,
-          borderWidth: 1,
-          borderColor: Colors.border,
-        }}
-      >
-        <Ionicons name="enter-outline" size={20} color={Colors.primary} />
-        <Text style={{ fontSize: 14, fontWeight: '600', color: Colors.primary, marginLeft: 6 }}>Join</Text>
-      </TouchableOpacity>
-
-      {/* FAB - Create Group */}
-      <TouchableOpacity
+      <HeaderAddButton
         onPress={() => router.push('/groups-create')}
-        style={{
-          position: 'absolute',
-          bottom: 20,
-          right: 20,
-          width: 56,
-          height: 56,
-          borderRadius: 28,
-          backgroundColor: Colors.primary,
-          justifyContent: 'center',
-          alignItems: 'center',
-          elevation: 6,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 3 },
-          shadowOpacity: 0.25,
-          shadowRadius: 4,
-        }}
-      >
-        <Ionicons name="add" size={28} color="#fff" />
-      </TouchableOpacity>
+        helpScreen="groups"
+        tipId="groups.create"
+        leadingAction={(
+          <TipAnchor id="groups.join">
+          <TouchableOpacity
+            onPress={() => router.push('/groups-join')}
+            accessibilityRole="button"
+            accessibilityLabel="Join"
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              borderRadius: 18,
+              borderWidth: 1,
+              borderColor: Colors.primary,
+              paddingHorizontal: 12,
+              paddingVertical: 5,
+            }}
+          >
+            <Ionicons name="enter-outline" size={16} color={Colors.primary} />
+            <Text style={{ fontSize: 14, fontWeight: '600', color: Colors.primary, marginLeft: 4 }}>Join</Text>
+          </TouchableOpacity>
+          </TipAnchor>
+        )}
+      />
     </View>
   );
 }

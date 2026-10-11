@@ -14,6 +14,8 @@ import { expenseService, type ExpenseListParams } from '../../../services/expens
 import { formatCurrency, formatRelativeDate, percentChange } from '../../../utils/format';
 import { Colors } from '../../../constants/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import EmptyState from '../../../components/EmptyState';
+import HeaderAddButton from '../../../components/HeaderAddButton';
 import { useToast } from '../../../components/Toast';
 import { useConfirm } from '../../../components/ConfirmDialog';
 import type { Expense, Category, ExpenseSummary } from '../../../types/models';
@@ -320,13 +322,17 @@ export default function ExpensesScreen() {
   );
 
   const renderEmpty = () => (
-    <View style={{ alignItems: 'center', paddingVertical: 60 }}>
-      <Ionicons name="receipt-outline" size={48} color={Colors.textMuted} />
-      <Text style={{ fontSize: 16, fontWeight: '600', color: Colors.text, marginTop: 12 }}>No expenses yet</Text>
-      <Text style={{ fontSize: 14, color: Colors.textSecondary, marginTop: 4, textAlign: 'center' }}>
-        {searchQuery || selectedCategory ? 'Try changing your filters' : 'Tap + to add your first expense'}
-      </Text>
-    </View>
+    searchQuery || selectedCategory ? (
+      <EmptyState icon="search-outline" title="No expenses match" text="Try changing your search or category filter." />
+    ) : (
+      <EmptyState
+        icon="wallet-outline"
+        title="Track your first expense"
+        text="Add what you spend, like groceries, rent or bills. Pick a category and JodTod shows where your money goes every month."
+        actionLabel="Add Expense"
+        onAction={() => router.push('/(tabs)/expenses/add')}
+      />
+    )
   );
 
   const renderFooter = () => {
@@ -368,28 +374,7 @@ export default function ExpensesScreen() {
         onEndReachedThreshold={0.3}
       />
 
-      {/* FAB - Add Expense */}
-      <TouchableOpacity
-        onPress={() => router.push('/(tabs)/expenses/add')}
-        style={{
-          position: 'absolute',
-          bottom: 20,
-          right: 20,
-          width: 56,
-          height: 56,
-          borderRadius: 28,
-          backgroundColor: Colors.primary,
-          justifyContent: 'center',
-          alignItems: 'center',
-          elevation: 6,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 3 },
-          shadowOpacity: 0.25,
-          shadowRadius: 4,
-        }}
-      >
-        <Ionicons name="add" size={28} color="#fff" />
-      </TouchableOpacity>
+      <HeaderAddButton onPress={() => router.push('/(tabs)/expenses/add')} helpScreen="expenses" tipId="expenses.add" />
     </View>
   );
 }

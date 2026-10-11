@@ -14,6 +14,7 @@ import { Colors } from '../constants/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useToast } from '../components/Toast';
 import BottomNav from '../components/BottomNav';
+import NoContactsNote from '../components/NoContactsNote';
 
 interface ContactItem {
   id: number;
@@ -162,12 +163,15 @@ export default function AddMemberScreen() {
   );
 
   const renderEmpty = () => (
-    <View style={{ alignItems: 'center', paddingVertical: 60 }}>
-      <Ionicons name="people-outline" size={48} color={Colors.textMuted} />
-      <Text style={{ fontSize: 16, fontWeight: '600', color: Colors.text, marginTop: 12 }}>No contacts available</Text>
-      <Text style={{ fontSize: 14, color: Colors.textSecondary, marginTop: 4, textAlign: 'center' }}>
-        All your contacts are already members of this group, or you have no contacts yet.
-      </Text>
+    <View style={{ paddingVertical: 40 }}>
+      <View style={{ alignItems: 'center', marginBottom: 20 }}>
+        <Ionicons name="people-outline" size={48} color={Colors.textMuted} />
+        <Text style={{ fontSize: 16, fontWeight: '600', color: Colors.text, marginTop: 12 }}>No contacts to add</Text>
+        <Text style={{ fontSize: 14, color: Colors.textSecondary, marginTop: 4, textAlign: 'center' }}>
+          Only people in your contact list can be added to a group.
+        </Text>
+      </View>
+      <NoContactsNote purpose="add more members" />
     </View>
   );
 

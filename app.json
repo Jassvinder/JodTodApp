@@ -45,9 +45,6 @@
       "expo-web-browser"
     ],
     "extra": {
-      "router": {
-        "origin": "https://jodtod.co.in"
-      },
       "eas": {
         "projectId": "d0ffc913-61e9-493f-9243-10c7d3d47ed8"
       }

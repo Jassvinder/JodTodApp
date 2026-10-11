@@ -13,6 +13,7 @@ export interface User {
   notification_email: boolean;
   notification_push: boolean;
   has_password: boolean;
+  friend_code?: string;
 }
 
 export interface AuthData {
@@ -97,12 +98,23 @@ export interface SearchUser {
   friend_code: string;
   avatar: string | null;
   avatar_url: string | null;
+  // Pending contact request between the current user and this user, if any.
+  request_status?: 'sent' | 'received' | null;
 }
+
+export type ContactRequestUser = Pick<SearchUser, 'id' | 'name' | 'friend_code' | 'avatar' | 'avatar_url'>;
 
 export interface ContactRequest {
   id: number;
   user_id: number;
-  user: Pick<SearchUser, 'id' | 'name' | 'friend_code' | 'avatar' | 'avatar_url'>;
+  user: ContactRequestUser;
+  created_at: string;
+}
+
+export interface SentContactRequest {
+  id: number;
+  contact_user_id: number;
+  contact_user: ContactRequestUser;
   created_at: string;
 }
 
@@ -193,4 +205,21 @@ export interface AppNotification {
   data: { title?: string; message?: string; [key: string]: any };
   read_at: string | null;
   created_at: string;
+}
+
+export interface RememberEntry {
+  id: number;
+  done_on: string;
+  note: string | null;
+}
+
+export interface RememberItem {
+  id: number;
+  name: string;
+  note: string | null;
+  entries_count: number;
+  last_done_on: string | null;
+  avg_gap_days: number | null;
+  created_at: string;
+  entries?: RememberEntry[];
 }

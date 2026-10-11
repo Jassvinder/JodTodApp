@@ -15,11 +15,14 @@ import { Colors } from '../constants/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useToast } from '../components/Toast';
 import BottomNav from '../components/BottomNav';
+import FriendCodeBadge from '../components/FriendCodeBadge';
+import { useAuthStore } from '../stores/authStore';
 import type { SearchUser } from '../types/models';
 
 export default function ContactsAddScreen() {
   const router = useRouter();
   const toast = useToast();
+  const myFriendCode = useAuthStore((s) => s.user?.friend_code);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchUser[]>([]);
   const [loading, setLoading] = useState(false);
@@ -59,8 +62,7 @@ export default function ContactsAddScreen() {
     try {
       const response = await contactService.addContact(user.id);
       toast.show(response.data.message);
-      // Remove from results since they're now a contact
-      setResults((prev) => prev.filter((u) => u.id !== user.id));
+      setResults((prev) => prev.map((u) => (u.id === user.id ? { ...u, request_status: 'sent' } : u)));
     } catch (error: any) {
       toast.show(error.response?.data?.message || 'Failed to add contact.', 'error');
     } finally {
@@ -114,30 +116,46 @@ export default function ContactsAddScreen() {
           <Text style={{ fontSize: 15, fontWeight: '500', color: Colors.text, flexShrink: 1 }} numberOfLines={1}>
             {item.name}
           </Text>
-          <View style={{ backgroundColor: Colors.primaryLight, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 1, marginLeft: 6 }}>
-            <Text style={{ fontSize: 11, fontWeight: '600', color: Colors.primary }}>{item.friend_code}</Text>
-          </View>
+          <FriendCodeBadge code={item.friend_code} />
         </View>
       </View>
 
-      {/* Add Button */}
-      <TouchableOpacity
-        onPress={() => handleAdd(item)}
-        disabled={addingId === item.id}
-        style={{
-          backgroundColor: Colors.primary,
-          borderRadius: 8,
-          paddingHorizontal: 14,
-          paddingVertical: 8,
-          marginLeft: 8,
-        }}
-      >
-        {addingId === item.id ? (
-          <ActivityIndicator size="small" color="#fff" />
-        ) : (
-          <Text style={{ color: '#fff', fontWeight: '600', fontSize: 13 }}>Add</Text>
-        )}
-      </TouchableOpacity>
+      {item.request_status ? (
+        // A request already exists either way; manage it on the Requests screen.
+        <TouchableOpacity
+          onPress={() => router.push('/contacts-requests')}
+          style={{
+            borderWidth: 1,
+            borderColor: Colors.primary,
+            borderRadius: 8,
+            paddingHorizontal: 12,
+            paddingVertical: 7,
+            marginLeft: 8,
+          }}
+        >
+          <Text style={{ color: Colors.primary, fontWeight: '600', fontSize: 13 }}>
+            {item.request_status === 'sent' ? 'Requested' : 'Respond'}
+          </Text>
+        </TouchableOpacity>
+      ) : (
+        <TouchableOpacity
+          onPress={() => handleAdd(item)}
+          disabled={addingId === item.id}
+          style={{
+            backgroundColor: Colors.primary,
+            borderRadius: 8,
+            paddingHorizontal: 14,
+            paddingVertical: 8,
+            marginLeft: 8,
+          }}
+        >
+          {addingId === item.id ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Text style={{ color: '#fff', fontWeight: '600', fontSize: 13 }}>Add</Text>
+          )}
+        </TouchableOpacity>
+      )}
     </View>
   );
 
@@ -174,7 +192,7 @@ export default function ContactsAddScreen() {
             <TextInput
               value={query}
               onChangeText={handleQueryChange}
-              placeholder="Search by name..."
+              placeholder="Search by name or friend code..."
               placeholderTextColor={Colors.textMuted}
               autoFocus
               autoCapitalize="none"
@@ -187,9 +205,15 @@ export default function ContactsAddScreen() {
               </TouchableOpacity>
             )}
           </View>
-          <Text style={{ fontSize: 12, color: Colors.textMuted, marginBottom: 12 }}>
-            Search by name to send a contact request (min 3 characters). Contact details are shared only after approval.
+          <Text style={{ fontSize: 12, color: Colors.textMuted, marginBottom: 8 }}>
+            Type at least 3 characters and send a request. Details are shared only after they approve. If many people share a name, ask your friend for their friend code.
           </Text>
+          {!!myFriendCode && (
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+              <Text style={{ fontSize: 12, color: Colors.textSecondary }}>Your friend code:</Text>
+              <FriendCodeBadge code={myFriendCode} />
+            </View>
+          )}
         </View>
 
         {/* Results */}

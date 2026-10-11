@@ -16,6 +16,8 @@ import { Colors } from '../../../constants/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useToast } from '../../../components/Toast';
 import { useConfirm } from '../../../components/ConfirmDialog';
+import FriendCodeBadge from '../../../components/FriendCodeBadge';
+import * as Clipboard from 'expo-clipboard';
 
 let ImagePicker: typeof import('expo-image-picker') | null = null;
 try {
@@ -415,6 +417,19 @@ export default function ProfileScreen() {
           </TouchableOpacity>
           <Text style={{ fontSize: 20, fontWeight: '700', color: Colors.text, marginTop: 8 }}>{user?.name}</Text>
           <Text style={{ fontSize: 14, color: Colors.textSecondary }}>{user?.email}</Text>
+          {!!user?.friend_code && (
+            <TouchableOpacity
+              onPress={async () => {
+                await Clipboard.setStringAsync(user.friend_code!);
+                toast.show('Friend code copied. Share it so friends can find you.');
+              }}
+              style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6 }}
+            >
+              <Text style={{ fontSize: 13, color: Colors.textSecondary }}>Friend code:</Text>
+              <FriendCodeBadge code={user.friend_code} />
+              <Ionicons name="copy-outline" size={14} color={Colors.textMuted} style={{ marginLeft: 6 }} />
+            </TouchableOpacity>
+          )}
           <View style={{ flexDirection: 'row', gap: 8, marginTop: 6 }}>
             {user?.email_verified_at ? (
               <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#dcfce7', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 }}>

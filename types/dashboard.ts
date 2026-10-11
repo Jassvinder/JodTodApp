@@ -67,4 +67,6 @@ export interface DashboardData {
   recentActivity: RecentActivity[];
   pendingSettlements: { items: PendingSettlement[]; count: number };
   todoStats: TodoStats;
+  // Optional so the dashboard still renders against a server without the Remember feature.
+  rememberStats?: { total: number };
 }

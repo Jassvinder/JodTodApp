@@ -155,7 +155,7 @@ export default function RegisterScreen() {
           <Text
             style={{ fontSize: 15, color: Colors.textSecondary, marginTop: 4 }}
           >
-            Start tracking your expenses with JodTod
+            Track expenses, split bills, and plan tasks with JodTod
           </Text>
         </View>
 

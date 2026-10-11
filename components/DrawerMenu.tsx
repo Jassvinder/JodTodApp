@@ -31,10 +31,12 @@ const menuItems: {
   { label: 'Expenses', icon: 'wallet-outline', route: '/(tabs)/expenses' },
   { label: 'Income', icon: 'trending-up-outline', route: '/(tabs)/incomes' },
   { label: 'My Tasks', icon: 'checkbox-outline', route: '/todos' },
+  { label: 'Remember', icon: 'bookmark-outline', route: '/remember' },
   { label: 'Contacts', icon: 'people-outline', route: '/contacts' },
   { label: 'Groups', icon: 'people-circle-outline', route: '/(tabs)/groups' },
   { label: 'Notifications', icon: 'notifications-outline', route: '/notifications' },
   { label: 'Profile', icon: 'person-outline', route: '/(tabs)/profile' },
+  { label: 'Help & Tips', icon: 'help-circle-outline', route: '/help' },
 ];
 
 export default function DrawerMenu({ visible, onClose }: DrawerMenuProps) {

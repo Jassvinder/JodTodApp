@@ -14,12 +14,17 @@ import { contactService, type ContactListParams } from '../services/contacts';
 import { resolveUrl } from '../utils/format';
 import { Colors } from '../constants/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import EmptyState from '../components/EmptyState';
+import HeaderAddButton from '../components/HeaderAddButton';
 import { useToast } from '../components/Toast';
 import { useConfirm } from '../components/ConfirmDialog';
 import BottomNav from '../components/BottomNav';
+import FriendCodeBadge from '../components/FriendCodeBadge';
+import TipAnchor from '../components/tips/TipAnchor';
 import type { Contact } from '../types/models';
 
 interface ContactListHeaderProps {
+  showSearch: boolean;
   contactCount: number;
   requestCount: number;
   searchText: string;
@@ -31,6 +36,7 @@ interface ContactListHeaderProps {
 }
 
 function ContactListHeader({
+  showSearch,
   contactCount,
   requestCount,
   searchText,
@@ -42,6 +48,7 @@ function ContactListHeader({
 }: ContactListHeaderProps) {
   return (
     <View>
+      {showSearch && (
       <View style={{
         flexDirection: 'row',
         alignItems: 'center',
@@ -76,15 +83,18 @@ function ContactListHeader({
           {searching ? <ActivityIndicator size="small" color="#fff" /> : <Ionicons name="search" size={17} color="#fff" />}
         </TouchableOpacity>
       </View>
+      )}
 
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
         <Text style={{ fontSize: 13, color: Colors.textSecondary }}>
           {contactCount} contact{contactCount !== 1 ? 's' : ''}
         </Text>
-        <TouchableOpacity onPress={onRequests} style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <Ionicons name="person-add-outline" size={16} color={Colors.primary} />
-          <Text style={{ fontSize: 13, color: Colors.primary, fontWeight: '600', marginLeft: 4 }}>Requests{requestCount ? ` (${requestCount})` : ''}</Text>
-        </TouchableOpacity>
+        <TipAnchor id="contacts.requests">
+          <TouchableOpacity onPress={onRequests} style={{ flexDirection: 'row', alignItems: 'center', padding: 2 }}>
+            <Ionicons name="person-add-outline" size={16} color={Colors.primary} />
+            <Text style={{ fontSize: 13, color: Colors.primary, fontWeight: '600', marginLeft: 4 }}>Requests{requestCount ? ` (${requestCount})` : ''}</Text>
+          </TouchableOpacity>
+        </TipAnchor>
       </View>
     </View>
   );
@@ -273,9 +283,7 @@ export default function ContactsScreen() {
           <Text style={{ fontSize: 15, fontWeight: '500', color: Colors.text, flexShrink: 1 }} numberOfLines={1}>
             {item.contact_user.name}
           </Text>
-          <View style={{ backgroundColor: Colors.primaryLight, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 1, marginLeft: 6 }}>
-            <Text style={{ fontSize: 11, fontWeight: '600', color: Colors.primary }}>{item.contact_user.friend_code}</Text>
-          </View>
+          <FriendCodeBadge code={item.contact_user.friend_code} />
         </View>
         <Text style={{ fontSize: 13, color: Colors.textSecondary, marginTop: 2 }} numberOfLines={1}>
           {item.contact_user.email}
@@ -288,13 +296,18 @@ export default function ContactsScreen() {
   );
 
   const renderEmpty = () => (
-    <View style={{ alignItems: 'center', paddingVertical: 60 }}>
-      <Ionicons name="people-outline" size={48} color={Colors.textMuted} />
-      <Text style={{ fontSize: 16, fontWeight: '600', color: Colors.text, marginTop: 12 }}>No contacts yet</Text>
-      <Text style={{ fontSize: 14, color: Colors.textSecondary, marginTop: 4, textAlign: 'center' }}>
-        {searchQuery ? 'No contacts match your search' : 'Tap + to add your first contact'}
-      </Text>
-    </View>
+    searchQuery ? (
+      <EmptyState icon="search-outline" title="No contacts match your search" text="Try a different name or email." />
+    ) : (
+      <EmptyState
+        icon="people-outline"
+        title="Add your first contact"
+        text="Contacts are friends you split group expenses and share tasks with. Find them by name or friend code and send a request. They show up here once they approve."
+        actionLabel="Find Friends"
+        actionIcon="person-add-outline"
+        onAction={() => router.push('/contacts-add')}
+      />
+    )
   );
 
   const renderFooter = () => {
@@ -315,6 +328,7 @@ export default function ContactsScreen() {
           keyExtractor={(item) => item.id.toString()}
           ListHeaderComponent={
             <ContactListHeader
+              showSearch={contacts.length > 0 || !!searchQuery}
               contactCount={contacts.length}
               requestCount={requestCount}
               searchText={searchText}
@@ -333,28 +347,7 @@ export default function ContactsScreen() {
           onEndReachedThreshold={0.3}
         />
 
-        <TouchableOpacity
-          onPress={() => router.push('/contacts-add')}
-          style={{
-            position: 'absolute',
-            bottom: 20,
-            right: 20,
-            width: 56,
-            height: 56,
-            borderRadius: 28,
-            backgroundColor: Colors.primary,
-            justifyContent: 'center',
-            alignItems: 'center',
-            elevation: 6,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 3 },
-            shadowOpacity: 0.25,
-            shadowRadius: 4,
-            zIndex: 10,
-          }}
-        >
-          <Ionicons name="person-add" size={24} color="#fff" />
-        </TouchableOpacity>
+        <HeaderAddButton onPress={() => router.push('/contacts-add')} helpScreen="contacts" tipId="contacts.add" />
       </View>
       <BottomNav />
     </View>

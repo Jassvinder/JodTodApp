@@ -12,6 +12,7 @@ import { useFocusEffect } from 'expo-router';
 import { getTodoCategoriesWithDefaults, todoService } from '../services/todos';
 import { Colors } from '../constants/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import HeaderAddButton from '../components/HeaderAddButton';
 import { useToast } from '../components/Toast';
 import { useConfirm } from '../components/ConfirmDialog';
 import BottomNav from '../components/BottomNav';
@@ -276,30 +277,7 @@ export default function TodoCategoriesScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Colors.primary]} />}
       />
 
-      {/* FAB - Add Category */}
-      {!showForm && (
-        <TouchableOpacity
-          onPress={() => { resetForm(); setShowForm(true); }}
-          style={{
-            position: 'absolute',
-            bottom: 20,
-            right: 20,
-            width: 56,
-            height: 56,
-            borderRadius: 28,
-            backgroundColor: Colors.primary,
-            justifyContent: 'center',
-            alignItems: 'center',
-            elevation: 6,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 3 },
-            shadowOpacity: 0.25,
-            shadowRadius: 4,
-          }}
-        >
-          <Ionicons name="add" size={28} color="#fff" />
-        </TouchableOpacity>
-      )}
+      <HeaderAddButton onPress={() => { resetForm(); setShowForm(true); }} visible={!showForm} />
       </View>
       <BottomNav />
     </View>

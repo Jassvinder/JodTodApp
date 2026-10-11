@@ -245,6 +245,22 @@ All API responses should follow a consistent JSON format:
 }
 ```
 
+The dashboard response also includes `rememberStats: { "total": 3 }`, the number of saved Remember items. The mobile type marks it optional so older servers still render.
+
+### Remember items (`services/remember.ts`)
+
+| Method | Endpoint | Used by |
+|--------|----------|---------|
+| GET | `/api/v1/remember-items` | `app/remember.tsx` list |
+| POST | `/api/v1/remember-items` | New Item form (`name`, `note`, `done_on`) |
+| GET | `/api/v1/remember-items/{id}` | `app/remember-detail.tsx` (summary + `entries`) |
+| PUT | `/api/v1/remember-items/{id}` | Edit Item form |
+| DELETE | `/api/v1/remember-items/{id}` | Delete item |
+| POST | `/api/v1/remember-items/{id}/entries` | Add Date form (`done_on`, `note`) |
+| DELETE | `/api/v1/remember-items/{id}/entries/{entryId}` | Delete a date |
+
+Each item returns `entries_count`, `last_done_on`, and `avg_gap_days`. Entry and update calls return the full item, so the screen replaces its state with the response. Full contract: `D:\Development\Projects\JodTod\Docs\API_ENDPOINTS.md` → Remember Items.
+
 ---
 
 ## Mobile-Side API Client Setup

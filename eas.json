@@ -8,11 +8,10 @@
       "android": {
         "buildType": "apk"
       },
-      "env": {
-        "EXPO_PUBLIC_API_URL": "https://jodtod.co.in"
-      }
+      "environment": "preview"
     },
     "production": {
+      "environment": "production",
       "android": {
         "buildType": "app-bundle"
       }

@@ -1,6 +1,6 @@
 import api from './api';
 import type { ApiResponse, PaginatedResponse } from '../types/api';
-import type { Contact, ContactRequest, SearchUser } from '../types/models';
+import type { Contact, ContactRequest, SearchUser, SentContactRequest } from '../types/models';
 
 export interface ContactListParams {
   search?: string;
@@ -22,6 +22,10 @@ export const contactService = {
 
   getContactRequests() {
     return api.get<ApiResponse<ContactRequest[]>>('/contacts/requests');
+  },
+
+  getSentRequests() {
+    return api.get<ApiResponse<SentContactRequest[]>>('/contacts/requests/sent');
   },
 
   approveContactRequest(id: number) {

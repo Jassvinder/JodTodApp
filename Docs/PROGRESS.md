@@ -7,6 +7,59 @@
 - **Docs:** `D:\Development\Projects\JodTodApp\Docs\`
 - **Web Backend (API):** `D:\Development\Projects\JodTod` (Laravel - same DB, shared API)
 
+## Tip Position Fix and Empty States (12-10-2026)
+
+- Tip bubbles and the spotlight were drawn one status bar height too high on Android (screenshots `Docs/Screenshots/3.jpeg`–`5.jpeg`). `measureInWindow` starts below the status bar while the translucent tips modal starts above it, so `TipsOverlay` now adds `StatusBar.currentHeight` and uses the full screen height for placement.
+- New `components/EmptyState.tsx`: colored icon, title, short explanation, a primary action button and an optional secondary link. Used on Expenses, Income, Groups (Create Group + "Join a group"), both Tasks screens, Group Expenses, Remember, Contacts and Notifications. Filtered/searched lists show a separate "No … match" state.
+- Typecheck passes. Needs a device check of the bubble position.
+
+## Onboarding: Welcome, Tips and Help (12-10-2026)
+
+- `app/welcome.tsx`: 4 intro slides (expenses, groups, tasks, Remember) with Skip/Back/Next. Shown once after the user first reaches the main app (root layout), replayable from Help & Tips.
+- Tip bubbles: `components/tips/TipsOverlay.tsx` (mounted once in the root layout) dims the screen, highlights the target element and shows a bubble with "1 of N", Skip, Next / Got it. Targets are wrapped in `components/tips/TipAnchor.tsx`, which measures itself only while its tip is active and its screen is focused.
+- `components/tips/HelpButton.tsx` is the "?" button. It shows a screen's tips automatically on the first visit (after the welcome slides) and replays them on tap. `HeaderAddButton` gained `helpScreen` and `tipId` props, so most screens just pass two props.
+- Screens with tips: Dashboard (summary, notifications, menu), Expenses, Income, Groups (create, join), Tasks (add, filters; both task screens), Contacts (add, requests), Remember. Tip text lives in `constants/tips.ts`.
+- `app/help.tsx` (drawer → Help & Tips): "Watch Intro", "Show All Tips Again", and a short description of every feature that opens its screen.
+- State (`stores/tipsStore.ts`) is saved with `expo-secure-store` (`jodtod_tips_v1`), so it is per device, not per account.
+- Typecheck (`npx tsc --noEmit`) passes. Not yet tested on a device; bubble alignment under the Android status bar needs a check (Task 1518).
+
+## Friend Code on Profile (12-10-2026)
+
+- The Profile header shows the user's friend code with the shared `FriendCodeBadge`; tapping it copies the code (`expo-clipboard`).
+- Web parity for all mobile-only features is now tracked in the backend repo's `Docs/TASKS.md` → "Web Pending".
+
+## Contacts UX Fixes (12-10-2026)
+
+- New `components/FriendCodeBadge.tsx` replaces three copies of the friend code chip. The old chip used `primaryLight` behind `primary` text, which was unreadable; it now uses a pale indigo background with dark indigo text.
+- Add Contact: search works by name or friend code, shows "Your friend code", and users with a pending request stay in the results with a "Requested" or "Respond" button that opens Requests.
+- Requests screen now has Received and Sent sections; sent requests can be cancelled.
+- Contacts screen hides the search box until there is at least one contact, and shows an onboarding empty state with a "Find Friends" button.
+- New `components/NoContactsNote.tsx` explains that friends must be added to the contact list first. Used in Add Member (groups) and the Assign To picker (Add/Edit Task).
+- Backend: search returns `request_status`, matches friend codes, and `GET /contacts/requests/sent` was added (see the backend repo's `Docs/PROGRESS.md`).
+- Typecheck (`npx tsc --noEmit`) passes. Not yet tested on a device.
+
+## Remember Feature (11-10-2026)
+
+- New "Remember" section to log when recurring things were done, such as replacing the gas cylinder or changing remote batteries. Each item keeps a history of dates.
+- `app/remember.tsx` lists items with last date, days since, and the usual gap. `app/remember-detail.tsx` shows a summary (last done, average gap, times), the date history, Add Date, edit, and delete.
+- `components/RememberForm.tsx` is one shared form for New Item, Edit Item, and Add Date. Future dates are blocked in the date picker and by the API.
+- Added `formatShortDate` and `formatDaysAgo` to `utils/format.ts`, a "Remember" drawer menu entry, and a Remember Summary card on the dashboard showing the saved item count.
+- Backend: new `/api/v1/remember-items` API and `rememberStats.total` on the dashboard (see the backend repo's `Docs/PROGRESS.md`). The server needs the new migration before the feature works.
+- Typecheck (`npx tsc --noEmit`) passes. Not yet tested on a device.
+
+## Dashboard Summary Card Links (11-10-2026)
+
+- Each dashboard summary card now has a tinted header (icon, title, and right arrow). Only the header is tappable, so the amount below stays selectable for copying.
+- Expenses opens the Expenses tab, Income opens Incomes, and To Pay / To Receive open Groups. Savings/Loss has no dedicated page, so it has no link or arrow.
+- Typecheck (`npx tsc --noEmit`) passes.
+
+## Production API URL and Tasks Copy (09-10-2026)
+
+- `API_BASE_URL` now strips trailing slashes. A value like `https://api.maatcare.com/` previously produced `//api/v1/...` URLs, which return 404 on the live server.
+- Removed every hardcoded API URL. `EXPO_PUBLIC_API_URL` from `.env` is now the only source: the `127.0.0.1` fallback is gone (the app throws a clear error if the variable is missing), the `eas.json` preview env URL was replaced with EAS `environment` names, and the Expo Router origin now comes from the new `app.config.js` instead of `app.json`.
+- Matched the website's new Tasks positioning: the Register subtitle and the dashboard subtitle now mention tasks alongside expenses.
+- Typecheck (`npx tsc --noEmit`) passes.
+
 ## Task 1512 Google Login on Android Devices (07-10-2026)
 
 - Added the `com.jodtod.app` URL scheme so the Google OAuth redirect returns to the app, and an Expo Router native-intent hook that keeps the redirect URL from opening an Unmatched Route screen.

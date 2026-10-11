@@ -24,6 +24,8 @@ import {
 import { Colors } from "../../constants/colors";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import CollapsibleSection from "../../components/CollapsibleSection";
+import HelpButton from "../../components/tips/HelpButton";
+import TipAnchor from "../../components/tips/TipAnchor";
 import type { DashboardData } from "../../types/dashboard";
 import type { Income } from "../../types/models";
 import * as Notifications from "expo-notifications";
@@ -145,9 +147,11 @@ export default function DashboardScreen() {
             alignItems: "center",
           }}
         >
-          <TouchableOpacity onPress={openDrawer} style={{ padding: 4 }}>
-            <Ionicons name="menu" size={26} color={Colors.text} />
-          </TouchableOpacity>
+          <TipAnchor id="dashboard.menu">
+            <TouchableOpacity onPress={openDrawer} style={{ padding: 4 }}>
+              <Ionicons name="menu" size={26} color={Colors.text} />
+            </TouchableOpacity>
+          </TipAnchor>
           <View style={{ flex: 1, marginLeft: 12 }}>
             <Text
               style={{ fontSize: 20, fontWeight: "700", color: Colors.text }}
@@ -155,12 +159,14 @@ export default function DashboardScreen() {
               Welcome, {user?.name?.split(" ")[0]}!
             </Text>
             <Text style={{ fontSize: 13, color: Colors.textSecondary }}>
-              Your expense overview
+              Your expenses and tasks at a glance
             </Text>
           </View>
+          <HelpButton screen="dashboard" color={Colors.text} />
+          <TipAnchor id="dashboard.notifications" style={{ marginRight: 8 }}>
           <TouchableOpacity
             onPress={() => router.push("/notifications")}
-            style={{ padding: 6, marginRight: 8 }}
+            style={{ padding: 6 }}
           >
             <Ionicons
               name="notifications-outline"
@@ -188,6 +194,7 @@ export default function DashboardScreen() {
               </View>
             )}
           </TouchableOpacity>
+          </TipAnchor>
           <TouchableOpacity
             onPress={() => router.push("/(tabs)/profile")}
             style={{ padding: 2 }}
@@ -231,6 +238,7 @@ export default function DashboardScreen() {
     >
       <View style={{ padding: 16 }}>
         {/* Summary Cards */}
+        <TipAnchor id="dashboard.summary">
         <CollapsibleSection
           title="Summary"
           icon="stats-chart-outline"
@@ -249,6 +257,7 @@ export default function DashboardScreen() {
               icon="wallet-outline"
               iconBg="#eef2ff"
               iconColor={Colors.primary}
+              onPress={() => router.push("/(tabs)/expenses")}
             />
             <SummaryCard
               title="Income"
@@ -258,6 +267,7 @@ export default function DashboardScreen() {
               icon="trending-up-outline"
               iconBg="#dcfce7"
               iconColor={Colors.success}
+              onPress={() => router.push("/(tabs)/incomes")}
             />
             <SummaryCard
               title={is && is.this_month_savings >= 0 ? "Savings" : "Loss"}
@@ -282,6 +292,7 @@ export default function DashboardScreen() {
               icon="arrow-up-outline"
               iconBg="#fee2e2"
               iconColor={Colors.error}
+              onPress={() => router.push("/(tabs)/groups")}
             />
             <SummaryCard
               title="To Receive"
@@ -291,9 +302,21 @@ export default function DashboardScreen() {
               icon="arrow-down-outline"
               iconBg="#dcfce7"
               iconColor={Colors.success}
+              onPress={() => router.push("/(tabs)/groups")}
+            />
+            <SummaryCard
+              title="Remember"
+              amount={String(data?.rememberStats?.total ?? 0)}
+              subtitle="Items saved"
+              subtitleColor={Colors.textSecondary}
+              icon="bookmark-outline"
+              iconBg="#fef3c7"
+              iconColor="#d97706"
+              onPress={() => router.push("/remember")}
             />
           </View>
         </CollapsibleSection>
+        </TipAnchor>
 
         {/* Pending Settlements */}
         {data?.pendingSettlements && data.pendingSettlements.count > 0 && (
@@ -600,6 +623,7 @@ function SummaryCard({
   icon,
   iconBg,
   iconColor,
+  onPress,
 }: {
   title: string;
   amount: string;
@@ -608,46 +632,68 @@ function SummaryCard({
   icon: keyof typeof Ionicons.glyphMap;
   iconBg: string;
   iconColor: string;
+  onPress?: () => void;
 }) {
+  // Only the header navigates, so the amount below stays selectable for copying.
+  const header = (
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: iconBg,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+      }}
+    >
+      <Ionicons name={icon} size={18} color={iconColor} />
+      <Text
+        style={{
+          flex: 1,
+          fontSize: 13,
+          fontWeight: "600",
+          color: iconColor,
+          marginLeft: 8,
+        }}
+      >
+        {title}
+      </Text>
+      {onPress && (
+        <Ionicons name="chevron-forward" size={18} color={iconColor} />
+      )}
+    </View>
+  );
+
   return (
     <View
       style={{
         backgroundColor: Colors.surface,
         borderRadius: 12,
-        padding: 14,
         borderWidth: 1,
         borderColor: Colors.border,
+        overflow: "hidden",
         width: "48%",
         flexGrow: 1,
         minWidth: 150,
       }}
     >
-      <View
-        style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}
-      >
-        <View
-          style={{
-            width: 32,
-            height: 32,
-            borderRadius: 8,
-            backgroundColor: iconBg,
-            justifyContent: "center",
-            alignItems: "center",
-            marginRight: 8,
-          }}
+      {onPress ? (
+        <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
+          {header}
+        </TouchableOpacity>
+      ) : (
+        header
+      )}
+      <View style={{ padding: 12 }}>
+        <Text
+          selectable
+          style={{ fontSize: 18, fontWeight: "700", color: Colors.text }}
         >
-          <Ionicons name={icon} size={18} color={iconColor} />
-        </View>
-        <Text style={{ fontSize: 13, color: Colors.textSecondary }}>
-          {title}
+          {amount}
+        </Text>
+        <Text style={{ fontSize: 11, color: subtitleColor, marginTop: 2 }}>
+          {subtitle}
         </Text>
       </View>
-      <Text style={{ fontSize: 18, fontWeight: "700", color: Colors.text }}>
-        {amount}
-      </Text>
-      <Text style={{ fontSize: 11, color: subtitleColor, marginTop: 2 }}>
-        {subtitle}
-      </Text>
     </View>
   );
 }
