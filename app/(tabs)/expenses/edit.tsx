@@ -19,7 +19,8 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import DatePickerField from '../../../components/DatePickerField';
 import { useToast } from '../../../components/Toast';
 import { useConfirm } from '../../../components/ConfirmDialog';
-import type { Category, Expense } from '../../../types/models';
+import type { Expense } from '../../../types/models';
+import ExpenseCategoryPicker from '../../../components/ExpenseCategoryPicker';
 
 let ImagePicker: typeof import('expo-image-picker') | null = null;
 try {
@@ -49,7 +50,6 @@ export default function EditExpenseScreen() {
   const [removeImage2, setRemoveImage2] = useState(false);
 
   // UI state
-  const [categories, setCategories] = useState<Category[]>([]);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -64,13 +64,9 @@ export default function EditExpenseScreen() {
 
   const loadData = async () => {
     try {
-      const [expenseRes, catRes] = await Promise.all([
-        expenseService.getExpense(parseInt(id!)),
-        expenseService.getCategories(),
-      ]);
+      const expenseRes = await expenseService.getExpense(parseInt(id!));
 
       const expense = expenseRes.data.data;
-      setCategories(catRes.data.data);
 
       // Pre-fill form
       setAmount(expense.amount.toString());
@@ -294,35 +290,11 @@ export default function EditExpenseScreen() {
             {errors.amount && <Text style={{ color: Colors.error, fontSize: 12, marginTop: 4 }}>{errors.amount}</Text>}
           </View>
 
-          {/* Category Picker */}
-          <View style={{ marginBottom: 20 }}>
-            <Text style={{ fontSize: 13, fontWeight: '500', color: Colors.text, marginBottom: 6 }}>Category *</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -4 }}>
-              {categories.map((cat) => (
-                <TouchableOpacity
-                  key={cat.id}
-                  onPress={() => { setCategoryId(cat.id); setErrors((e) => ({ ...e, category_id: '' })); }}
-                  style={{
-                    paddingHorizontal: 14,
-                    paddingVertical: 10,
-                    borderRadius: 20,
-                    backgroundColor: categoryId === cat.id ? Colors.primary : Colors.surface,
-                    borderWidth: 1,
-                    borderColor: categoryId === cat.id ? Colors.primary : Colors.border,
-                    marginHorizontal: 4,
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                  }}
-                >
-                  {cat.icon && <Text style={{ fontSize: 14, marginRight: 4 }}>{cat.icon}</Text>}
-                  <Text style={{ fontSize: 13, fontWeight: '500', color: categoryId === cat.id ? '#fff' : Colors.text }}>
-                    {cat.name}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-            {errors.category_id && <Text style={{ color: Colors.error, fontSize: 12, marginTop: 4 }}>{errors.category_id}</Text>}
-          </View>
+          <ExpenseCategoryPicker
+            value={categoryId}
+            onChange={(id) => { setCategoryId(id); setErrors((e) => ({ ...e, category_id: '' })); }}
+            error={errors.category_id}
+          />
 
           {/* Description Input with Autocomplete */}
           <View style={{ marginBottom: 20 }}>

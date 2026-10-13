@@ -7,6 +7,17 @@
 - **Docs:** `D:\Development\Projects\JodTodApp\Docs\`
 - **Web Backend (API):** `D:\Development\Projects\JodTod` (Laravel - same DB, shared API)
 
+## Web App Parity (12-10-2026)
+
+- Every mobile-only feature now exists on the web app (Remember, contact requests with Sent/Cancel, friend codes, onboarding slides, tips and Help, empty states, dashboard card links). Details are in the backend repo's `Docs/PROGRESS.md`.
+- Backend side effects for mobile: `pendingSettlements` items now include `group_id` (the mobile `PendingSettlement` type already expected it), and contact search / Remember API responses are unchanged (logic moved into shared model methods).
+
+## Empty Expense Categories Fix (12-10-2026)
+
+- Add Expense showed "Select a category" with no chips (screenshot `Docs/Screenshots/1.jpeg`). The live database had an empty `categories` table because production deploys never ran the seeder. Fixed in the backend: a migration now inserts the defaults and the categories API recreates them if the table is empty (see the backend repo's `Docs/PROGRESS.md`).
+- New `components/ExpenseCategoryPicker.tsx` loads categories itself and shows "Could not load categories" / "No categories available yet" with a Retry link instead of a blank row. It replaces four copies of the chip picker in Add/Edit Expense and Add/Edit Group Expense, and Add Expense no longer blocks the whole form on a full-screen spinner.
+- Typecheck (`npx tsc --noEmit`) passes. Needs a device check after the backend deploy (Task 1519).
+
 ## Tip Position Fix and Empty States (12-10-2026)
 
 - Tip bubbles and the spotlight were drawn one status bar height too high on Android (screenshots `Docs/Screenshots/3.jpeg`–`5.jpeg`). `measureInWindow` starts below the status bar while the translucent tips modal starts above it, so `TipsOverlay` now adds `StatusBar.currentHeight` and uses the full screen height for placement.

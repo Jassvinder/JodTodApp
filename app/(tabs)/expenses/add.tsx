@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -19,7 +19,7 @@ import { API_BASE_URL } from '../../../constants/config';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useToast } from '../../../components/Toast';
 import { useConfirm } from '../../../components/ConfirmDialog';
-import type { Category } from '../../../types/models';
+import ExpenseCategoryPicker from '../../../components/ExpenseCategoryPicker';
 
 let ImagePicker: typeof import('expo-image-picker') | null = null;
 try {
@@ -41,29 +41,12 @@ export default function AddExpenseScreen() {
   const [image, setImage] = useState<{ uri: string; name: string; type: string } | null>(null);
 
   // UI state
-  const [categories, setCategories] = useState<Category[]>([]);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [loadingCategories, setLoadingCategories] = useState(true);
 
   const descriptionTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  const fetchCategories = async () => {
-    try {
-      const response = await expenseService.getCategories();
-      setCategories(response.data.data);
-    } catch {
-      toast.show('Failed to load categories.', 'error');
-    } finally {
-      setLoadingCategories(false);
-    }
-  };
 
   const fetchSuggestions = async (query: string) => {
     if (query.length < 2) {
@@ -201,14 +184,6 @@ export default function AddExpenseScreen() {
     }
   };
 
-  if (loadingCategories) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background }}>
-        <ActivityIndicator size="large" color={Colors.primary} />
-      </View>
-    );
-  }
-
   return (
     <KeyboardAvoidingView
       style={{ flex: 1, backgroundColor: Colors.background }}
@@ -241,35 +216,11 @@ export default function AddExpenseScreen() {
             {errors.amount && <Text style={{ color: Colors.error, fontSize: 12, marginTop: 4 }}>{errors.amount}</Text>}
           </View>
 
-          {/* Category Picker */}
-          <View style={{ marginBottom: 20 }}>
-            <Text style={{ fontSize: 13, fontWeight: '500', color: Colors.text, marginBottom: 6 }}>Category *</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -4 }}>
-              {categories.map((cat) => (
-                <TouchableOpacity
-                  key={cat.id}
-                  onPress={() => { setCategoryId(cat.id); setErrors((e) => ({ ...e, category_id: '' })); }}
-                  style={{
-                    paddingHorizontal: 14,
-                    paddingVertical: 10,
-                    borderRadius: 20,
-                    backgroundColor: categoryId === cat.id ? Colors.primary : Colors.surface,
-                    borderWidth: 1,
-                    borderColor: categoryId === cat.id ? Colors.primary : Colors.border,
-                    marginHorizontal: 4,
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                  }}
-                >
-                  {cat.icon && <Text style={{ fontSize: 14, marginRight: 4 }}>{cat.icon}</Text>}
-                  <Text style={{ fontSize: 13, fontWeight: '500', color: categoryId === cat.id ? '#fff' : Colors.text }}>
-                    {cat.name}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-            {errors.category_id && <Text style={{ color: Colors.error, fontSize: 12, marginTop: 4 }}>{errors.category_id}</Text>}
-          </View>
+          <ExpenseCategoryPicker
+            value={categoryId}
+            onChange={(id) => { setCategoryId(id); setErrors((e) => ({ ...e, category_id: '' })); }}
+            error={errors.category_id}
+          />
 
           {/* Description Input with Autocomplete */}
           <View style={{ marginBottom: 20 }}>

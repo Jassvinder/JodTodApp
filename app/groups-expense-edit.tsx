@@ -11,14 +11,14 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { groupService, type GroupExpensePayload, type GroupShowResponse } from '../services/groups';
-import { expenseService } from '../services/expenses';
 import { formatCurrency } from '../utils/format';
 import { Colors } from '../constants/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import DatePickerField from '../components/DatePickerField';
 import { useToast } from '../components/Toast';
 import BottomNav from '../components/BottomNav';
-import type { Category, GroupMember, GroupExpense } from '../types/models';
+import type { GroupMember, GroupExpense } from '../types/models';
+import ExpenseCategoryPicker from '../components/ExpenseCategoryPicker';
 
 export default function EditGroupExpenseScreen() {
   const router = useRouter();
@@ -43,7 +43,6 @@ export default function EditGroupExpenseScreen() {
   const [percentages, setPercentages] = useState<Record<number, string>>({});
 
   // UI state
-  const [categories, setCategories] = useState<Category[]>([]);
   const [activeMembers, setActiveMembers] = useState<GroupMember[]>([]);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -52,16 +51,14 @@ export default function EditGroupExpenseScreen() {
 
   const fetchData = async () => {
     try {
-      const [groupRes, catRes, expenseRes] = await Promise.all([
+      const [groupRes, expenseRes] = await Promise.all([
         groupService.getGroup(groupId),
-        expenseService.getCategories(),
         groupService.getGroupExpenses(groupId, { page: 1 }),
       ]);
 
       const groupData: GroupShowResponse = groupRes.data.data;
       const active = groupData.group.members.filter((m) => m.pivot.is_active);
       setActiveMembers(active);
-      setCategories(catRes.data.data);
 
       // Find the expense - could be in recent expenses from group detail or paginated list
       // Try to get it from the group expenses endpoint
@@ -287,35 +284,11 @@ export default function EditGroupExpenseScreen() {
             {errors.amount && <Text style={{ color: Colors.error, fontSize: 12, marginTop: 4 }}>{errors.amount}</Text>}
           </View>
 
-          {/* Category Picker */}
-          <View style={{ marginBottom: 20 }}>
-            <Text style={{ fontSize: 13, fontWeight: '500', color: Colors.text, marginBottom: 6 }}>Category *</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="always" style={{ marginHorizontal: -4 }}>
-              {categories.map((cat) => (
-                <TouchableOpacity
-                  key={cat.id}
-                  onPress={() => { setCategoryId(cat.id); setErrors((e) => ({ ...e, category_id: '' })); }}
-                  style={{
-                    paddingHorizontal: 14,
-                    paddingVertical: 10,
-                    borderRadius: 20,
-                    backgroundColor: categoryId === cat.id ? Colors.primary : Colors.surface,
-                    borderWidth: 1,
-                    borderColor: categoryId === cat.id ? Colors.primary : Colors.border,
-                    marginHorizontal: 4,
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                  }}
-                >
-                  {cat.icon && <Text style={{ fontSize: 14, marginRight: 4 }}>{cat.icon}</Text>}
-                  <Text style={{ fontSize: 13, fontWeight: '500', color: categoryId === cat.id ? '#fff' : Colors.text }}>
-                    {cat.name}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-            {errors.category_id && <Text style={{ color: Colors.error, fontSize: 12, marginTop: 4 }}>{errors.category_id}</Text>}
-          </View>
+          <ExpenseCategoryPicker
+            value={categoryId}
+            onChange={(id) => { setCategoryId(id); setErrors((e) => ({ ...e, category_id: '' })); }}
+            error={errors.category_id}
+          />
 
           {/* Description Input */}
           <View style={{ marginBottom: 20 }}>

@@ -25,6 +25,8 @@
 
 - [] **Task 1517** - After the tunnel fix (backend Task 516), change `.env` back from `http://127.0.0.1:8181` (local testing with `adb reverse tcp:8181 tcp:8181`) to `https://jodtod.co.in`.
 
+- [] **Task 1519** - After deploying the backend, open `/set-up-backend?key=<SETUP_KEY>` once, then confirm categories appear on Add Expense, Edit Expense and both group expense screens, and that receipt photos open.
+
 - [] **Task 1518** - Test on device: Remember feature (list, add, add date, edit, delete, dashboard card), the 12-10-2026 contacts changes (friend code badge, sent requests and cancel, Requested/Respond in search, empty states, no-contacts notes in groups and tasks), friend code on Profile, and onboarding (welcome slides on first launch, tip bubbles on first visit to each screen, bubble position next to the highlighted button, "?" replay, Help & Tips page actions).
 
 ### Testing / Bug Fixes
@@ -89,6 +91,7 @@
 
 ## Completed
 
+- [X] Fix empty Category list on Add Expense (live DB had no categories); shared `ExpenseCategoryPicker` with Retry (12-10-2026)
 - [X] Fix tip bubble position on Android (it sat a status bar height too high) (12-10-2026)
 - [X] Helpful empty states with a first action on Expenses, Income, Groups, Tasks, Group Expenses, Remember, Contacts and Notifications (12-10-2026)
 - [X] Task 1519 - In-app onboarding: welcome slides, one-time tip bubbles per screen with "?" replay, and a Help & Tips page (12-10-2026)
