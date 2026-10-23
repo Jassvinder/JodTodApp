@@ -32,6 +32,7 @@ const menuItems: {
   { label: 'Income', icon: 'trending-up-outline', route: '/(tabs)/incomes' },
   { label: 'My Tasks', icon: 'checkbox-outline', route: '/todos' },
   { label: 'Remember', icon: 'bookmark-outline', route: '/remember' },
+  { label: 'Lend & Borrow', icon: 'swap-horizontal-outline', route: '/ledger' },
   { label: 'Contacts', icon: 'people-outline', route: '/contacts' },
   { label: 'Groups', icon: 'people-circle-outline', route: '/(tabs)/groups' },
   { label: 'Notifications', icon: 'notifications-outline', route: '/notifications' },

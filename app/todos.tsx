@@ -6,12 +6,10 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
-  Image,
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { getTodoCategoriesWithDefaults, todoService, type TodoListParams } from '../services/todos';
 import { cancelTodoReminder } from '../services/todoReminders';
-import { resolveUrl } from '../utils/format';
 import { Colors } from '../constants/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import EmptyState from '../components/EmptyState';
@@ -21,14 +19,10 @@ import { useConfirm } from '../components/ConfirmDialog';
 import BottomNav from '../components/BottomNav';
 import ListSearchBar from '../components/ListSearchBar';
 import TodoFilterBar from '../components/TodoFilterBar';
+import TodoListItem from '../components/TodoListItem';
+import { useAuthStore } from '../stores/authStore';
 import TipAnchor from '../components/tips/TipAnchor';
 import type { Todo, TodoCategory } from '../types/models';
-
-const PRIORITY_COLORS: Record<string, string> = {
-  high: '#ef4444',
-  medium: '#f59e0b',
-  low: '#22c55e',
-};
 
 type StatusFilter = 'all' | 'pending' | 'completed' | 'assigned_to_me' | 'assigned_by_me';
 interface TodoFilters {
@@ -41,6 +35,7 @@ export default function TodosScreen() {
   const router = useRouter();
   const toast = useToast();
   const confirm = useConfirm();
+  const currentUserId = useAuthStore((s) => s.user?.id);
   const [todos, setTodos] = useState<Todo[]>([]);
   const [categories, setCategories] = useState<TodoCategory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -170,6 +165,10 @@ export default function TodosScreen() {
   };
 
   const handleDelete = (todo: Todo) => {
+    if (todo.user_id !== currentUserId) {
+      toast.show(`${todo.user?.name || 'Someone else'} assigned this task to you, so only they can delete it.`, 'info');
+      return;
+    }
     confirm.show({
       title: 'Delete Task',
       message: `Are you sure you want to delete "${todo.title}"?`,
@@ -185,19 +184,6 @@ export default function TodosScreen() {
         }
       },
     });
-  };
-
-  const isOverdue = (dueDate: string | null): boolean => {
-    if (!dueDate) return false;
-    const today = new Date().toISOString().split('T')[0];
-    return dueDate < today;
-  };
-
-  const getInitials = (name: string): string => {
-    if (!name) return '?';
-    const parts = name.split(' ');
-    if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-    return parts[0][0].toUpperCase();
   };
 
   if (loading && !refreshing) {
@@ -252,132 +238,15 @@ export default function TodosScreen() {
     </View>
   );
 
-  const renderTodoItem = ({ item }: { item: Todo }) => {
-    const overdue = !item.is_completed && isOverdue(item.due_date);
-
-    return (
-    <TouchableOpacity
-      onPress={() => router.push({ pathname: '/todos-edit', params: { id: item.id } })}
+  const renderTodoItem = ({ item }: { item: Todo }) => (
+    <TodoListItem
+      item={item}
+      currentUserId={currentUserId}
+      onPress={() => router.push({ pathname: '/todos-detail', params: { id: item.id } })}
       onLongPress={() => handleDelete(item)}
-      style={{
-        backgroundColor: overdue ? '#fff7f7' : Colors.surface,
-        borderRadius: 12,
-        padding: 14,
-        marginBottom: 8,
-        borderWidth: 1,
-        borderColor: overdue ? '#fecaca' : Colors.border,
-        flexDirection: 'row',
-        alignItems: 'center',
-      }}
-    >
-      {/* Checkbox */}
-      <TouchableOpacity
-        onPress={() => handleToggle(item)}
-        style={{
-          width: 24,
-          height: 24,
-          borderRadius: 12,
-          borderWidth: 2,
-          borderColor: item.is_completed ? Colors.success : Colors.border,
-          backgroundColor: item.is_completed ? Colors.success : 'transparent',
-          justifyContent: 'center',
-          alignItems: 'center',
-          marginRight: 12,
-        }}
-      >
-        {item.is_completed && <Ionicons name="checkmark" size={14} color="#fff" />}
-      </TouchableOpacity>
-
-      {/* Content */}
-      <View style={{ flex: 1 }}>
-        <Text
-          style={{
-            fontSize: 15,
-            fontWeight: '500',
-            color: item.is_completed ? Colors.textMuted : Colors.text,
-            textDecorationLine: item.is_completed ? 'line-through' : 'none',
-          }}
-          numberOfLines={1}
-        >
-          {item.title}
-        </Text>
-
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4, flexWrap: 'wrap', gap: 8 }}>
-          {/* Priority Badge */}
-          <View style={{
-            paddingHorizontal: 8,
-            paddingVertical: 2,
-            borderRadius: 10,
-            backgroundColor: PRIORITY_COLORS[item.priority] + '20',
-          }}>
-            <Text style={{ fontSize: 11, fontWeight: '600', color: PRIORITY_COLORS[item.priority] }}>
-              {item.priority.charAt(0).toUpperCase() + item.priority.slice(1)}
-            </Text>
-          </View>
-
-          {/* Category */}
-          {item.category && (
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: item.category.color, marginRight: 4 }} />
-              <Text style={{ fontSize: 11, color: Colors.textSecondary }}>{item.category.name}</Text>
-            </View>
-          )}
-
-          {/* Due Date */}
-          {item.due_date && (
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Ionicons
-                name="calendar-outline"
-                size={11}
-                color={overdue ? Colors.error : Colors.textMuted}
-              />
-              <Text style={{
-                fontSize: 11,
-                color: overdue ? Colors.error : Colors.textMuted,
-                marginLeft: 3,
-                fontWeight: overdue ? '600' : '400',
-              }}>
-                {new Date(item.due_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
-              </Text>
-            </View>
-          )}
-          {item.reminder_at && <Ionicons name="notifications-outline" size={14} color={Colors.primary} accessibilityLabel="Reminder set" />}
-          {overdue && (
-            <View style={{ paddingHorizontal: 7, paddingVertical: 2, borderRadius: 10, backgroundColor: '#fee2e2' }}>
-              <Text style={{ fontSize: 10, fontWeight: '700', color: Colors.error }}>Overdue</Text>
-            </View>
-          )}
-        </View>
-      </View>
-
-      {/* Assigned User Avatar */}
-      {item.assigned_user && (
-        <View style={{ marginLeft: 8 }}>
-          {item.assigned_user.avatar_url ? (
-            <Image
-              source={{ uri: resolveUrl(item.assigned_user.avatar_url)! }}
-              style={{ width: 28, height: 28, borderRadius: 14 }}
-            />
-          ) : (
-            <View style={{
-              width: 28,
-              height: 28,
-              borderRadius: 14,
-              backgroundColor: Colors.primary,
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}>
-              <Text style={{ fontSize: 11, fontWeight: '700', color: '#fff' }}>
-                {getInitials(item.assigned_user.name)}
-              </Text>
-            </View>
-          )}
-        </View>
-      )}
-      <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} style={{ marginLeft: 8 }} />
-    </TouchableOpacity>
-    );
-  };
+      onToggle={() => handleToggle(item)}
+    />
+  );
 
   const renderEmpty = () => (
     statusFilter !== 'all' || priorityFilter !== 'all' || categoryFilter || searchQuery ? (

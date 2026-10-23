@@ -125,6 +125,13 @@ export interface TodoCategory {
   is_default: boolean;
 }
 
+export interface TodoPerson {
+  id: number;
+  name: string;
+  avatar: string | null;
+  avatar_url: string | null;
+}
+
 export interface Todo {
   id: number;
   title: string;
@@ -134,16 +141,21 @@ export interface Todo {
   todo_category_id: number | null;
   category?: TodoCategory;
   assigned_to: number | null;
-  assigned_user?: { id: number; name: string; avatar: string | null; avatar_url: string | null };
+  assignee?: TodoPerson | null;
+  // Creator of the task (the person who assigned it, when assigned_to is someone else).
+  user?: TodoPerson;
   reminder_at: string | null;
   user_id: number;
+  completed_at?: string | null;
   created_at: string;
 }
 
 export interface GroupMember {
   id: number;
   name: string;
-  email: string;
+  // Null for guest members (added by name, no app).
+  email: string | null;
+  is_guest?: boolean;
   phone: string | null;
   avatar: string | null;
   avatar_url: string | null;
@@ -222,6 +234,40 @@ export interface RememberItem {
   avg_gap_days: number | null;
   created_at: string;
   entries?: RememberEntry[];
+}
+
+// Lend & Borrow. gave = I gave money to this person, got = I received money from them.
+export type LedgerEntryType = 'gave' | 'got';
+
+export interface LedgerEntry {
+  id: number;
+  type: LedgerEntryType;
+  amount: number;
+  entry_date: string;
+  note: string | null;
+  // Balance with this person right after this entry (> 0: they owe me).
+  balance_after: number;
+}
+
+export interface LedgerPerson {
+  id: number;
+  name: string;
+  phone: string | null;
+  note: string | null;
+  entries_count: number;
+  total_gave: number;
+  total_got: number;
+  // > 0: they owe me (I will get). < 0: I owe them (I will give).
+  balance: number;
+  last_entry_on: string | null;
+  created_at: string;
+  entries?: LedgerEntry[];
+}
+
+export interface LedgerTotals {
+  you_will_get: number;
+  you_will_give: number;
+  net: number;
 }
 
 // GET /support: free-for-now note and the UPI details set by the admin.

@@ -7,6 +7,15 @@
 - **Docs:** `D:\Development\Projects\JodTodApp\Docs\`
 - **Web Backend (API):** `D:\Development\Projects\JodTod` (Laravel - same DB, shared API)
 
+## Task Details, Group Guests, Paid By Default, Lend & Borrow (23-10-2026)
+
+- **Task Details (1521, 1522):** new `app/todos-detail.tsx` opens when a task is tapped (list rows and task push notifications). Shows status, priority, category, due date, reminder, Assigned By / Created By, Assigned To and a Mark as Completed button; Edit in the header, Delete only for the creator. `todos-edit.tsx` now loads the task with `GET /todos/{id}` (it used to search only the first 20 tasks) and hides Assign To on tasks someone else assigned to you, leaving `assigned_to` out of the update. Long-press delete on those tasks shows "<name> assigned this task to you, so only they can delete it." The `Todo` type now matches the API (`assignee`, `user`; the old `assigned_user` was never sent, so the assignee avatar never showed).
+- New shared components: `UserAvatar` (photo or initials) and `TodoListItem` (one row for both task screens, adds "Assigned by <name>").
+- **Paid By (1523):** Add Group Expense selects the logged-in user as payer.
+- **Group guests (1524):** Add Member has "Add someone without the app" (name only, `POST /groups/{id}/guest-members`). Group member list shows a "No app" badge. Guests are normal members for splits and balances; the admin marks their settlements.
+- **Lend & Borrow (1525):** `app/ledger.tsx` and `app/ledger-detail.tsx`, `services/ledger.ts`, components in `components/ledger/` (`LedgerPersonForm`, `LedgerEntryForm`, `LedgerUi` with the shared form card and balance text). Gave = red, got = green; balance > 0 means "You will get". Drawer item, Help & Tips topic and a tip bubble (`ledger` tip screen).
+- Typecheck (`npx tsc --noEmit`) passes. Backend API smoke-tested locally. Not yet run on a device (Task 1526); needs backend deploy and migrations (backend Task 534).
+
 ## Support JodTod Screen (14-10-2026)
 
 - New `app/support.tsx` (drawer → Support JodTod): explains that JodTod is free for now and may add an optional donation or subscription later (no feature names), then shows the UPI QR with "Save QR to Gallery", the pay steps, the UPI ID with Copy, and "Pay with UPI App" (opens the `upi://pay` link). The payment card is hidden until the admin sets a UPI ID or QR.

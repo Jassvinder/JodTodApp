@@ -40,7 +40,9 @@ export default function RootLayout() {
       const type = data.type as string;
       const groupId = data.group_id;
 
-      if (type === 'todo_reminder' || type === 'todo_assigned') {
+      if ((type === 'todo_reminder' || type === 'todo_assigned') && data.todo_id) {
+        router.push({ pathname: '/todos-detail', params: { id: String(data.todo_id) } });
+      } else if (type === 'todo_reminder' || type === 'todo_assigned') {
         router.push('/todos');
       } else if (type === 'contact_request_received') {
         router.push('/contacts-requests');
@@ -106,8 +108,11 @@ export default function RootLayout() {
         <Stack.Screen name="contacts-requests" options={{ headerShown: true, title: 'Contact Requests', headerStyle: { backgroundColor: Colors.surface }, headerTitleStyle: { fontWeight: '600', color: Colors.text }, headerShadowVisible: false }} />
         <Stack.Screen name="todos" options={{ headerShown: true, title: 'My Tasks', headerStyle: { backgroundColor: Colors.surface }, headerTitleStyle: { fontWeight: '600', color: Colors.text }, headerShadowVisible: false }} />
         <Stack.Screen name="todos-add" options={{ headerShown: true, title: 'Add Task', headerStyle: { backgroundColor: Colors.surface }, headerTitleStyle: { fontWeight: '600', color: Colors.text }, headerShadowVisible: false }} />
+        <Stack.Screen name="todos-detail" options={{ headerShown: true, title: 'Task Details', headerStyle: { backgroundColor: Colors.surface }, headerTitleStyle: { fontWeight: '600', color: Colors.text }, headerShadowVisible: false }} />
         <Stack.Screen name="todos-edit" options={{ headerShown: true, title: 'Edit Task', headerStyle: { backgroundColor: Colors.surface }, headerTitleStyle: { fontWeight: '600', color: Colors.text }, headerShadowVisible: false }} />
         <Stack.Screen name="todo-categories" options={{ headerShown: true, title: 'Task Categories', headerStyle: { backgroundColor: Colors.surface }, headerTitleStyle: { fontWeight: '600', color: Colors.text }, headerShadowVisible: false }} />
+        <Stack.Screen name="ledger" options={{ headerShown: true, title: 'Lend & Borrow', headerStyle: { backgroundColor: Colors.surface }, headerTitleStyle: { fontWeight: '600', color: Colors.text }, headerShadowVisible: false }} />
+        <Stack.Screen name="ledger-detail" options={{ headerShown: true, title: 'Lend & Borrow', headerStyle: { backgroundColor: Colors.surface }, headerTitleStyle: { fontWeight: '600', color: Colors.text }, headerShadowVisible: false }} />
         <Stack.Screen name="remember" options={{ headerShown: true, title: 'Remember', headerStyle: { backgroundColor: Colors.surface }, headerTitleStyle: { fontWeight: '600', color: Colors.text }, headerShadowVisible: false }} />
         <Stack.Screen name="remember-detail" options={{ headerShown: true, title: 'Remember', headerStyle: { backgroundColor: Colors.surface }, headerTitleStyle: { fontWeight: '600', color: Colors.text }, headerShadowVisible: false }} />
         <Stack.Screen name="groups-create" options={{ headerShown: true, title: 'Create Group', headerStyle: { backgroundColor: Colors.surface }, headerTitleStyle: { fontWeight: '600', color: Colors.text }, headerShadowVisible: false }} />

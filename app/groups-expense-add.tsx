@@ -21,6 +21,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useToast } from '../components/Toast';
 import { useConfirm } from '../components/ConfirmDialog';
 import BottomNav from '../components/BottomNav';
+import { useAuthStore } from '../stores/authStore';
 import type { GroupMember } from '../types/models';
 import ExpenseCategoryPicker from '../components/ExpenseCategoryPicker';
 
@@ -72,9 +73,10 @@ export default function AddGroupExpenseScreen() {
       const memberIds = active.map((m) => m.id);
       setEqualSplitMembers(memberIds);
 
-      // Default payer: first active member (usually current user)
-      if (active.length > 0) {
-        setPaidBy(active[0].id);
+      // Default payer: the person adding the expense on this device
+      const me = active.find((m) => m.id === useAuthStore.getState().user?.id);
+      if (me || active.length > 0) {
+        setPaidBy((me ?? active[0]).id);
       }
     } catch (error: any) {
       toast.show(error.response?.data?.message || 'Failed to load group data.', 'error');

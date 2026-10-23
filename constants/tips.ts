@@ -2,7 +2,7 @@ import type Ionicons from '@expo/vector-icons/Ionicons';
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
-export type TipScreen = 'dashboard' | 'expenses' | 'incomes' | 'groups' | 'todos' | 'contacts' | 'remember';
+export type TipScreen = 'dashboard' | 'expenses' | 'incomes' | 'groups' | 'todos' | 'contacts' | 'remember' | 'ledger';
 
 export interface Tip {
   // Matches the `id` of a TipAnchor on the screen.
@@ -39,6 +39,9 @@ export const SCREEN_TIPS: Record<TipScreen, Tip[]> = {
   remember: [
     { anchor: 'remember.add', title: 'Remember something', text: 'Save things like when you changed the gas cylinder. Add a date each time it happens, and JodTod shows how often it usually does.' },
   ],
+  ledger: [
+    { anchor: 'ledger.add', title: 'Add a person', text: 'Add anyone you lend money to or borrow from. Then record each "You Gave" and "You Got", and JodTod keeps the running total.' },
+  ],
 };
 
 export interface WelcomeSlide {
@@ -71,5 +74,6 @@ export const HELP_TOPICS: HelpTopic[] = [
   { icon: 'checkbox-outline', title: 'Tasks', text: 'Tasks with due dates, priorities, categories and reminders. Assign tasks to your contacts.', route: '/todos' },
   { icon: 'people-outline', title: 'Contacts', text: 'Friends you split bills and share tasks with. Find them by name or friend code; they join your list after approving.', route: '/contacts' },
   { icon: 'bookmark-outline', title: 'Remember', text: 'Log when recurring things happened, like a gas cylinder change, and see the usual gap between them.', route: '/remember' },
+  { icon: 'swap-horizontal-outline', title: 'Lend & Borrow', text: 'Keep a simple record of money you give to or get from people, with each person\'s running balance and your overall "You will get" / "You will give" totals.', route: '/ledger' },
   { icon: 'notifications-outline', title: 'Notifications', text: 'Contact requests, task reminders, and group expense and settlement updates.', route: '/notifications' },
 ];

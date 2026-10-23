@@ -29,6 +29,10 @@
 
 - [] **Task 1520** - Run `npx expo prebuild --platform android` and make a fresh build (new native modules `expo-media-library` and `expo-file-system`). After the backend deploy and setting the UPI ID and QR in web Admin > Settings, test Support JodTod on a device: QR loads, Save QR to Gallery asks for permission and the image appears in the gallery, Copy UPI ID, Pay with UPI App opens a UPI app.
 
+- [] **Task 1526** - After backend Task 534 (deploy + migrations), test on a device: tap a task opens Task Details (Assigned By shown, Edit/Delete in header, Mark as Completed); edit a task someone assigned to you (no Assign To field, saves without error); long-press delete on an assigned-to-me task shows the "only they can delete it" message; Add Group Expense defaults Paid By to you; add a "no app" member by name, add an expense paid by them, settle and mark their payment as admin; Lend & Borrow (add person, You Gave / You Got, edit and delete entry, running balance, totals, search, edit/delete person, call link); task push notification opens Task Details.
+
+- [] **Task 1527** - Lend & Borrow extras (optional, ask before building): dashboard card with "You will get / give", share a person's statement on WhatsApp, and a reminder to collect money.
+
 - [] **Task 1518** - Test on device: Remember feature (list, add, add date, edit, delete, dashboard card), the 12-10-2026 contacts changes (friend code badge, sent requests and cancel, Requested/Respond in search, empty states, no-contacts notes in groups and tasks), friend code on Profile, and onboarding (welcome slides on first launch, tip bubbles on first visit to each screen, bubble position next to the highlighted button, "?" replay, Help & Tips page actions).
 
 ### Testing / Bug Fixes
@@ -93,6 +97,11 @@
 
 ## Completed
 
+- [X] Task 1525 - Lend & Borrow: `app/ledger.tsx` (You will get / You will give totals, search, people with balance) and `app/ledger-detail.tsx` (balance card, You Gave / You Got, history with running balance, edit/delete entry, edit/delete person). Drawer, Help & Tips and tip bubble added (23-10-2026)
+- [X] Task 1524 - Add group members without the app: "Add someone without the app" (name only) on Add Member; "No app" badge in the group member list (23-10-2026)
+- [X] Task 1523 - Add Group Expense: Paid By defaults to the logged-in user (23-10-2026)
+- [X] Task 1522 - Deleting a task someone else assigned shows "<name> assigned this task to you, so only they can delete it." instead of "Forbidden"; Delete is hidden on Task Details for those tasks (23-10-2026)
+- [X] Task 1521 - Task Details screen before edit: status, priority, category, due date, reminder, Assigned By / Created By, Assigned To, Mark as Completed, Edit/Delete in header. List rows show "Assigned by <name>". Edit hides Assign To on tasks assigned to you and loads the task by id (23-10-2026)
 - [X] Support JodTod screen: free-for-now note, UPI QR save to gallery, UPI ID copy and Pay with UPI App (14-10-2026)
 - [X] Fix empty Category list on Add Expense (live DB had no categories); shared `ExpenseCategoryPicker` with Retry (12-10-2026)
 - [X] Fix tip bubble position on Android (it sat a status bar height too high) (12-10-2026)

@@ -507,8 +507,15 @@ export default function GroupDetailScreen() {
                       <Text style={{ fontSize: 9, fontWeight: '600', color: Colors.textMuted }}>Inactive</Text>
                     </View>
                   )}
+                  {member.is_guest && (
+                    <View style={{ backgroundColor: '#fef3c7', paddingHorizontal: 5, paddingVertical: 1, borderRadius: 3, marginLeft: 6 }}>
+                      <Text style={{ fontSize: 9, fontWeight: '600', color: '#92400e' }}>No app</Text>
+                    </View>
+                  )}
                 </View>
-                <Text style={{ fontSize: 12, color: Colors.textMuted }}>{member.email}</Text>
+                <Text style={{ fontSize: 12, color: Colors.textMuted }}>
+                  {member.is_guest ? 'Added by name, payments recorded by the admin' : member.email}
+                </Text>
               </View>
 
               {/* Admin actions */}

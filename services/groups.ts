@@ -107,6 +107,11 @@ export const groupService = {
     return api.post<ApiResponse<null>>(`/groups/${groupId}/add-member`, { user_id });
   },
 
+  // Member without the app: name only, no account.
+  addGuestMember(groupId: number, name: string) {
+    return api.post<ApiResponse<{ id: number; name: string; is_guest: boolean }>>(`/groups/${groupId}/guest-members`, { name });
+  },
+
   removeMember(groupId: number, userId: number) {
     return api.delete<ApiResponse<null>>(`/groups/${groupId}/members/${userId}`);
   },

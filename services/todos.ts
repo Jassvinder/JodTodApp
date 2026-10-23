@@ -20,6 +20,7 @@ export interface CreateTodoData {
   reminder_at?: string | null;
 }
 
+// Leave assigned_to out when the current user is the assignee (only the creator can reassign).
 export interface UpdateTodoData extends CreateTodoData {}
 
 export interface CreateCategoryData {
@@ -34,6 +35,10 @@ export async function getTodoCategoriesWithDefaults() {
 export const todoService = {
   getTodos(params?: TodoListParams, signal?: AbortSignal) {
     return api.get<PaginatedResponse<Todo>>('/todos', { params, signal });
+  },
+
+  getTodo(id: number) {
+    return api.get<ApiResponse<Todo>>(`/todos/${id}`);
   },
 
   createTodo(data: CreateTodoData) {

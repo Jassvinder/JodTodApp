@@ -24,6 +24,7 @@ import TodoCategoryPicker from '../components/TodoCategoryPicker';
 import { useToast } from '../components/Toast';
 import BottomNav from '../components/BottomNav';
 import NoContactsNote from '../components/NoContactsNote';
+import { useAuthStore } from '../stores/authStore';
 import type { TodoCategory, Contact, Todo } from '../types/models';
 
 const PRIORITY_COLORS = {
@@ -45,6 +46,9 @@ export default function EditTodoScreen() {
   const [assignedTo, setAssignedTo] = useState<number | null>(null);
   const [assignedName, setAssignedName] = useState('');
   const [reminderAt, setReminderAt] = useState('');
+  // Only the creator can reassign; a task someone else assigned to me hides Assign To.
+  const [isOwner, setIsOwner] = useState(true);
+  const currentUserId = useAuthStore((s) => s.user?.id);
 
   // UI state
   const [categories, setCategories] = useState<TodoCategory[]>([]);
@@ -60,27 +64,15 @@ export default function EditTodoScreen() {
 
   const loadData = async () => {
     try {
-      const [todosRes, catRes, contactRes] = await Promise.all([
-        todoService.getTodos({ page: 1 }),
+      const [todoRes, catRes, contactRes] = await Promise.all([
+        todoService.getTodo(parseInt(id!)),
         getTodoCategoriesWithDefaults(),
         contactService.getContacts({ page: 1 }),
       ]);
 
       setCategories(catRes.data.data);
       setContacts(contactRes.data.data);
-
-      // Find the todo from the list or fetch individually
-      // Since we don't have a getTodo endpoint, we search in the list
-      // But a better approach: use the API directly
-      // For now, fetch all and find
-      const todo = todosRes.data.data.find((t: Todo) => t.id === parseInt(id!));
-      if (todo) {
-        prefillForm(todo);
-      } else {
-        // Try fetching with search or just show error
-        toast.show('Task not found.', 'error');
-        router.back();
-      }
+      prefillForm(todoRes.data.data);
     } catch (error: any) {
       toast.show(error.response?.data?.message || 'Failed to load task.', 'error');
       router.back();
@@ -95,8 +87,9 @@ export default function EditTodoScreen() {
     setDueDate(todo.due_date || '');
     setCategoryId(todo.todo_category_id);
     setAssignedTo(todo.assigned_to);
-    setAssignedName(todo.assigned_user?.name || '');
+    setAssignedName(todo.assignee?.name || '');
     setReminderAt(todo.reminder_at || '');
+    setIsOwner(todo.user_id === currentUserId);
   };
 
   const getInitials = (name: string): string => {
@@ -123,7 +116,7 @@ export default function EditTodoScreen() {
         priority,
         due_date: dueDate || null,
         todo_category_id: categoryId,
-        assigned_to: assignedTo,
+        ...(isOwner ? { assigned_to: assignedTo } : {}),
         reminder_at: reminderAt || null,
       });
       await scheduleTodoReminder(response.data.data.id, title.trim(), reminderAt || null);
@@ -232,6 +225,7 @@ export default function EditTodoScreen() {
           />
 
           {/* Assign to Contact */}
+          {isOwner && (
           <View style={{ marginBottom: 20 }}>
             <Text style={{ fontSize: 13, fontWeight: '500', color: Colors.text, marginBottom: 6 }}>Assign To</Text>
             {assignedTo ? (
@@ -278,6 +272,7 @@ export default function EditTodoScreen() {
               </TouchableOpacity>
             )}
           </View>
+          )}
 
           {/* Reminder */}
           <DatePickerField

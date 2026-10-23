@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Image,
+  TextInput,
 } from 'react-native';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { groupService, type GroupShowResponse } from '../services/groups';
@@ -35,6 +36,9 @@ export default function AddMemberScreen() {
   const [memberIds, setMemberIds] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [addingId, setAddingId] = useState<number | null>(null);
+  const [guestName, setGuestName] = useState('');
+  const [guestError, setGuestError] = useState('');
+  const [addingGuest, setAddingGuest] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -74,6 +78,27 @@ export default function AddMemberScreen() {
       toast.show(error.response?.data?.message || 'Failed to add member.', 'error');
     } finally {
       setAddingId(null);
+    }
+  };
+
+  const handleAddGuest = async () => {
+    const name = guestName.trim();
+    if (!name) {
+      setGuestError('Enter a name');
+      return;
+    }
+    setGuestError('');
+    setAddingGuest(true);
+    try {
+      const response = await groupService.addGuestMember(groupId, name);
+      setMemberIds((prev) => [...prev, response.data.data.id]);
+      setGuestName('');
+      toast.show(`${name} has been added to the group.`);
+    } catch (error: any) {
+      const fieldError = error.response?.data?.errors?.name?.[0];
+      setGuestError(fieldError || error.response?.data?.message || 'Failed to add member.');
+    } finally {
+      setAddingGuest(false);
     }
   };
 
@@ -162,13 +187,59 @@ export default function AddMemberScreen() {
     </View>
   );
 
+  const renderGuestForm = () => (
+    <View style={{ marginBottom: 20 }}>
+      <View style={{ backgroundColor: Colors.surface, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: Colors.border }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+          <Ionicons name="person-outline" size={18} color={Colors.primary} />
+          <Text style={{ fontSize: 15, fontWeight: '600', color: Colors.text, marginLeft: 6 }}>Add someone without the app</Text>
+        </View>
+        <Text style={{ fontSize: 12, color: Colors.textSecondary, marginBottom: 10 }}>
+          For people who don't use JodTod or have no phone. Just enter a name. They are included in splits and balances, and you record their payments for them.
+        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TextInput
+            value={guestName}
+            onChangeText={(text) => { setGuestName(text); if (guestError) setGuestError(''); }}
+            placeholder="Name, e.g. Ramesh Uncle"
+            placeholderTextColor={Colors.textMuted}
+            maxLength={100}
+            returnKeyType="done"
+            onSubmitEditing={handleAddGuest}
+            style={{
+              flex: 1, backgroundColor: Colors.background, borderWidth: 1,
+              borderColor: guestError ? Colors.error : Colors.border, borderRadius: 8,
+              paddingHorizontal: 12, paddingVertical: 9, fontSize: 14, color: Colors.text, marginRight: 8,
+            }}
+          />
+          <TouchableOpacity
+            onPress={handleAddGuest}
+            disabled={addingGuest}
+            style={{ backgroundColor: Colors.primary, borderRadius: 8, paddingHorizontal: 14, paddingVertical: 10, flexDirection: 'row', alignItems: 'center' }}
+          >
+            {addingGuest ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <>
+                <Ionicons name="add" size={16} color="#fff" />
+                <Text style={{ color: '#fff', fontSize: 13, fontWeight: '600', marginLeft: 2 }}>Add</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
+        {!!guestError && <Text style={{ color: Colors.error, fontSize: 12, marginTop: 4 }}>{guestError}</Text>}
+      </View>
+      <Text style={{ fontSize: 13, fontWeight: '600', color: Colors.textSecondary, marginTop: 20 }}>FROM YOUR CONTACTS</Text>
+    </View>
+  );
+
   const renderEmpty = () => (
-    <View style={{ paddingVertical: 40 }}>
+    <View style={{ paddingVertical: 24 }}>
       <View style={{ alignItems: 'center', marginBottom: 20 }}>
         <Ionicons name="people-outline" size={48} color={Colors.textMuted} />
         <Text style={{ fontSize: 16, fontWeight: '600', color: Colors.text, marginTop: 12 }}>No contacts to add</Text>
         <Text style={{ fontSize: 14, color: Colors.textSecondary, marginTop: 4, textAlign: 'center' }}>
-          Only people in your contact list can be added to a group.
+          JodTod users must be in your contact list before you can add them.
         </Text>
       </View>
       <NoContactsNote purpose="add more members" />
@@ -182,7 +253,9 @@ export default function AddMemberScreen() {
         data={contacts}
         renderItem={renderContactItem}
         keyExtractor={(item) => item.id.toString()}
+        ListHeaderComponent={renderGuestForm()}
         ListEmptyComponent={renderEmpty}
+        keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
       />
       </View>
