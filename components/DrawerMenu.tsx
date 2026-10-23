@@ -37,6 +37,7 @@ const menuItems: {
   { label: 'Notifications', icon: 'notifications-outline', route: '/notifications' },
   { label: 'Profile', icon: 'person-outline', route: '/(tabs)/profile' },
   { label: 'Help & Tips', icon: 'help-circle-outline', route: '/help' },
+  { label: 'Support JodTod', icon: 'heart-outline', route: '/support' },
 ];
 
 export default function DrawerMenu({ visible, onClose }: DrawerMenuProps) {

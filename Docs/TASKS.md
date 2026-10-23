@@ -27,6 +27,8 @@
 
 - [] **Task 1519** - After deploying the backend, open `/set-up-backend?key=<SETUP_KEY>` once, then confirm categories appear on Add Expense, Edit Expense and both group expense screens, and that receipt photos open.
 
+- [] **Task 1520** - Run `npx expo prebuild --platform android` and make a fresh build (new native modules `expo-media-library` and `expo-file-system`). After the backend deploy and setting the UPI ID and QR in web Admin > Settings, test Support JodTod on a device: QR loads, Save QR to Gallery asks for permission and the image appears in the gallery, Copy UPI ID, Pay with UPI App opens a UPI app.
+
 - [] **Task 1518** - Test on device: Remember feature (list, add, add date, edit, delete, dashboard card), the 12-10-2026 contacts changes (friend code badge, sent requests and cancel, Requested/Respond in search, empty states, no-contacts notes in groups and tasks), friend code on Profile, and onboarding (welcome slides on first launch, tip bubbles on first visit to each screen, bubble position next to the highlighted button, "?" replay, Help & Tips page actions).
 
 ### Testing / Bug Fixes
@@ -91,6 +93,7 @@
 
 ## Completed
 
+- [X] Support JodTod screen: free-for-now note, UPI QR save to gallery, UPI ID copy and Pay with UPI App (14-10-2026)
 - [X] Fix empty Category list on Add Expense (live DB had no categories); shared `ExpenseCategoryPicker` with Retry (12-10-2026)
 - [X] Fix tip bubble position on Android (it sat a status bar height too high) (12-10-2026)
 - [X] Helpful empty states with a first action on Expenses, Income, Groups, Tasks, Group Expenses, Remember, Contacts and Notifications (12-10-2026)

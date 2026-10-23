@@ -121,6 +121,7 @@ export default function RootLayout() {
         <Stack.Screen name="groups-settlements" options={{ headerShown: true, title: 'Settlements', headerStyle: { backgroundColor: Colors.surface }, headerTitleStyle: { fontWeight: '600', color: Colors.text }, headerShadowVisible: false }} />
         <Stack.Screen name="notifications" options={{ headerShown: true, title: 'Notifications', headerStyle: { backgroundColor: Colors.surface }, headerTitleStyle: { fontWeight: '600', color: Colors.text }, headerShadowVisible: false }} />
         <Stack.Screen name="help" options={{ headerShown: true, title: 'Help & Tips', headerStyle: { backgroundColor: Colors.surface }, headerTitleStyle: { fontWeight: '600', color: Colors.text }, headerShadowVisible: false }} />
+        <Stack.Screen name="support" options={{ headerShown: true, title: 'Support JodTod', headerStyle: { backgroundColor: Colors.surface }, headerTitleStyle: { fontWeight: '600', color: Colors.text }, headerShadowVisible: false }} />
         <Stack.Screen name="welcome" options={{ headerShown: false, presentation: 'fullScreenModal' }} />
       </Stack>
       <TipsOverlay />

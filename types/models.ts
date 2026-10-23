@@ -223,3 +223,15 @@ export interface RememberItem {
   created_at: string;
   entries?: RememberEntry[];
 }
+
+// GET /support: free-for-now note and the UPI details set by the admin.
+export interface SupportDetails {
+  title: string;
+  paragraphs: string[];
+  early_users_note: string | null;
+  pay_steps: string[];
+  upi_id: string | null;
+  payee_name: string;
+  qr_url: string | null;
+  upi_link: string | null;
+}

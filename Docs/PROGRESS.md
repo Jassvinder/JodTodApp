@@ -7,6 +7,13 @@
 - **Docs:** `D:\Development\Projects\JodTodApp\Docs\`
 - **Web Backend (API):** `D:\Development\Projects\JodTod` (Laravel - same DB, shared API)
 
+## Support JodTod Screen (14-10-2026)
+
+- New `app/support.tsx` (drawer → Support JodTod): explains that JodTod is free for now and may add an optional donation or subscription later (no feature names), then shows the UPI QR with "Save QR to Gallery", the pay steps, the UPI ID with Copy, and "Pay with UPI App" (opens the `upi://pay` link). The payment card is hidden until the admin sets a UPI ID or QR.
+- Content comes from the backend `GET /api/v1/support` (`services/support.ts`, `SupportDetails` type); the note text is shared with the web app through the backend config, and the UPI details are set in web Admin > Settings.
+- Saving to the gallery uses the new native modules `expo-media-library` (write-only photo permission, plugin added in `app.json`) and `expo-file-system` (download to cache first). A fresh native build is needed (`npx expo prebuild --platform android`, then a new APK); an older APK will crash on this screen.
+- Typecheck (`npx tsc --noEmit`) passes. Needs a device check (Task 1520).
+
 ## Web App Parity (12-10-2026)
 
 - Every mobile-only feature now exists on the web app (Remember, contact requests with Sent/Cancel, friend codes, onboarding slides, tips and Help, empty states, dashboard card links). Details are in the backend repo's `Docs/PROGRESS.md`.
