@@ -14,7 +14,7 @@ export interface Tip {
 // One-time tips per screen. They show on the first visit and can be replayed with the "?" button.
 export const SCREEN_TIPS: Record<TipScreen, Tip[]> = {
   dashboard: [
-    { anchor: 'dashboard.summary', title: 'Your month at a glance', text: 'Spending, income, savings and group balances. Tap a card header to open its details.' },
+    { anchor: 'dashboard.summary', title: 'Your month at a glance', text: 'Spending, income, savings, and what you have to pay or receive from groups and Give & Take. Tap a card header or a row to open its details. Use the + button to add an expense, income, task or Give & Take entry.' },
     { anchor: 'dashboard.notifications', title: 'Notifications', text: 'Contact requests, task reminders and group updates show up here.' },
     { anchor: 'dashboard.menu', title: 'Menu', text: 'Open Contacts, Remember, Help & Tips and everything else from here.' },
   ],
@@ -74,6 +74,7 @@ export const HELP_TOPICS: HelpTopic[] = [
   { icon: 'checkbox-outline', title: 'Tasks', text: 'Tasks with due dates, priorities, categories and reminders. Assign tasks to your contacts.', route: '/todos' },
   { icon: 'people-outline', title: 'Contacts', text: 'Friends you split bills and share tasks with. Find them by name or friend code; they join your list after approving.', route: '/contacts' },
   { icon: 'bookmark-outline', title: 'Remember', text: 'Log when recurring things happened, like a gas cylinder change, and see the usual gap between them.', route: '/remember' },
-  { icon: 'swap-horizontal-outline', title: 'Lend & Borrow', text: 'Keep a simple record of money you give to or get from people, with each person\'s running balance and your overall "You will get" / "You will give" totals.', route: '/ledger' },
+  { icon: 'swap-horizontal-outline', title: 'Give & Take', text: 'Keep a simple record of money you give to or get from people, with each person\'s running balance and your overall "You will get" / "You will give" totals. Share a person\'s statement on WhatsApp and set a reminder to collect money.', route: '/ledger' },
+  { icon: 'git-network-outline', title: 'Team Builder', text: 'For network marketing. Switch from More. Add prospects, log calls, plans and follow-ups, get follow-up reminders, and build your team: share your invite code, and everyone who joins with it comes under you.', route: '/mode-select' },
   { icon: 'notifications-outline', title: 'Notifications', text: 'Contact requests, task reminders, and group expense and settlement updates.', route: '/notifications' },
 ];

@@ -13,6 +13,7 @@ import { useAuthStore } from '../stores/authStore';
 import { Colors } from '../constants/colors';
 import { resolveUrl } from '../utils/format';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { DRAWER_MENU_ITEMS } from '../constants/navigation';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const DRAWER_WIDTH = SCREEN_WIDTH * 0.78;
@@ -22,24 +23,6 @@ interface DrawerMenuProps {
   onClose: () => void;
 }
 
-const menuItems: {
-  label: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  route: string;
-}[] = [
-  { label: 'Dashboard', icon: 'home-outline', route: '/(tabs)' },
-  { label: 'Expenses', icon: 'wallet-outline', route: '/(tabs)/expenses' },
-  { label: 'Income', icon: 'trending-up-outline', route: '/(tabs)/incomes' },
-  { label: 'My Tasks', icon: 'checkbox-outline', route: '/todos' },
-  { label: 'Remember', icon: 'bookmark-outline', route: '/remember' },
-  { label: 'Lend & Borrow', icon: 'swap-horizontal-outline', route: '/ledger' },
-  { label: 'Contacts', icon: 'people-outline', route: '/contacts' },
-  { label: 'Groups', icon: 'people-circle-outline', route: '/(tabs)/groups' },
-  { label: 'Notifications', icon: 'notifications-outline', route: '/notifications' },
-  { label: 'Profile', icon: 'person-outline', route: '/(tabs)/profile' },
-  { label: 'Help & Tips', icon: 'help-circle-outline', route: '/help' },
-  { label: 'Support JodTod', icon: 'heart-outline', route: '/support' },
-];
 
 export default function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
   const router = useRouter();
@@ -132,7 +115,7 @@ export default function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
 
           {/* Menu Items */}
           <View style={{ paddingVertical: 8 }}>
-            {menuItems.map((item) => (
+            {DRAWER_MENU_ITEMS.map((item) => (
               <TouchableOpacity
                 key={item.label}
                 onPress={() => handleNavigate(item.route)}

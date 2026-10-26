@@ -3,24 +3,13 @@ import { useRouter, usePathname } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../constants/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
-
-const tabs: {
-  name: string;
-  route: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  activeIcon: keyof typeof Ionicons.glyphMap;
-}[] = [
-  { name: 'Home', route: '/(tabs)', icon: 'home-outline', activeIcon: 'home' },
-  { name: 'Expenses', route: '/(tabs)/expenses', icon: 'wallet-outline', activeIcon: 'wallet' },
-  { name: 'Groups', route: '/(tabs)/groups', icon: 'people-outline', activeIcon: 'people' },
-  { name: 'Tasks', route: '/(tabs)/todos', icon: 'checkbox-outline', activeIcon: 'checkbox' },
-  { name: 'Income', route: '/(tabs)/incomes', icon: 'trending-up-outline', activeIcon: 'trending-up' },
-  { name: 'Profile', route: '/(tabs)/profile', icon: 'person-outline', activeIcon: 'person' },
-];
+import { bottomTabsFor, isTabActive } from '../constants/navigation';
+import { useAuthStore } from '../stores/authStore';
 
 export default function BottomNav() {
   const router = useRouter();
   const pathname = usePathname();
+  const appMode = useAuthStore((state) => state.user?.app_mode);
   const insets = useSafeAreaInsets();
   const bottomPadding = Platform.OS === 'android' ? Math.max(insets.bottom, 10) : insets.bottom;
 
@@ -33,12 +22,12 @@ export default function BottomNav() {
       paddingBottom: bottomPadding,
       paddingTop: 6,
     }}>
-      {tabs.map((tab) => {
-        const isActive = pathname === tab.route || pathname.startsWith(tab.route + '/');
+      {bottomTabsFor(appMode).map((tab) => {
+        const isActive = isTabActive(tab, pathname);
 
         return (
           <TouchableOpacity
-            key={tab.name}
+            key={tab.screen}
             onPress={() => router.push(tab.route as any)}
             style={{ flex: 1, alignItems: 'center', paddingVertical: 4 }}
           >
@@ -53,7 +42,7 @@ export default function BottomNav() {
               color: isActive ? Colors.primary : Colors.textMuted,
               marginTop: 2,
             }}>
-              {tab.name}
+              {tab.label}
             </Text>
           </TouchableOpacity>
         );

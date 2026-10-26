@@ -130,7 +130,7 @@ export default function LedgerScreen() {
     ) : (
       <EmptyState
         icon="swap-horizontal-outline"
-        title="Keep track of money you lend and borrow"
+        title="Keep track of money you give and get"
         text="Gave ₹500 to a friend, got some back later? Add the person, then record each time you give or get money. JodTod keeps the running total, so you always know who owes whom."
         iconColor={LEDGER_GET_COLOR}
         iconBg="#dcfce7"

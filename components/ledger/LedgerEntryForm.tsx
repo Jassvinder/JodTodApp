@@ -3,7 +3,8 @@ import { View, Text, TextInput, TouchableOpacity } from 'react-native';
 import { Colors } from '../../constants/colors';
 import { formatLocalDateTime } from '../../utils/format';
 import DatePickerField from '../DatePickerField';
-import { LEDGER_GET_COLOR, LEDGER_GIVE_COLOR, LedgerFormCard, ledgerInputStyle } from './LedgerUi';
+import { LEDGER_GET_COLOR, LEDGER_GIVE_COLOR } from './LedgerUi';
+import FormCard, { formInputStyle } from '../FormCard';
 import type { LedgerEntryData } from '../../services/ledger';
 import type { LedgerEntryType } from '../../types/models';
 
@@ -50,7 +51,7 @@ export default function LedgerEntryForm({ personName, initial, isEdit = false, s
   );
 
   return (
-    <LedgerFormCard
+    <FormCard
       title={isEdit ? 'Edit Entry' : `New entry with ${personName}`}
       submitLabel={isEdit ? 'Save' : type === 'gave' ? 'Save "You Gave"' : 'Save "You Got"'}
       submitColor={color}
@@ -73,7 +74,7 @@ export default function LedgerEntryForm({ personName, initial, isEdit = false, s
         placeholderTextColor={Colors.textMuted}
         keyboardType="decimal-pad"
         autoFocus={!isEdit}
-        style={{ ...ledgerInputStyle, fontSize: 18, fontWeight: '600', color }}
+        style={{ ...formInputStyle, fontSize: 18, fontWeight: '600', color }}
       />
       <DatePickerField label="Date" value={entryDate} onChange={setEntryDate} maxDate={new Date()} />
       <TextInput
@@ -82,8 +83,8 @@ export default function LedgerEntryForm({ personName, initial, isEdit = false, s
         placeholder="Note (optional), e.g. for rent, returned in cash"
         placeholderTextColor={Colors.textMuted}
         maxLength={255}
-        style={ledgerInputStyle}
+        style={formInputStyle}
       />
-    </LedgerFormCard>
+    </FormCard>
   );
 }

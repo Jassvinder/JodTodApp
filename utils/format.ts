@@ -87,3 +87,17 @@ export function percentChange(current: number, previous: number): number {
   if (previous === 0) return current > 0 ? 100 : 0;
   return Math.round(((current - previous) / previous) * 100);
 }
+
+/**
+ * Format an ISO date-time as "26 Oct, 04:30 pm"
+ */
+export function formatDateTime(dateStr: string): string {
+  return new Date(dateStr).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true });
+}
+
+/**
+ * Picker value "YYYY-MM-DDTHH:MM" as the "YYYY-MM-DD HH:MM" local time the API expects.
+ */
+export function toApiDateTime(pickerValue: string): string | null {
+  return pickerValue ? pickerValue.replace('T', ' ') : null;
+}

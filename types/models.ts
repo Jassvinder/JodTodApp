@@ -1,3 +1,6 @@
+// Which part of the app the user works in; null until they choose once.
+export type AppMode = 'personal' | 'team_builder';
+
 export interface User {
   id: number;
   name: string;
@@ -14,6 +17,7 @@ export interface User {
   notification_push: boolean;
   has_password: boolean;
   friend_code?: string;
+  app_mode: AppMode | null;
 }
 
 export interface AuthData {

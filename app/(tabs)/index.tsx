@@ -8,7 +8,7 @@ import {
   RefreshControl,
   Image,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuthStore } from "../../stores/authStore";
 import { useDrawerStore } from "../../stores/drawerStore";
@@ -24,10 +24,13 @@ import {
 import { Colors } from "../../constants/colors";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import CollapsibleSection from "../../components/CollapsibleSection";
+import QuickAddButton from "../../components/QuickAddButton";
 import HelpButton from "../../components/tips/HelpButton";
 import TipAnchor from "../../components/tips/TipAnchor";
 import type { DashboardData } from "../../types/dashboard";
-import type { Income } from "../../types/models";
+import type { Income, LedgerTotals } from "../../types/models";
+import { ledgerService } from "../../services/ledger";
+import { LEDGER_LABEL } from "../../constants/navigation";
 import * as Notifications from "expo-notifications";
 
 export default function DashboardScreen() {
@@ -39,8 +42,19 @@ export default function DashboardScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [ledgerTotals, setLedgerTotals] = useState<LedgerTotals | null>(null);
+
+  const fetchLedgerTotals = async () => {
+    try {
+      const response = await ledgerService.getPeople();
+      setLedgerTotals(response.data.data.totals);
+    } catch {
+      // Keep the dashboard available; the cards then show group balances only.
+    }
+  };
 
   const fetchData = async () => {
+    fetchLedgerTotals();
     try {
       const dashboardResponse = await dashboardService.getData();
       const dashboardData = dashboardResponse.data.data;
@@ -84,9 +98,15 @@ export default function DashboardScreen() {
     }
   };
 
+  // Reload on every visit so amounts added on other screens show without pull-to-refresh.
+  useFocusEffect(
+    useCallback(() => {
+      fetchData();
+      fetchUnreadCount();
+    }, []),
+  );
+
   useEffect(() => {
-    fetchData();
-    fetchUnreadCount();
     const notificationListener = Notifications.addNotificationReceivedListener(
       (notification) => {
         // Jaise hi notification aaya, background me chup-chap count update kar do
@@ -124,6 +144,12 @@ export default function DashboardScreen() {
   const ps = data?.personalSummary;
   const is = data?.incomeSummary;
   const gs = data?.groupsSummary;
+  const groupsToPay = gs?.total_you_owe || 0;
+  const groupsToReceive = gs?.total_owed_to_you || 0;
+  const ledgerToPay = ledgerTotals?.you_will_give || 0;
+  const ledgerToReceive = ledgerTotals?.you_will_get || 0;
+  const openGroups = () => router.push("/(tabs)/groups");
+  const openLedger = () => router.push("/ledger");
   const expPct = percentChange(
     ps?.this_month_total || 0,
     ps?.last_month_total || 0,
@@ -286,23 +312,39 @@ export default function DashboardScreen() {
             />
             <SummaryCard
               title="To Pay"
-              amount={formatCurrency(gs?.total_you_owe || 0)}
+              amount={formatCurrency(groupsToPay + ledgerToPay)}
               subtitle="Group balances"
               subtitleColor={Colors.textSecondary}
               icon="arrow-up-outline"
               iconBg="#fee2e2"
               iconColor={Colors.error}
-              onPress={() => router.push("/(tabs)/groups")}
+              onPress={ledgerTotals ? undefined : openGroups}
+              breakdown={
+                ledgerTotals
+                  ? [
+                      { label: "Groups", amount: formatCurrency(groupsToPay), onPress: openGroups },
+                      { label: LEDGER_LABEL, amount: formatCurrency(ledgerToPay), onPress: openLedger },
+                    ]
+                  : undefined
+              }
             />
             <SummaryCard
               title="To Receive"
-              amount={formatCurrency(gs?.total_owed_to_you || 0)}
+              amount={formatCurrency(groupsToReceive + ledgerToReceive)}
               subtitle="Group balances"
               subtitleColor={Colors.textSecondary}
               icon="arrow-down-outline"
               iconBg="#dcfce7"
               iconColor={Colors.success}
-              onPress={() => router.push("/(tabs)/groups")}
+              onPress={ledgerTotals ? undefined : openGroups}
+              breakdown={
+                ledgerTotals
+                  ? [
+                      { label: "Groups", amount: formatCurrency(groupsToReceive), onPress: openGroups },
+                      { label: LEDGER_LABEL, amount: formatCurrency(ledgerToReceive), onPress: openLedger },
+                    ]
+                  : undefined
+              }
             />
             <SummaryCard
               title="Remember"
@@ -518,7 +560,7 @@ export default function DashboardScreen() {
         <CollapsibleSection
           title="Recent Activity"
           icon="time-outline"
-          style={{ marginBottom: 24 }}
+          style={{ marginBottom: 88 }}
         >
           {data?.recentActivity && data.recentActivity.length > 0 ? (
             data.recentActivity.map((a, i) => (
@@ -611,6 +653,7 @@ export default function DashboardScreen() {
         </CollapsibleSection>
       </View>
       </ScrollView>
+      <QuickAddButton />
     </View>
   );
 }
@@ -624,6 +667,7 @@ function SummaryCard({
   iconBg,
   iconColor,
   onPress,
+  breakdown,
 }: {
   title: string;
   amount: string;
@@ -633,6 +677,8 @@ function SummaryCard({
   iconBg: string;
   iconColor: string;
   onPress?: () => void;
+  // Tappable source rows shown instead of the subtitle (e.g. Groups / Give & Take).
+  breakdown?: { label: string; amount: string; onPress: () => void }[];
 }) {
   // Only the header navigates, so the amount below stays selectable for copying.
   const header = (
@@ -690,9 +736,28 @@ function SummaryCard({
         >
           {amount}
         </Text>
-        <Text style={{ fontSize: 11, color: subtitleColor, marginTop: 2 }}>
-          {subtitle}
-        </Text>
+        {breakdown ? (
+          breakdown.map((row) => (
+            <TouchableOpacity
+              key={row.label}
+              onPress={row.onPress}
+              activeOpacity={0.7}
+              style={{ flexDirection: "row", alignItems: "center", marginTop: 6 }}
+            >
+              <Text style={{ flex: 1, fontSize: 11, color: Colors.textSecondary }} numberOfLines={1}>
+                {row.label}
+              </Text>
+              <Text style={{ fontSize: 11, fontWeight: "600", color: Colors.text }}>
+                {row.amount}
+              </Text>
+              <Ionicons name="chevron-forward" size={12} color={Colors.textMuted} style={{ marginLeft: 2 }} />
+            </TouchableOpacity>
+          ))
+        ) : (
+          <Text style={{ fontSize: 11, color: subtitleColor, marginTop: 2 }}>
+            {subtitle}
+          </Text>
+        )}
       </View>
     </View>
   );

@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import * as SecureStore from 'expo-secure-store';
 import { authService } from '../services/auth';
 import { unregisterPushToken } from '../services/pushNotifications';
-import type { User, LoginPayload, RegisterPayload } from '../types/models';
+import type { AppMode, User, LoginPayload, RegisterPayload } from '../types/models';
 
 interface AuthState {
   user: User | null;
@@ -17,6 +17,7 @@ interface AuthState {
   logout: () => Promise<void>;
   loadToken: () => Promise<void>;
   setUser: (user: User) => void;
+  setAppMode: (appMode: AppMode) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -91,4 +92,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   setUser: (user: User) => set({ user }),
+
+  setAppMode: async (appMode: AppMode) => {
+    const response = await authService.updateAppMode(appMode);
+    set({ user: response.data.data });
+  },
 }));

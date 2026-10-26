@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { TextInput } from 'react-native';
 import { Colors } from '../../constants/colors';
-import { LedgerFormCard, ledgerInputStyle } from './LedgerUi';
+import FormCard, { formInputStyle } from '../FormCard';
 import type { LedgerPersonData } from '../../services/ledger';
 
 interface LedgerPersonFormProps {
@@ -13,7 +13,7 @@ interface LedgerPersonFormProps {
   onCancel: () => void;
 }
 
-// Add/edit form for a Lend & Borrow person.
+// Add/edit form for a Give & Take (personal ledger) person.
 export default function LedgerPersonForm({ title, submitLabel, initial, saving, onSubmit, onCancel }: LedgerPersonFormProps) {
   const [name, setName] = useState(initial?.name ?? '');
   const [phone, setPhone] = useState(initial?.phone ?? '');
@@ -30,7 +30,7 @@ export default function LedgerPersonForm({ title, submitLabel, initial, saving, 
   };
 
   return (
-    <LedgerFormCard title={title} submitLabel={submitLabel} saving={saving} error={error} onSubmit={handleSubmit} onCancel={onCancel}>
+    <FormCard title={title} submitLabel={submitLabel} saving={saving} error={error} onSubmit={handleSubmit} onCancel={onCancel}>
       <TextInput
         value={name}
         onChangeText={setName}
@@ -38,7 +38,7 @@ export default function LedgerPersonForm({ title, submitLabel, initial, saving, 
         placeholderTextColor={Colors.textMuted}
         maxLength={100}
         autoFocus
-        style={ledgerInputStyle}
+        style={formInputStyle}
       />
       <TextInput
         value={phone}
@@ -47,7 +47,7 @@ export default function LedgerPersonForm({ title, submitLabel, initial, saving, 
         placeholderTextColor={Colors.textMuted}
         keyboardType="phone-pad"
         maxLength={20}
-        style={ledgerInputStyle}
+        style={formInputStyle}
       />
       <TextInput
         value={note}
@@ -55,8 +55,8 @@ export default function LedgerPersonForm({ title, submitLabel, initial, saving, 
         placeholder="Note (optional)"
         placeholderTextColor={Colors.textMuted}
         maxLength={255}
-        style={ledgerInputStyle}
+        style={formInputStyle}
       />
-    </LedgerFormCard>
+    </FormCard>
   );
 }

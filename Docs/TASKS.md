@@ -31,7 +31,13 @@
 
 - [] **Task 1526** - After backend Task 534 (deploy + migrations), test on a device: tap a task opens Task Details (Assigned By shown, Edit/Delete in header, Mark as Completed); edit a task someone assigned to you (no Assign To field, saves without error); long-press delete on an assigned-to-me task shows the "only they can delete it" message; Add Group Expense defaults Paid By to you; add a "no app" member by name, add an expense paid by them, settle and mark their payment as admin; Lend & Borrow (add person, You Gave / You Got, edit and delete entry, running balance, totals, search, edit/delete person, call link); task push notification opens Task Details.
 
-- [] **Task 1527** - Lend & Borrow extras (optional, ask before building): dashboard card with "You will get / give", share a person's statement on WhatsApp, and a reminder to collect money.
+- [] **Task 1531** - Test on device: Home To Pay / To Receive show Groups + Give & Take rows (each row opens its screen, totals add up); footer has 5 tabs (Home, Expenses, Groups, Tasks, More); More lists Income, Remember, Give & Take, Contacts, Notifications, Profile, Help & Tips, Support JodTod; the More tab stays highlighted on those screens; Profile still opens from the header avatar and the drawer; Home amounts update after adding an expense or entry and coming back (no pull-to-refresh); Home + button opens Expense, Income, Task and Give & Take; Give & Take WhatsApp button opens the person's chat (with phone) or the share sheet (without phone) with the statement; set / change / remove a collect reminder, the notification fires and tapping it opens the person; a local task reminder tap now opens Task Details.
+
+- [] **Task 1537** - After backend Task 538 (deploy + migrations), test Team Builder on a device: first login asks Personal / Team Builder; More and the drawer switch modes and the app reopens in the chosen mode; Team tab: create a team, share the invite code, join with it from a second account (sponsor shown, counts update, nested join under the second account shows in the first account's total downline), leave/delete rules; Prospects: add, search, status filter, call and WhatsApp buttons, edit, delete; Log Activity moves the status and sets or clears the next follow-up; Follow-ups tab shows overdue/today/upcoming; the follow-up notification fires and opens the prospect; Dashboard numbers; Profile from Team Builder More has no personal tab bar.
+
+- [] **Task 1538** - Team Builder Phase 2 (after backend Task 539): upline view of the whole downline (tree, each member's weekly numbers, last active, their prospects' names, statuses and follow-up dates, no phone or notes), "Push needed" / "Training needed" flags, call/WhatsApp a member from there.
+
+- [] **Task 1539** - Team Builder Phase 3 (after backend Task 540): weekly targets with progress, team announcements / training material, push notifications.
 
 - [] **Task 1518** - Test on device: Remember feature (list, add, add date, edit, delete, dashboard card), the 12-10-2026 contacts changes (friend code badge, sent requests and cancel, Requested/Respond in search, empty states, no-contacts notes in groups and tasks), friend code on Profile, and onboarding (welcome slides on first launch, tip bubbles on first visit to each screen, bubble position next to the highlighted button, "?" replay, Help & Tips page actions).
 
@@ -97,6 +103,14 @@
 
 ## Completed
 
+- [X] Task 1536 - Team Builder Phase 1: one-time Personal / Team Builder choice (`app/mode-select.tsx`, `users.app_mode`), switch from More and the drawer; Team Builder tabs in `app/team-builder/` (Dashboard, Prospects, Follow-ups, Team, More); prospect add/edit (`tb-prospect-form`), prospect details with Log Activity and history (`tb-prospect-detail`), team details with direct members (`tb-team-detail`); follow-up reminders on the phone (26-10-2026)
+- [X] Task 1535 - Give & Take extras: WhatsApp statement share (`utils/ledgerStatement.ts`) and an on-device "collect money" reminder (`services/ledgerReminders.ts`). Shared reminder code moved to `services/localReminders.ts` (25-10-2026)
+- [X] Task 1534 - Home quick-add + button (`components/QuickAddButton.tsx`): Expense, Income, Task, Give & Take (25-10-2026)
+- [X] Task 1533 - Home reloads on every visit (25-10-2026)
+- [X] Task 1532 - Footer down to 5 tabs: Income moved into More; ledger renamed again from "Transactions" to "Give & Take" (25-10-2026)
+- [X] Task 1530 - Footer: Profile tab replaced by a More tab (`app/(tabs)/more`) listing Remember, Transactions, Contacts, Notifications, Profile, Help & Tips and Support JodTod. Tab, drawer and More lists now come from `constants/navigation.ts` (25-10-2026)
+- [X] Task 1529 - Renamed "Lend & Borrow" to "Transactions" (later "Give & Take", Task 1532) in the drawer, screen titles, Help & Tips and the empty state (25-10-2026)
+- [X] Task 1528 - Home To Pay / To Receive cards now include Transactions totals, with tappable Groups and Transactions rows (25-10-2026)
 - [X] Task 1525 - Lend & Borrow: `app/ledger.tsx` (You will get / You will give totals, search, people with balance) and `app/ledger-detail.tsx` (balance card, You Gave / You Got, history with running balance, edit/delete entry, edit/delete person). Drawer, Help & Tips and tip bubble added (23-10-2026)
 - [X] Task 1524 - Add group members without the app: "Add someone without the app" (name only) on Add Member; "No app" badge in the group member list (23-10-2026)
 - [X] Task 1523 - Add Group Expense: Paid By defaults to the logged-in user (23-10-2026)

@@ -7,6 +7,33 @@
 - **Docs:** `D:\Development\Projects\JodTodApp\Docs\`
 - **Web Backend (API):** `D:\Development\Projects\JodTod` (Laravel - same DB, shared API)
 
+## Team Builder Phase 1 (26-10-2026)
+
+- **Modes:** `User.app_mode` (`personal` | `team_builder` | null). When it is null, `app/_layout.tsx` sends the user to `app/mode-select.tsx` once; `homeRouteFor()` in `constants/navigation.ts` picks `/(tabs)` or `/team-builder` for login and app start. "Switch to Team Builder" / "Switch to Personal" in More and the drawer open the same screen. `authStore.setAppMode()` saves the choice (`PUT /user/app-mode`).
+- **Navigation:** Team Builder lives under `app/team-builder/` (a real path, so its index does not clash with `(tabs)/index`) with Tabs: Dashboard, Prospects, Follow-ups, Team, More. `TEAM_BOTTOM_TABS` / `TEAM_MORE_MENU_ITEMS` in `constants/navigation.ts`; `BottomNav` follows the mode via `bottomTabsFor()`; tabs list extra highlighted screens in `alsoActiveOn`. Profile (a hidden `(tabs)` route) hides the personal tab bar in Team Builder mode.
+- **Screens:** Dashboard (overdue / due today, this week's plans, follow-ups, calls, new prospects, meetings, joined, prospects per status, my teams); Prospects (search, status chips with counts); Follow-ups (overdue / today / upcoming); Team (Join Team with an invite code, Create Team, team cards with sponsor, my invite code + Invite share, direct and total downline); `tb-prospect-form`, `tb-prospect-detail` (call / WhatsApp, follow-up banner, Log Activity, history with delete), `tb-team-detail` (direct members with counts, edit/delete for the creator, leave for members).
+- **Shared code:** `services/teamBuilder.ts`, `types/teamBuilder.ts`, `constants/teamBuilder.ts` (status and activity labels/colors), `components/teamBuilder/` (`ProspectListItem`, `ProspectStatusBadge`, `ContactActions`, `TeamCard`, `TeamForm`, `ActivityForm`), generic `ChipSelect`, `MoreMenuList` (both More tabs) and `FormCard` (moved out of the ledger UI; ledger forms use it too). `utils/phone.ts` (WhatsApp number, call, open chat) now also backs the Give & Take statement share. `formatDateTime` and `toApiDateTime` added to `utils/format.ts`.
+- **Reminders:** `services/prospectReminders.ts` keeps an on-device follow-up reminder in step with each save (cancelled when the prospect closes or is deleted); tapping it opens the prospect.
+- Typecheck passes and `npx expo export --platform android` bundles. Not run on a device yet (Task 1537); needs the backend deploy (backend Task 538). Phases 2 and 3: Tasks 1538, 1539.
+
+## UX Pass: 5 Tabs, Give & Take, Quick Add, Statement Share, Collect Reminder (25-10-2026)
+
+- **Footer (1532):** 5 tabs: Home, Expenses, Groups, Tasks, More. Income and Profile are hidden tab routes (`HIDDEN_TAB_SCREENS`, `href: null`) opened from More, the drawer and Home.
+- **Name (1532):** the ledger is now "Give & Take" (`LEDGER_LABEL` in `constants/navigation.ts`); "Transactions" was dropped because expenses and income are transactions too.
+- **Home refresh (1533):** Home loads in `useFocusEffect`, so it updates every time it is opened.
+- **Quick add (1534):** floating + on Home (`components/QuickAddButton.tsx`) with Expense, Income, Task and Give & Take.
+- **Statement share (1535):** WhatsApp icon in the Give & Take person header. Builds a statement written to the person (oldest first, last 30 entries, totals and balance). With a phone number it opens `https://wa.me/<number>` (10-digit numbers get +91); without one it opens the share sheet.
+- **Collect reminder (1535):** when a person owes you, the person screen shows "Remind me to collect this money" (Set / Change / Remove). The reminder is on-device only (expo-notifications, `data.ledgerPersonId`) and is cancelled automatically when the balance drops to zero or the person is deleted. Tapping it opens the person.
+- **Reminders refactor:** `services/localReminders.ts` now holds the schedule / cancel / find logic used by task and collect reminders. The Android `default` channel is now named "Reminders". Notification taps now also read the local reminders' `todoId`, so a local task reminder opens Task Details instead of the task list.
+- Typecheck (`npx tsc --noEmit`) passes. Device check is Task 1531.
+
+## Home Balances, Transactions Rename, More Tab (25-10-2026)
+
+- **Home cards (1528):** To Pay and To Receive now add the Transactions totals (`GET /ledger-people` `totals`) to the group balances. Each card shows a Groups row and a Transactions row; each row opens its own screen. If the Transactions call fails, the cards fall back to group balances only. No backend change.
+- **Rename (1529):** "Lend & Borrow" is now "Transactions" (`TRANSACTIONS_LABEL`). Routes (`/ledger`), API and code names are unchanged.
+- **More tab (1530):** the footer's Profile tab is now More (`app/(tabs)/more`). Profile is still a hidden tab route (`href: null`), opened from More, the header avatar and the drawer. New `constants/navigation.ts` holds the bottom tabs, More items and drawer items, used by `app/(tabs)/_layout.tsx`, `BottomNav` and `DrawerMenu`. `BottomNav` highlighting now matches the real pathname (route groups are dropped), so More stays active on Remember, Transactions and the other More screens.
+- Typecheck (`npx tsc --noEmit`) passes. Device check is Task 1531.
+
 ## Task Details, Group Guests, Paid By Default, Lend & Borrow (23-10-2026)
 
 - **Task Details (1521, 1522):** new `app/todos-detail.tsx` opens when a task is tapped (list rows and task push notifications). Shows status, priority, category, due date, reminder, Assigned By / Created By, Assigned To and a Mark as Completed button; Edit in the header, Delete only for the creator. `todos-edit.tsx` now loads the task with `GET /todos/{id}` (it used to search only the first 20 tasks) and hides Assign To on tasks someone else assigned to you, leaving `assigned_to` out of the update. Long-press delete on those tasks shows "<name> assigned this task to you, so only they can delete it." The `Todo` type now matches the API (`assignee`, `user`; the old `assigned_user` was never sent, so the assignee avatar never showed).

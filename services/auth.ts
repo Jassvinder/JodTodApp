@@ -1,6 +1,6 @@
 import api from './api';
 import type { ApiResponse } from '../types/api';
-import type { AuthData, LoginPayload, RegisterPayload, User } from '../types/models';
+import type { AppMode, AuthData, LoginPayload, RegisterPayload, User } from '../types/models';
 
 export const authService = {
   login(data: LoginPayload) {
@@ -17,6 +17,10 @@ export const authService = {
 
   getUser() {
     return api.get<ApiResponse<User>>('/user');
+  },
+
+  updateAppMode(appMode: AppMode) {
+    return api.put<ApiResponse<User>>('/user/app-mode', { app_mode: appMode });
   },
 
   forgotPassword(email: string) {

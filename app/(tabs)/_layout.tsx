@@ -4,12 +4,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import DrawerMenu from '../../components/DrawerMenu';
+import { BOTTOM_TABS, HIDDEN_TAB_SCREENS } from '../../constants/navigation';
 import { useDrawerStore } from '../../stores/drawerStore';
+import { useAuthStore } from '../../stores/authStore';
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
   const bottomPadding = Platform.OS === 'android' ? Math.max(insets.bottom, 10) : insets.bottom;
   const { isOpen, close } = useDrawerStore();
+  const appMode = useAuthStore((state) => state.user?.app_mode);
 
   return (
     <View style={{ flex: 1 }}>
@@ -38,54 +41,25 @@ export default function TabLayout() {
           headerShadowVisible: false,
         }}
       >
-        <Tabs.Screen
-          name="index"
-          options={{
-            title: 'Home',
-            headerShown: false,
-            tabBarIcon: ({ color, size }) => <Ionicons name="home-outline" size={size} color={color} />,
-          }}
-        />
-        <Tabs.Screen
-          name="expenses"
-          options={{
-            title: 'Expenses',
-            headerShown: false,
-            tabBarIcon: ({ color, size }) => <Ionicons name="wallet-outline" size={size} color={color} />,
-          }}
-        />
-        <Tabs.Screen
-          name="groups"
-          options={{
-            title: 'Groups',
-            headerShown: false,
-            tabBarIcon: ({ color, size }) => <Ionicons name="people-outline" size={size} color={color} />,
-          }}
-        />
-        <Tabs.Screen
-          name="todos"
-          options={{
-            title: 'Tasks',
-            headerShown: false,
-            tabBarIcon: ({ color, size }) => <Ionicons name="checkbox-outline" size={size} color={color} />,
-          }}
-        />
-        <Tabs.Screen
-          name="incomes"
-          options={{
-            title: 'Income',
-            headerShown: false,
-            tabBarIcon: ({ color, size }) => <Ionicons name="trending-up-outline" size={size} color={color} />,
-          }}
-        />
-        <Tabs.Screen
-          name="profile"
-          options={{
-            title: 'Profile',
-            headerShown: false,
-            tabBarIcon: ({ color, size }) => <Ionicons name="person-outline" size={size} color={color} />,
-          }}
-        />
+        {BOTTOM_TABS.map((tab) => (
+          <Tabs.Screen
+            key={tab.screen}
+            name={tab.screen}
+            options={{
+              title: tab.label,
+              headerShown: false,
+              tabBarIcon: ({ color, size }) => <Ionicons name={tab.icon} size={size} color={color} />,
+            }}
+          />
+        ))}
+        {HIDDEN_TAB_SCREENS.map((tab) => (
+          <Tabs.Screen
+            key={tab.screen}
+            name={tab.screen}
+            // Team Builder opens Profile too; hide the personal tab bar there.
+            options={{ title: tab.title, headerShown: false, href: null, ...(appMode === 'team_builder' ? { tabBarStyle: { display: 'none' } } : {}) }}
+          />
+        ))}
       </Tabs>
 
       <DrawerMenu visible={isOpen} onClose={close} />
