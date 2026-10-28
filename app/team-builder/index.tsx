@@ -4,7 +4,11 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Colors } from '../../constants/colors';
 import { PROSPECT_STATUSES, PROSPECT_STATUS_META, TEAM_BUILDER_COLOR } from '../../constants/teamBuilder';
-import { teamBuilderService } from '../../services/teamBuilder';
+import { teamBuilderService, type TargetData } from '../../services/teamBuilder';
+import AnnouncementCard from '../../components/teamBuilder/AnnouncementCard';
+import TargetForm from '../../components/teamBuilder/TargetForm';
+import TargetProgress from '../../components/teamBuilder/TargetProgress';
+import { useToast } from '../../components/Toast';
 import { useAuthStore } from '../../stores/authStore';
 import HeaderAddButton from '../../components/HeaderAddButton';
 import EmptyState from '../../components/EmptyState';
@@ -27,9 +31,25 @@ function SectionTitle({ children }: { children: string }) {
 export default function TeamBuilderDashboardScreen() {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
+  const toast = useToast();
   const [data, setData] = useState<TeamBuilderDashboard | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [editingTarget, setEditingTarget] = useState(false);
+  const [savingTarget, setSavingTarget] = useState(false);
+
+  const handleSaveTarget = async (values: TargetData) => {
+    setSavingTarget(true);
+    try {
+      const response = await teamBuilderService.setMyTarget(values);
+      setData((current) => (current ? { ...current, target: response.data.data } : current));
+      setEditingTarget(false);
+    } catch (error: any) {
+      toast.show(error.response?.data?.message || 'Failed to save target.', 'error');
+    } finally {
+      setSavingTarget(false);
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -60,6 +80,8 @@ export default function TeamBuilderDashboardScreen() {
   const openFollowUps = () => router.push('/team-builder/follow-ups');
   const week = data?.week;
   const followUps = data?.follow_ups;
+  const target = data?.target ?? null;
+  const hasTarget = !!target && (target.plans_per_week > 0 || target.follow_ups_per_week > 0);
 
   return (
     <ScrollView
@@ -83,6 +105,36 @@ export default function TeamBuilderDashboardScreen() {
           <Text style={{ fontSize: 24, fontWeight: '800', color: TEAM_BUILDER_COLOR, marginTop: 2 }}>{followUps?.today ?? 0}</Text>
         </TouchableOpacity>
       </View>
+
+      {data?.latest_announcement && (
+        <>
+          <SectionTitle>FROM YOUR TEAM</SectionTitle>
+          <AnnouncementCard
+            announcement={data.latest_announcement}
+            onPress={() => router.push({ pathname: '/tb-announcements', params: { teamId: String(data.latest_announcement!.team_id) } })}
+          />
+        </>
+      )}
+
+      <SectionTitle>WEEKLY TARGET</SectionTitle>
+      {editingTarget ? (
+        <View style={{ marginHorizontal: -16 }}>
+          <TargetForm title="My weekly target" initial={target} saving={savingTarget} onSubmit={handleSaveTarget} onCancel={() => setEditingTarget(false)} />
+        </View>
+      ) : (
+        <View style={{ backgroundColor: Colors.surface, borderRadius: 12, borderWidth: 1, borderColor: Colors.border, padding: 14 }}>
+          {hasTarget ? (
+            <TargetProgress target={target!} plans={week?.plans_shown ?? 0} followUps={week?.follow_ups ?? 0} />
+          ) : (
+            <Text style={{ fontSize: 13, color: Colors.textSecondary }}>
+              Set how many plans and follow-ups you want to do each week, and track it here.
+            </Text>
+          )}
+          <TouchableOpacity onPress={() => setEditingTarget(true)} style={{ alignSelf: 'flex-start', marginTop: 10 }}>
+            <Text style={{ fontSize: 14, fontWeight: '700', color: TEAM_BUILDER_COLOR }}>{hasTarget ? 'Change target' : 'Set a target'}</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       <SectionTitle>THIS WEEK</SectionTitle>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>

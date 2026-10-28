@@ -6,16 +6,20 @@ import { formatDateTime } from '../../utils/format';
 import UserAvatar from '../UserAvatar';
 import ProspectStatusBadge from './ProspectStatusBadge';
 import ContactActions from './ContactActions';
-import type { Prospect } from '../../types/teamBuilder';
+import type { Prospect, ProspectBrief } from '../../types/teamBuilder';
 
-// One prospect row, shared by the Prospects and Follow-ups tabs.
-export default function ProspectListItem({ prospect, onPress }: { prospect: Prospect; onPress: () => void }) {
+// Uplines get a ProspectBrief (no phone or team), so those fields are optional.
+type ProspectRow = ProspectBrief & Partial<Pick<Prospect, 'phone' | 'team_name'>>;
+
+// One prospect row, shared by the Prospects and Follow-ups tabs and the upline's member view.
+export default function ProspectListItem({ prospect, onPress }: { prospect: ProspectRow; onPress?: () => void }) {
   const showFollowUp = !!prospect.next_follow_up_at && OPEN_PROSPECT_STATUSES.includes(prospect.status);
   const overdue = showFollowUp && new Date(prospect.next_follow_up_at!).getTime() < Date.now();
 
   return (
     <TouchableOpacity
       onPress={onPress}
+      disabled={!onPress}
       activeOpacity={0.7}
       style={{
         backgroundColor: Colors.surface,

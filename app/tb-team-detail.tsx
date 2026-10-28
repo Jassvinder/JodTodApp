@@ -3,17 +3,18 @@ import { ActivityIndicator, FlatList, RefreshControl, Text, TouchableOpacity, Vi
 import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Colors } from '../constants/colors';
-import { TEAM_BUILDER_COLOR } from '../constants/teamBuilder';
+import { MEMBER_FLAG_META, TEAM_BUILDER_COLOR } from '../constants/teamBuilder';
 import { teamBuilderService, type TeamData } from '../services/teamBuilder';
-import { formatShortDate } from '../utils/format';
-import UserAvatar from '../components/UserAvatar';
 import BottomNav from '../components/BottomNav';
+import ChipSelect, { type ChipOption } from '../components/ChipSelect';
 import TeamCard from '../components/teamBuilder/TeamCard';
 import TeamForm from '../components/teamBuilder/TeamForm';
-import ContactActions from '../components/teamBuilder/ContactActions';
+import TeamMemberListItem from '../components/teamBuilder/TeamMemberListItem';
 import { useToast } from '../components/Toast';
 import { useConfirm } from '../components/ConfirmDialog';
-import type { TeamDetail, TeamDirectMember } from '../types/teamBuilder';
+import type { TeamMemberFlag, TeamMembersResponse, TeamSummary } from '../types/teamBuilder';
+
+type MemberFilter = TeamMemberFlag | 'all';
 
 export default function TeamDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -21,7 +22,9 @@ export default function TeamDetailScreen() {
   const router = useRouter();
   const toast = useToast();
   const confirm = useConfirm();
-  const [team, setTeam] = useState<TeamDetail | null>(null);
+  const [team, setTeam] = useState<TeamSummary | null>(null);
+  const [members, setMembers] = useState<TeamMembersResponse | null>(null);
+  const [filter, setFilter] = useState<MemberFilter>('all');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -29,8 +32,12 @@ export default function TeamDetailScreen() {
 
   const fetchTeam = async () => {
     try {
-      const response = await teamBuilderService.getTeam(teamId);
-      setTeam(response.data.data);
+      const [teamResponse, membersResponse] = await Promise.all([
+        teamBuilderService.getTeam(teamId),
+        teamBuilderService.getTeamMembers(teamId),
+      ]);
+      setTeam(teamResponse.data.data);
+      setMembers(membersResponse.data.data);
     } catch (error: any) {
       toast.show(error.response?.data?.message || 'Failed to load team.', 'error');
     } finally {
@@ -48,9 +55,9 @@ export default function TeamDetailScreen() {
   const handleSave = async (values: TeamData) => {
     setSaving(true);
     try {
-      await teamBuilderService.updateTeam(teamId, values);
+      const response = await teamBuilderService.updateTeam(teamId, values);
+      setTeam(response.data.data);
       setEditing(false);
-      fetchTeam();
     } catch (error: any) {
       toast.show(error.response?.data?.message || 'Failed to save.', 'error');
     } finally {
@@ -107,18 +114,13 @@ export default function TeamDetailScreen() {
     );
   }
 
-  const renderMember = ({ item }: { item: TeamDirectMember }) => (
-    <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.surface, borderRadius: 12, borderWidth: 1, borderColor: Colors.border, padding: 12, marginBottom: 8 }}>
-      <UserAvatar name={item.name} avatarUrl={item.avatar_url} size={40} color={TEAM_BUILDER_COLOR} />
-      <View style={{ flex: 1, marginLeft: 10 }}>
-        <Text style={{ fontSize: 15, fontWeight: '600', color: Colors.text }} numberOfLines={1}>{item.name}</Text>
-        <Text style={{ fontSize: 12, color: Colors.textSecondary, marginTop: 2 }}>
-          Joined {formatShortDate(item.joined_at.slice(0, 10))} · {item.direct_count} direct · {item.downline_count} total
-        </Text>
-      </View>
-      <ContactActions phone={item.phone} />
-    </View>
-  );
+  const counts = members?.counts;
+  const filterOptions: ChipOption<MemberFilter>[] = [
+    { key: 'all', label: 'Everyone', count: counts?.total ?? 0, color: TEAM_BUILDER_COLOR },
+    { key: 'push', label: MEMBER_FLAG_META.push.label, count: counts?.push ?? 0, color: MEMBER_FLAG_META.push.color },
+    { key: 'training', label: MEMBER_FLAG_META.training.label, count: counts?.training ?? 0, color: MEMBER_FLAG_META.training.color },
+  ];
+  const visible = (members?.members ?? []).filter((member) => filter === 'all' || member.flag === filter);
 
   return (
     <View style={{ flex: 1, backgroundColor: Colors.background }}>
@@ -134,20 +136,37 @@ export default function TeamDetailScreen() {
         />
       )}
       <FlatList
-        data={team.direct_members}
+        data={visible}
         keyExtractor={(item) => item.user_id.toString()}
-        renderItem={renderMember}
+        renderItem={({ item }) => (
+          <TeamMemberListItem
+            member={item}
+            onPress={() => router.push({ pathname: '/tb-member-detail', params: { teamId: String(teamId), userId: String(item.user_id) } })}
+          />
+        )}
         ListHeaderComponent={
           <View>
             <TeamCard team={team} />
-            <Text style={{ fontSize: 13, fontWeight: '700', color: Colors.textSecondary, marginBottom: 8 }}>
-              MY DIRECT TEAM ({team.direct_members.length})
-            </Text>
+            <TouchableOpacity
+              onPress={() => router.push({ pathname: '/tb-announcements', params: { teamId: String(teamId) } })}
+              style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.surface, borderRadius: 12, borderWidth: 1, borderColor: Colors.border, padding: 12, marginBottom: 12 }}
+            >
+              <Ionicons name="megaphone-outline" size={20} color={TEAM_BUILDER_COLOR} />
+              <Text style={{ flex: 1, fontSize: 14, fontWeight: '600', color: Colors.text, marginLeft: 10 }}>Announcements</Text>
+              <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+            </TouchableOpacity>
+            {(counts?.total ?? 0) > 0 && (
+              <View style={{ marginBottom: 12 }}>
+                <ChipSelect options={filterOptions} value={filter} onChange={setFilter} scroll />
+              </View>
+            )}
           </View>
         }
         ListEmptyComponent={
           <Text style={{ fontSize: 14, color: Colors.textSecondary, textAlign: 'center', marginTop: 8 }}>
-            Nobody has joined with your invite code yet. Tap Invite to share it.
+            {(counts?.total ?? 0) === 0
+              ? 'Nobody has joined under you yet. Tap Invite to share your code.'
+              : 'Nobody here right now.'}
           </Text>
         }
         contentContainerStyle={{ padding: 16, paddingBottom: 32 }}

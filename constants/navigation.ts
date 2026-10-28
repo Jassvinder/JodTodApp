@@ -86,7 +86,7 @@ export const TEAM_BOTTOM_TABS: BottomTab[] = [
   { screen: 'follow-ups', label: 'Follow-ups', route: '/team-builder/follow-ups', icon: 'alarm-outline', activeIcon: 'alarm' },
   {
     screen: 'team', label: 'Team', route: '/team-builder/team', icon: 'git-network-outline', activeIcon: 'git-network',
-    alsoActiveOn: ['/tb-team-detail'],
+    alsoActiveOn: ['/tb-team-detail', '/tb-member-detail', '/tb-announcements'],
   },
   {
     screen: 'more', label: 'More', route: '/team-builder/more', icon: 'grid-outline', activeIcon: 'grid',

@@ -11,6 +11,7 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import TipsOverlay from '../components/tips/TipsOverlay';
 import { useTipsStore } from '../stores/tipsStore';
 import { LEDGER_LABEL, MODE_SELECT_ROUTE, homeRouteFor } from '../constants/navigation';
+import { getTeamBuilderNotificationRoute } from '../utils/teamBuilderRoutes';
 
 // Setup notification display handler (safe in Expo Go)
 setupNotificationHandler();
@@ -43,11 +44,12 @@ export default function RootLayout() {
 
       // Push notifications send todo_id; on-device reminders store todoId.
       const todoId = data.todo_id ?? data.todoId;
+      const teamBuilderRoute = getTeamBuilderNotificationRoute(data);
 
       if ((type === 'todo_reminder' || type === 'todo_assigned') && todoId) {
         router.push({ pathname: '/todos-detail', params: { id: String(todoId) } });
-      } else if (type === 'prospect_follow_up' && data.prospectId) {
-        router.push({ pathname: '/tb-prospect-detail', params: { id: String(data.prospectId) } } as any);
+      } else if (teamBuilderRoute) {
+        router.push(teamBuilderRoute as any);
       } else if (type === 'ledger_reminder' && data.ledgerPersonId) {
         router.push({ pathname: '/ledger-detail', params: { id: String(data.ledgerPersonId) } });
       } else if (type === 'todo_reminder' || type === 'todo_assigned') {
@@ -143,6 +145,8 @@ export default function RootLayout() {
         <Stack.Screen name="tb-prospect-form" options={{ headerShown: true, title: 'Prospect', headerStyle: { backgroundColor: Colors.surface }, headerTitleStyle: { fontWeight: '600', color: Colors.text }, headerShadowVisible: false }} />
         <Stack.Screen name="tb-prospect-detail" options={{ headerShown: true, title: 'Prospect', headerStyle: { backgroundColor: Colors.surface }, headerTitleStyle: { fontWeight: '600', color: Colors.text }, headerShadowVisible: false }} />
         <Stack.Screen name="tb-team-detail" options={{ headerShown: true, title: 'Team', headerStyle: { backgroundColor: Colors.surface }, headerTitleStyle: { fontWeight: '600', color: Colors.text }, headerShadowVisible: false }} />
+        <Stack.Screen name="tb-announcements" options={{ headerShown: true, title: 'Announcements', headerStyle: { backgroundColor: Colors.surface }, headerTitleStyle: { fontWeight: '600', color: Colors.text }, headerShadowVisible: false }} />
+        <Stack.Screen name="tb-member-detail" options={{ headerShown: true, title: 'Team Member', headerStyle: { backgroundColor: Colors.surface }, headerTitleStyle: { fontWeight: '600', color: Colors.text }, headerShadowVisible: false }} />
         <Stack.Screen name="welcome" options={{ headerShown: false, presentation: 'fullScreenModal' }} />
       </Stack>
       <TipsOverlay />

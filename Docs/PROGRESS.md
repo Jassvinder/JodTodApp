@@ -7,6 +7,24 @@
 - **Docs:** `D:\Development\Projects\JodTodApp\Docs\`
 - **Web Backend (API):** `D:\Development\Projects\JodTod` (Laravel - same DB, shared API)
 
+## Web App Parity (28-10-2026)
+
+- The web app now has every mobile feature up to Team Builder Phase 3 (backend Tasks 533, 541). Mobile side effect: `GET /dashboard` also returns `ledgerTotals` (the mobile Home still reads the totals from `GET /ledger-people`). Team Builder API errors keep the same status codes and messages after the backend refactor.
+
+## Team Builder Phase 3: Targets, Announcements, Notifications (28-10-2026)
+
+- **Weekly target:** Dashboard "WEEKLY TARGET" card with progress bars for plans shown and follow-ups this week (`components/teamBuilder/TargetProgress.tsx`) and an inline `TargetForm` (0 = no target). An upline sets a member's target on `tb-member-detail`; the card then says "Target set by <name>". Member rows show done/target (e.g. 3/10 plans).
+- **Announcements:** new `app/tb-announcements.tsx` (per team, opened from Team Details or the Dashboard): newest posts from you and your upline, "Post" for anyone with people below them (message + optional link, saved as https when typed without a scheme), delete own. `AnnouncementCard` is shared with the Dashboard's "FROM YOUR TEAM" card.
+- **Notifications:** `utils/teamBuilderRoutes.ts` maps `team_member_joined` / `team_weekly_summary` to Team Details, `team_announcement` to Announcements, `team_target_set` to the Dashboard and `prospect_follow_up` to the prospect. Used by both the push tap handler in `app/_layout.tsx` and `app/notifications.tsx`.
+- Typecheck passes and the Android bundle builds. Device check is part of Task 1537 (needs backend Task 538).
+
+## Team Builder Phase 2: Upline View (26-10-2026)
+
+- Kept simple (no tree, per the user): `tb-team-detail` shows the team card and one flat list of everyone under you (`GET /team-builder/teams/{id}/members`), flagged first, with chips Everyone / Push needed / Training needed. Each row (`TeamMemberListItem`) shows the flag (`MemberFlagBadge`), this week's plans and follow-ups, overdue follow-ups, and "Under <sponsor>" for indirect members.
+- New `app/tb-member-detail.tsx`: last active, plans / follow-ups / joined this week, overdue follow-ups, flag explanation (`MEMBER_FLAG_META`), call/WhatsApp, and their prospects for this team through the shared `ProspectListItem` (now accepts the upline's `ProspectBrief`, read-only).
+- `TeamCard` shows a single "N people in my team" line instead of Direct / Total downline boxes.
+- Typecheck passes and the Android bundle builds. Device check is part of Task 1537.
+
 ## Team Builder Phase 1 (26-10-2026)
 
 - **Modes:** `User.app_mode` (`personal` | `team_builder` | null). When it is null, `app/_layout.tsx` sends the user to `app/mode-select.tsx` once; `homeRouteFor()` in `constants/navigation.ts` picks `/(tabs)` or `/team-builder` for login and app start. "Switch to Team Builder" / "Switch to Personal" in More and the drawer open the same screen. `authStore.setAppMode()` saves the choice (`PUT /user/app-mode`).

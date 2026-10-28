@@ -14,6 +14,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import EmptyState from '../components/EmptyState';
 import { useToast } from '../components/Toast';
 import BottomNav from '../components/BottomNav';
+import { getTeamBuilderNotificationRoute } from '../utils/teamBuilderRoutes';
 import type { AppNotification } from '../types/models';
 
 function formatTimeAgo(dateStr: string): string {
@@ -113,6 +114,11 @@ export default function NotificationsScreen() {
     // Todo notifications
     if (type === 'todo_reminder' || type === 'todo_assigned') {
       return { pathname: '/todos' };
+    }
+
+    const teamBuilderRoute = getTeamBuilderNotificationRoute(data);
+    if (teamBuilderRoute) {
+      return teamBuilderRoute;
     }
 
     // Contact request notifications

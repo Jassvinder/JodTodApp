@@ -1,5 +1,5 @@
 import type Ionicons from '@expo/vector-icons/Ionicons';
-import type { ProspectActivityType, ProspectStatus } from '../types/teamBuilder';
+import type { ProspectActivityType, ProspectStatus, TeamMemberFlag } from '../types/teamBuilder';
 
 export const TEAM_BUILDER_COLOR = '#d97706';
 
@@ -24,4 +24,22 @@ export const ACTIVITY_TYPE_META: Record<ProspectActivityType, { label: string; i
   follow_up: { label: 'Follow-up', icon: 'repeat-outline' },
   meeting: { label: 'Meeting', icon: 'people-outline' },
   note: { label: 'Note', icon: 'document-text-outline' },
+};
+
+// Same rules as the backend's TeamMemberController.
+export const MEMBER_FLAG_META: Record<TeamMemberFlag, { label: string; text: string; color: string; bg: string; icon: keyof typeof Ionicons.glyphMap }> = {
+  push: {
+    label: 'Push needed',
+    text: 'No call, plan, follow-up or meeting logged in the last 7 days.',
+    color: '#dc2626',
+    bg: '#fee2e2',
+    icon: 'flash-outline',
+  },
+  training: {
+    label: 'Training needed',
+    text: 'Showed 5 or more plans in the last 30 days, but nobody joined.',
+    color: '#7c3aed',
+    bg: '#ede9fe',
+    icon: 'school-outline',
+  },
 };

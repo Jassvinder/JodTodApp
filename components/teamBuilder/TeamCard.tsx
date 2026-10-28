@@ -33,15 +33,11 @@ export default function TeamCard({ team, onPress }: { team: TeamSummary; onPress
         {onPress && <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />}
       </View>
 
-      <View style={{ flexDirection: 'row', marginTop: 12, gap: 10 }}>
-        <View style={{ flex: 1, backgroundColor: Colors.background, borderRadius: 10, padding: 10 }}>
-          <Text style={{ fontSize: 11, color: Colors.textSecondary }}>Direct</Text>
-          <Text style={{ fontSize: 18, fontWeight: '700', color: Colors.text }}>{team.direct_count}</Text>
-        </View>
-        <View style={{ flex: 1, backgroundColor: Colors.background, borderRadius: 10, padding: 10 }}>
-          <Text style={{ fontSize: 11, color: Colors.textSecondary }}>Total downline</Text>
-          <Text style={{ fontSize: 18, fontWeight: '700', color: Colors.text }}>{team.downline_count}</Text>
-        </View>
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 10 }}>
+        <Ionicons name="people-outline" size={16} color={Colors.textSecondary} />
+        <Text style={{ fontSize: 13, color: Colors.textSecondary, marginLeft: 6 }}>
+          <Text style={{ fontWeight: '700', color: Colors.text }}>{team.downline_count}</Text> {team.downline_count === 1 ? 'person' : 'people'} in my team
+        </Text>
       </View>
 
       {team.sponsor && (

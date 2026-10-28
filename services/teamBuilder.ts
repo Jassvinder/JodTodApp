@@ -7,9 +7,19 @@ import type {
   ProspectListResponse,
   ProspectStatus,
   TeamBuilderDashboard,
-  TeamDetail,
+  AnnouncementsResponse,
+  TeamAnnouncement,
+  TeamMemberDetail,
+  TeamMemberSummary,
+  TeamMembersResponse,
   TeamSummary,
+  WeeklyTarget,
 } from '../types/teamBuilder';
+
+export interface TargetData {
+  plans_per_week: number;
+  follow_ups_per_week: number;
+}
 
 export interface TeamData {
   name: string;
@@ -51,7 +61,35 @@ export const teamBuilderService = {
   },
 
   getTeam(id: number) {
-    return api.get<ApiResponse<TeamDetail>>(`${BASE}/teams/${id}`);
+    return api.get<ApiResponse<TeamSummary>>(`${BASE}/teams/${id}`);
+  },
+
+  getTeamMembers(teamId: number) {
+    return api.get<ApiResponse<TeamMembersResponse>>(`${BASE}/teams/${teamId}/members`);
+  },
+
+  getTeamMember(teamId: number, userId: number) {
+    return api.get<ApiResponse<TeamMemberDetail>>(`${BASE}/teams/${teamId}/members/${userId}`);
+  },
+
+  setMemberTarget(teamId: number, userId: number, data: TargetData) {
+    return api.put<ApiResponse<TeamMemberSummary>>(`${BASE}/teams/${teamId}/members/${userId}/target`, data);
+  },
+
+  setMyTarget(data: TargetData) {
+    return api.put<ApiResponse<WeeklyTarget>>(`${BASE}/target`, data);
+  },
+
+  getAnnouncements(teamId: number) {
+    return api.get<ApiResponse<AnnouncementsResponse>>(`${BASE}/teams/${teamId}/announcements`);
+  },
+
+  postAnnouncement(teamId: number, data: { message: string; link?: string | null }) {
+    return api.post<ApiResponse<TeamAnnouncement>>(`${BASE}/teams/${teamId}/announcements`, data);
+  },
+
+  deleteAnnouncement(id: number) {
+    return api.delete<ApiResponse<null>>(`${BASE}/announcements/${id}`);
   },
 
   createTeam(data: TeamData) {
